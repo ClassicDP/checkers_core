@@ -1,20 +1,38 @@
+use js_sys::JsString;
 use serde::{Deserialize, Serialize};
+use serde::de::DeserializeOwned;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsValue;
 
+
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen (js_namespace = Math)]
+    #[wasm_bindgen(js_namespace = Math)]
     fn random() -> f64;
-    #[wasm_bindgen (js_namespace = console)]
+    #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
 }
 
+fn to_js<T: Serialize>(val: T) -> JsValue {
+    match serde_wasm_bindgen::to_value(&val) {
+        Ok(js) => js,
+        Err(_err) => JsValue::UNDEFINED,
+    }
+}
+
+fn from_js<T: DeserializeOwned>(_to: &mut T, js: JsValue) {
+    let val = serde_wasm_bindgen::from_value(js);
+    match val {
+        Ok(val) => { *_to = val }
+        Err(err) => { log(&format!("{}", err)); }
+    }
+}
+
 #[wasm_bindgen]
-#[derive(Copy, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Copy, Clone, PartialEq, PartialOrd, Serialize, Deserialize, Debug)]
 pub enum Color {
-    Black=0,
-    White=8,
+    Black = 0,
+    White = 8,
 }
 
 impl Color {
@@ -28,13 +46,14 @@ impl Color {
 }
 
 #[wasm_bindgen]
-#[derive(Clone, Copy, Serialize, Deserialize)]
+#[derive(Clone, Copy, Serialize, Deserialize, Debug)]
 pub struct Figure {
     pos: i32,
     color: Color,
     is_king: bool,
     stricken: bool,
 }
+
 #[wasm_bindgen]
 impl Figure {
     #[wasm_bindgen(constructor)]
@@ -48,20 +67,19 @@ impl Figure {
     }
     #[wasm_bindgen(getter)]
     pub fn it(self) -> JsValue {
-        match serde_wasm_bindgen::to_value(&self) {
-            Ok(js) => js,
-            Err(_err) => JsValue::UNDEFINED,
-        }
+        to_js(self)
     }
     #[wasm_bindgen(setter)]
     pub fn set_it(&mut self, js: JsValue) {
-        let val = serde_wasm_bindgen::from_value(js);
-        match val {
-            Ok(val) => *self = val,
-            Err(_err) => {}
-        }
+        from_js(self, js);
+        // let val = serde_wasm_bindgen::from_value(js);
+        // match val {
+        //     Ok(val) => { *self = val }
+        //     Err(err) => {log(&format!("{}", err));}
+        // }
     }
 }
+
 #[derive(Clone, Serialize, Deserialize)]
 enum Cell {
     None,
@@ -74,10 +92,11 @@ enum Cell {
 pub struct Position {
     cells: Vec<Cell>,
 }
+
 #[wasm_bindgen]
 impl Position {
     pub fn new(size: u32) -> Position {
-        let mut pos = Position {cells:Vec::new()};
+        let mut pos = Position { cells: Vec::new() };
         pos.cells = Vec::new();
         pos.cells.resize(size as usize, Cell::None);
         pos
@@ -100,7 +119,6 @@ impl Position {
             Err(_err) => JsValue::UNDEFINED,
         }
     }
-
 }
 
 #[wasm_bindgen]
@@ -109,6 +127,7 @@ pub struct Game {
     size: u32,
     position_history: Vec<Position>,
 }
+
 #[wasm_bindgen]
 impl Game {
     #[wasm_bindgen(constructor)]
@@ -119,7 +138,7 @@ impl Game {
         }
     }
 
-    pub fn start_position (&self) -> Position {
+    pub fn start_position(&self) -> Position {
         let mut pos = Position::new(self.size);
         pos.set_fig(0, Figure::new(0, Color::Black, true));
         pos
@@ -128,7 +147,7 @@ impl Game {
     #[wasm_bindgen(getter)]
     pub fn last_position(self) -> JsValue {
         match &self.position_history.last() {
-            Some(pos)=>pos.to_js(),
+            Some(pos) => pos.to_js(),
             None => JsValue::UNDEFINED
         }
     }
