@@ -93,6 +93,14 @@ impl Position {
             Err(_err) => JsValue::UNDEFINED,
         }
     }
+    #[wasm_bindgen]
+    pub fn to_js(&self) -> JsValue {
+        match serde_wasm_bindgen::to_value(self) {
+            Ok(js) => js,
+            Err(_err) => JsValue::UNDEFINED,
+        }
+    }
+
 }
 
 #[wasm_bindgen]
@@ -120,11 +128,8 @@ impl Game {
     #[wasm_bindgen(getter)]
     pub fn last_position(self) -> JsValue {
         match &self.position_history.last() {
-            Some(pos) => match serde_wasm_bindgen::to_value(pos) {
-                Ok(js) => js,
-                Err(_err) => JsValue::UNDEFINED,
-            },
-            None => JsValue::UNDEFINED,
+            Some(pos)=>pos.to_js(),
+            None => JsValue::UNDEFINED
         }
     }
 }
