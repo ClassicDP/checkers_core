@@ -1,9 +1,14 @@
 use js_sys::JsString;
 use serde::{Deserialize, Serialize};
-use serde::de::DeserializeOwned;
+use serde::de::{DeserializeOwned, Error};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsValue;
+use ts_rs::TS;
+use position::Position;
 
+mod position;
+mod game;
+mod vector;
 
 #[wasm_bindgen]
 extern "C" {
@@ -20,19 +25,23 @@ fn to_js<T: Serialize>(val: T) -> JsValue {
     }
 }
 
-fn from_js<T: DeserializeOwned>(_to: &mut T, js: JsValue) {
+fn from_js<T: DeserializeOwned>(js: JsValue)->Option<T> {
     let val = serde_wasm_bindgen::from_value(js);
     match val {
-        Ok(val) => { *_to = val }
-        Err(err) => { log(&format!("{}", err)); }
+        Ok(val) => {  Some(val) }
+        Err(err) => { log(&format!("{}", err)); None }
     }
 }
 
 #[wasm_bindgen]
-#[derive(Copy, Clone, PartialEq, PartialOrd, Serialize, Deserialize, Debug)]
+#[derive(Copy, Clone, PartialEq, PartialOrd, Serialize, Deserialize, Debug, Default)]
+#[derive(TS)]
+#[ts(export)]
 pub enum Color {
-    Black = 0,
-    White = 8,
+    Black,
+    White,
+    #[default]
+    None,
 }
 
 impl Color {
@@ -45,8 +54,11 @@ impl Color {
     }
 }
 
+
 #[wasm_bindgen]
-#[derive(Clone, Copy, Serialize, Deserialize, Debug)]
+#[derive(TS)]
+#[ts(export)]
+#[derive(Clone, Copy, Serialize, Deserialize, Debug, Default)]
 pub struct Figure {
     pos: i32,
     color: Color,
@@ -54,9 +66,12 @@ pub struct Figure {
     stricken: bool,
 }
 
+trait Getter {
+
+}
+
 #[wasm_bindgen]
 impl Figure {
-    #[wasm_bindgen(constructor)]
     pub fn new(pos: i32, color: Color, is_king: bool) -> Figure {
         Figure {
             pos,
@@ -65,18 +80,30 @@ impl Figure {
             stricken: false,
         }
     }
+
+    pub fn new_fom_js(js: JsValue) -> Figure {
+        let mut fi: Figure = Default::default();
+        match from_js(js) {
+            Some(fi) => fi,
+            None => {let mut fi: Figure = Default::default(); fi}
+        }
+
+    }
+
+
+
     #[wasm_bindgen(getter)]
     pub fn it(self) -> JsValue {
         to_js(self)
     }
     #[wasm_bindgen(setter)]
     pub fn set_it(&mut self, js: JsValue) {
-        from_js(self, js);
-        // let val = serde_wasm_bindgen::from_value(js);
-        // match val {
-        //     Ok(val) => { *self = val }
-        //     Err(err) => {log(&format!("{}", err));}
-        // }
+        let model: Option<Figure> = from_js(js);
+        match model {
+            Some(val)=> *self = val,
+            None => {}
+        }
+
     }
 }
 
@@ -84,71 +111,4 @@ impl Figure {
 enum Cell {
     None,
     Figure(Figure),
-}
-
-
-#[derive(Clone, Serialize, Deserialize)]
-#[wasm_bindgen]
-pub struct Position {
-    cells: Vec<Cell>,
-}
-
-#[wasm_bindgen]
-impl Position {
-    pub fn new(size: u32) -> Position {
-        let mut pos = Position { cells: Vec::new() };
-        pos.cells = Vec::new();
-        pos.cells.resize(size as usize, Cell::None);
-        pos
-    }
-    #[wasm_bindgen]
-    pub fn set_fig(&mut self, _i: usize, ch: Figure) {
-        self.cells[_i] = Cell::Figure(ch);
-    }
-    #[wasm_bindgen(getter)]
-    pub fn it(self) -> JsValue {
-        match serde_wasm_bindgen::to_value(&self) {
-            Ok(js) => js,
-            Err(_err) => JsValue::UNDEFINED,
-        }
-    }
-    #[wasm_bindgen]
-    pub fn to_js(&self) -> JsValue {
-        match serde_wasm_bindgen::to_value(self) {
-            Ok(js) => js,
-            Err(_err) => JsValue::UNDEFINED,
-        }
-    }
-}
-
-#[wasm_bindgen]
-#[derive(Clone, Serialize, Deserialize)]
-pub struct Game {
-    size: u32,
-    position_history: Vec<Position>,
-}
-
-#[wasm_bindgen]
-impl Game {
-    #[wasm_bindgen(constructor)]
-    pub fn new(size: u32) -> Self {
-        Game {
-            position_history: (Vec::new()),
-            size,
-        }
-    }
-
-    pub fn start_position(&self) -> Position {
-        let mut pos = Position::new(self.size);
-        pos.set_fig(0, Figure::new(0, Color::Black, true));
-        pos
-    }
-
-    #[wasm_bindgen(getter)]
-    pub fn last_position(self) -> JsValue {
-        match &self.position_history.last() {
-            Some(pos) => pos.to_js(),
-            None => JsValue::UNDEFINED
-        }
-    }
 }
