@@ -19,7 +19,7 @@ impl Vector {
 }
 
 impl Iterator for VectorIntoIterator {
-    type Item = i8;
+    type Item = i16;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index < self.vector.points.len() {
@@ -31,7 +31,7 @@ impl Iterator for VectorIntoIterator {
 }
 
 impl IntoIterator for Vector {
-    type Item = i8;
+    type Item = i16;
     type IntoIter = VectorIntoIterator;
     fn into_iter(self) -> Self::IntoIter {
         VectorIntoIterator {
