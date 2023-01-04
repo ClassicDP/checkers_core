@@ -1,10 +1,10 @@
+use std::rc::Rc;
 use js_sys::JsString;
 use serde::{Deserialize, Serialize};
 use serde::de::{DeserializeOwned, Error};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsValue;
 use ts_rs::TS;
-use position::Position;
 
 mod position;
 mod game;
@@ -34,9 +34,10 @@ fn from_js<T: DeserializeOwned>(js: JsValue)->Option<T> {
 }
 
 #[wasm_bindgen]
-#[derive(Copy, Clone, PartialEq, PartialOrd, Serialize, Deserialize, Debug, Default)]
+#[derive(Copy, Clone, PartialOrd, Serialize, Deserialize, Debug, Default)]
 #[derive(TS)]
 #[ts(export)]
+#[derive (PartialEq, Eq, Hash)]
 pub enum Color {
     Black,
     White,
@@ -60,19 +61,15 @@ impl Color {
 #[ts(export)]
 #[derive(Clone, Copy, Serialize, Deserialize, Debug, Default)]
 pub struct Figure {
-    pos: i32,
+    pos: i16, // in pack_board
     color: Color,
     is_king: bool,
     stricken: bool,
 }
 
-trait Getter {
-
-}
-
 #[wasm_bindgen]
 impl Figure {
-    pub fn new(pos: i32, color: Color, is_king: bool) -> Figure {
+    pub fn new(pos: i16, color: Color, is_king: bool) -> Figure {
         Figure {
             pos,
             color,
@@ -82,10 +79,9 @@ impl Figure {
     }
 
     pub fn new_fom_js(js: JsValue) -> Figure {
-        let mut fi: Figure = Default::default();
         match from_js(js) {
             Some(fi) => fi,
-            None => {let mut fi: Figure = Default::default(); fi}
+            None => {let fi: Figure = Default::default(); fi}
         }
 
     }
@@ -107,8 +103,8 @@ impl Figure {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone)]
 enum Cell {
     None,
-    Figure(Figure),
+    Figure(Rc<Figure>),
 }

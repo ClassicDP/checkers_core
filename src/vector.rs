@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Vector {
     pub(crate) points: Vec<i16>,
-    pub(crate) direction_index: i8, // 0..3 (0 - UR, 1 - UL, 2 - DL, 3 - DR)
+    pub(crate) direction_index: i8, // 0..3 (0 - UR, 1 - UL, 2 - DL, 3 - DR): used in Game
 }
 
 pub struct VectorIntoIterator {

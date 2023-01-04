@@ -1,33 +1,24 @@
-use serde::{Deserialize, Serialize};
-use wasm_bindgen::prelude::wasm_bindgen;
-use wasm_bindgen::JsValue;
+use std::rc::Rc;
 use crate::{Cell, Figure};
+use crate::game::Game;
 
-#[derive(Clone, Serialize, Deserialize)]
-#[wasm_bindgen]
+#[derive(Clone)]
 pub struct Position {
     cells: Vec<Cell>,
+    game: Rc<Game>,
 }
 
-#[wasm_bindgen]
+
 impl Position {
-    pub fn new(size: i8) -> Position {
-        if size % 2 != 0 { panic!("Size must be even"); }
-        let mut pos = Position { cells: Vec::new() };
+    pub fn new(game: Rc<Game>) -> Position {
+        let mut pos = Position { cells: Vec::new(), game };
         pos.cells = Vec::new();
-        pos.cells.resize((size * size / 2) as usize, Cell::None);
+        pos.cells.resize((pos.game.size * pos.game.size / 2) as usize, Cell::None);
         pos
     }
-    #[wasm_bindgen]
-    pub fn set_fig(&mut self, _i: usize, ch: Figure) {
-        self.cells[_i] = Cell::Figure(ch);
+    pub fn inset_fig(&mut self, fig: Rc<Figure>) {
+        let pos = fig.pos as usize;
+        self.cells[pos] = Cell::Figure(fig);
     }
 
-    #[wasm_bindgen]
-    pub fn to_js(&self) -> JsValue {
-        match serde_wasm_bindgen::to_value(self) {
-            Ok(js) => js,
-            Err(_err) => JsValue::UNDEFINED,
-        }
-    }
 }
