@@ -1,12 +1,13 @@
-use wasm_bindgen::prelude::wasm_bindgen;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsValue;
-use crate::{Color, Figure, to_js};
+use wasm_bindgen::prelude::wasm_bindgen;
+
+use crate::{Color, Figure, log, to_js};
 use crate::position::Position;
 use crate::vector::Vector;
 
 #[wasm_bindgen]
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct Game {
     pub size: i8,
     position_history: Vec<Position>,
@@ -30,8 +31,9 @@ impl Game {
         let d4 = vec![size + 1, size - 1, -(size + 1), -(size - 1)];
         let mut vectors_map: Vec<Vec<Vector>> = Vec::with_capacity((size2 / 2) as usize);
         let mut board_to_pack: Vec<i16> = Vec::with_capacity(size2 as usize);
+        board_to_pack.resize(size2 as usize, 0);
         let mut pack_to_board: Vec<i16> = Vec::with_capacity((size2 / 2) as usize);
-
+        pack_to_board.resize((size2 / 2) as usize, 0);
         // packing board is array with only black cells
         let mut j: i16 = 0;
         for i in 0..size2 {
@@ -44,17 +46,19 @@ impl Game {
         // vectors_map for packing board
         for i in 0..size2 {
             if is_black_cell(i) {
-                let mut p = i;
-                let direction_index: i8 = 0;
+                let mut direction_index: i8 = 0;
                 let mut d4_v_list: Vec<Vector> = Vec::new();
                 for d in d4.iter() {
+                    let mut p = i;
                     let mut v = Vector { points: vec![board_to_pack[p as usize]], direction_index };
                     loop {
                         p = p + *d as i16;
                         if !is_on_board(p) { break; }
                         v.points.push(board_to_pack[p as usize]);
                     }
+
                     if v.points.len() > 1 { d4_v_list.push(v); }
+                    direction_index += 1;
                 }
                 vectors_map.push(d4_v_list);
             }
@@ -76,4 +80,18 @@ impl Game {
         self.board_to_pack[board_index as usize]
     }
 
+    pub fn js(&self) -> JsValue {
+        let s = serde_json::to_value(self).expect("TODO: panic message").to_string();
+        JsValue::from_str(&s)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::game::Game;
+
+    #[test]
+    fn game() {
+        Game::new(8);
+    }
 }

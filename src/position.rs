@@ -1,22 +1,24 @@
 use std::cell::RefCell;
 use std::rc::Rc;
+use serde::{Deserialize, Serialize};
 
 use crate::{Cell, Figure, MutFigure};
 use crate::Cell::CellFigure;
 use crate::game::Game;
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct Position {
     cells: Vec<Cell>,
-    game: Rc<Game>,
+    game: RefCell<Game>,
 }
 
 
 impl Position {
-    pub fn new(game: Rc<Game>) -> Position {
+    pub fn new(game: RefCell<Game>) -> Position {
         let mut pos = Position { cells: Vec::new(), game };
         pos.cells = Vec::new();
-        pos.cells.resize((pos.game.size * pos.game.size / 2) as usize, Cell::None);
+        pos.cells.resize((pos.game.borrow_mut().size *
+            pos.game.borrow_mut().size / 2) as usize, Cell::None);
         pos
     }
     pub fn inset_fig(&mut self, fig: RefCell<Figure>) {

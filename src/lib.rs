@@ -102,7 +102,7 @@ impl Figure {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize, Debug)]
 enum Cell {
     None,
     CellFigure(RefCell<Figure>),
