@@ -1,10 +1,10 @@
-use std::rc::Rc;
-use js_sys::JsString;
+use std::cell::RefCell;
+
 use serde::{Deserialize, Serialize};
-use serde::de::{DeserializeOwned, Error};
-use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsValue;
+use serde::de::DeserializeOwned;
 use ts_rs::TS;
+use wasm_bindgen::JsValue;
+use wasm_bindgen::prelude::*;
 
 mod position;
 mod game;
@@ -99,12 +99,24 @@ impl Figure {
             Some(val)=> *self = val,
             None => {}
         }
-
     }
 }
 
 #[derive(Clone)]
 enum Cell {
     None,
-    Figure(Rc<Figure>),
+    CellFigure(RefCell<Figure>),
+}
+
+trait MutFigure {
+    fn set_pos(&self, new_pos: i16);
+}
+
+impl MutFigure for Cell {
+    fn set_pos(&self, new_pos: i16) {
+        match self {
+            Cell::CellFigure(fig) => { fig.borrow_mut().pos = new_pos; }
+            _ => {},
+        }
+    }
 }

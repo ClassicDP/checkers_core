@@ -1,5 +1,8 @@
+use std::cell::RefCell;
 use std::rc::Rc;
-use crate::{Cell, Figure};
+
+use crate::{Cell, Figure, MutFigure};
+use crate::Cell::CellFigure;
 use crate::game::Game;
 
 #[derive(Clone)]
@@ -16,9 +19,14 @@ impl Position {
         pos.cells.resize((pos.game.size * pos.game.size / 2) as usize, Cell::None);
         pos
     }
-    pub fn inset_fig(&mut self, fig: Rc<Figure>) {
-        let pos = fig.pos as usize;
-        self.cells[pos] = Cell::Figure(fig);
+    pub fn inset_fig(&mut self, fig: RefCell<Figure>) {
+        let pos = fig.borrow_mut().pos as usize;
+        self.cells[pos] = CellFigure(fig);
     }
 
+    pub fn swap(&mut self, i: i16, j: i16) {
+        self.cells.swap(i as usize, j as usize);
+        self.cells[i as usize].set_pos(i);
+        self.cells[j as usize].set_pos(j);
+    }
 }
