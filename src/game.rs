@@ -11,7 +11,7 @@ use crate::vector::Vector;
 pub struct Game {
     pub size: i8,
     position_history: Vec<Position>,
-    vectors_map: Vec<Vec<Vector>>,
+    vectors_map: Vec<Vec<Vector<i16>>>,
     board_to_pack: Vec<i16>,
     pack_to_board: Vec<i16>,
 }
@@ -29,7 +29,7 @@ impl Game {
             i >= 0 && i < size2 && is_black_cell(i)
         };
         let d4 = vec![size + 1, size - 1, -(size + 1), -(size - 1)];
-        let mut vectors_map: Vec<Vec<Vector>> = Vec::with_capacity((size2 / 2) as usize);
+        let mut vectors_map: Vec<Vec<Vector<i16>>> = Vec::with_capacity((size2 / 2) as usize);
         let mut board_to_pack: Vec<i16> = Vec::with_capacity(size2 as usize);
         board_to_pack.resize(size2 as usize, 0);
         let mut pack_to_board: Vec<i16> = Vec::with_capacity((size2 / 2) as usize);
@@ -47,7 +47,7 @@ impl Game {
         for i in 0..size2 {
             if is_black_cell(i) {
                 let mut direction_index: i8 = 0;
-                let mut d4_v_list: Vec<Vector> = Vec::new();
+                let mut d4_v_list: Vec<Vector<i16>> = Vec::new();
                 for d in d4.iter() {
                     let mut p = i;
                     let mut v = Vector { points: vec![board_to_pack[p as usize]], direction_index };

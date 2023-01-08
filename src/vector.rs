@@ -3,19 +3,19 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[derive(TS)]
-pub struct Vector {
-    pub(crate) points: Vec<i16>,
+pub struct Vector<T> {
+    pub(crate) points: Vec<T>,
     pub(crate) direction_index: i8, // 0..3 (0 - UR, 1 - UL, 2 - DL, 3 - DR): used in Game
 }
 
-pub struct VectorIntoIterator<'a> {
-    vector: &'a Vector,
+pub struct VectorIntoIterator<'a, T> {
+    vector: &'a Vector<T>,
     index: usize,
 }
 
 
-impl Vector {
-    pub fn new(direction: i8) -> Vector {
+impl <T> Vector<T> {
+    pub fn new(direction: i8) -> Vector<T> {
         Vector {
             points: Vec::new(),
             direction_index: direction,
@@ -23,8 +23,8 @@ impl Vector {
     }
 }
 
-impl <'a> Iterator for VectorIntoIterator<'a> {
-    type Item = &'a i16;
+impl <'a, T> Iterator for VectorIntoIterator<'a, T> {
+    type Item = &'a T;
     fn next(&mut self) -> Option<Self::Item> {
         if self.index < self.vector.points.len() {
             let i = self.index;
@@ -36,9 +36,9 @@ impl <'a> Iterator for VectorIntoIterator<'a> {
 
 
 
-impl <'a> IntoIterator for &'a Vector {
-    type Item = &'a i16;
-    type IntoIter = VectorIntoIterator<'a>;
+impl <'a, T> IntoIterator for &'a Vector<T> {
+    type Item = &'a T;
+    type IntoIter = VectorIntoIterator<'a, T>;
     fn into_iter(self) -> Self::IntoIter {
         VectorIntoIterator {
             index: 0,
