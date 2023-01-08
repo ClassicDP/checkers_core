@@ -5,8 +5,10 @@ use serde::{Deserialize, Serialize};
 use crate::{Cell, Figure, MutFigure};
 use crate::Cell::CellFigure;
 use crate::game::Game;
+use ts_rs::TS;
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
+#[derive(TS)]
 pub struct Position {
     cells: Vec<Cell>,
     game: RefCell<Game>,

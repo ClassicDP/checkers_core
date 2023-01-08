@@ -1,13 +1,13 @@
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::wasm_bindgen;
-
-use crate::{Color, Figure, log, to_js};
+use ts_rs::TS;
 use crate::position::Position;
 use crate::vector::Vector;
 
 #[wasm_bindgen]
 #[derive(Clone, Deserialize, Serialize, Debug)]
+#[derive(TS)]
 pub struct Game {
     pub size: i8,
     position_history: Vec<Position>,
@@ -81,7 +81,8 @@ impl Game {
     }
 
     pub fn js(&self) -> JsValue {
-        let s = serde_json::to_value(self).expect("TODO: panic message").to_string();
+        let s = serde_json::to_value(self).expect("Game serialize error")
+            .to_string();
         JsValue::from_str(&s)
     }
 }
@@ -89,9 +90,9 @@ impl Game {
 #[cfg(test)]
 mod tests {
     use crate::game::Game;
-
     #[test]
     fn game() {
-        Game::new(8);
+        let game = Game::new(8);
+        assert_eq!(game.board_to_pack.len(), game.pack_to_board.len() * 2);
     }
 }
