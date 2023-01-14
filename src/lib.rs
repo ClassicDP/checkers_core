@@ -9,6 +9,7 @@ use wasm_bindgen::prelude::*;
 mod position;
 mod game;
 mod vector;
+mod mutable_iterator;
 
 #[wasm_bindgen]
 extern "C" {
