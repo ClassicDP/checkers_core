@@ -138,6 +138,7 @@ impl Game {
 mod tests {
     use std::borrow::BorrowMut;
     use std::cell::RefCell;
+    use std::ops::Deref;
     use std::rc::Rc;
     use crate::{Color, MutPiece, Piece};
     use crate::game::Game;
@@ -150,12 +151,14 @@ mod tests {
         print!("{:?}", game);
         let mut pos = Position::new(RefCell::new(game));
         pos.inset_piece(Piece::new(0, Color::Black, true));
-        let c1 = &pos.cells[0];
-
-        let col = (*c1.get_piece().unwrap()).borrow_mut().color;
-        let set = pos.pieces.get_mut(&col);
-        let z = set.unwrap().contains(&c1.get_piece().unwrap().clone());
-        print!("{z}")
+        let x = pos.cells[0].as_ref();
+        if x.is_some() {
+            let c1 = x.unwrap();
+            let col = c1.deref().borrow_mut().color;
+            let set = pos.pieces.get_mut(&col);
+            let z = set.unwrap().contains(&c1);
+            print!("{z}")
+        }
     }
 }
 
