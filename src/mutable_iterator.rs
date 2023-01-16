@@ -1,6 +1,6 @@
 use std::cmp::min;
 
-struct MutIter<'a, T> {
+pub struct MutIter<'a, T> {
     v: &'a Vec<T>,
     index: usize,
     range_a: Option<usize>,
@@ -50,11 +50,9 @@ struct St0 {
 
 #[cfg(test)]
 mod tests {
-    use std::borrow::BorrowMut;
-    use std::cell::{Cell, RefCell};
-    use std::ops::Deref;
+    use std::cell::{RefCell};
+    use std::ptr;
     use std::rc::Rc;
-    use rand::distributions::uniform::SampleBorrow;
     use crate::mutable_iterator::{MutIter, St0};
 
     #[test]
@@ -65,13 +63,15 @@ mod tests {
         let i1 = MutIter::new(&v, None, Some(3));
         let mut v2: Vec<Rc<RefCell<St0>>> = Vec::new();
         for i in &i1 {
-            (**i).borrow_mut().a += 1;
+            (**i).borrow_mut().b += 1;
             v2.push(i.clone());
         }
         for (i, it) in i1.enumerate() {
-            let x = &(**it);
-            let y = &(*v2[i]);
-            assert_eq!(x as *const RefCell<St0>, y as *const RefCell<St0>);
+            (**it).borrow_mut().a = i as i32;
+            let x = (**it).as_ptr();
+            let y = v2[i].as_ptr();
+            assert!(ptr::eq(x, y));
+            assert_eq!(x, y);
         }
         print!(" v: {:?}  {:?}", v, v2);
     }

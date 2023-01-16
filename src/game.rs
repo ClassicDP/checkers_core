@@ -1,9 +1,55 @@
+use std::cell::RefCell;
+use std::hash::{Hash, Hasher};
+use std::ops::Deref;
+use std::rc::Rc;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::wasm_bindgen;
 use ts_rs::TS;
 use crate::position::Position;
 use crate::vector::Vector;
+
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(TS)]
+pub struct HashRcWrap<T> {
+    value: Rc<RefCell<T>>,
+}
+
+impl<T> Deref for HashRcWrap<T> {
+    type Target = RefCell<T>;
+
+    fn deref(&self) -> &Self::Target {
+        self.value.deref()
+    }
+}
+
+impl<T> HashRcWrap<T> {
+    pub fn new(value: T) -> HashRcWrap<T> {
+        HashRcWrap {
+            value: Rc::new(RefCell::new(value))
+        }
+    }
+    pub fn get_rc(&self) -> Rc<RefCell<T>> {
+        self.value.clone()
+    }
+}
+
+impl<T> PartialEq<Self> for HashRcWrap<T> {
+    fn eq(&self, other: &Self) -> bool {
+        (*self.value).as_ptr() == (*other.value).as_ptr()
+    }
+}
+
+impl<T> Eq for HashRcWrap<T> {}
+
+impl<T> Hash for HashRcWrap<T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        let ptr = (*self.value).as_ptr();
+        ptr.hash(state)
+    }
+}
+
 
 #[wasm_bindgen]
 #[derive(Clone, Deserialize, Serialize, Debug)]
@@ -50,11 +96,12 @@ impl Game {
                 let mut d4_v_list: Vec<Vector<i16>> = Vec::new();
                 for d in d4.iter() {
                     let mut p = i;
-                    let mut v = Vector { points: vec![board_to_pack[p as usize]], direction_index };
+                    let mut v =
+                        Vector::new(direction_index, vec![board_to_pack[p as usize]]);
                     loop {
                         p = p + *d as i16;
                         if !is_on_board(p) { break; }
-                        v.points.push(board_to_pack[p as usize]);
+                        Rc::get_mut(&mut v.points).unwrap().push(board_to_pack[p as usize]);
                     }
 
                     if v.points.len() > 1 { d4_v_list.push(v); }
@@ -89,10 +136,27 @@ impl Game {
 
 #[cfg(test)]
 mod tests {
+    use std::borrow::BorrowMut;
+    use std::cell::RefCell;
+    use std::rc::Rc;
+    use crate::{Color, MutPiece, Piece};
     use crate::game::Game;
+    use crate::position::Position;
+
     #[test]
     fn game() {
         let game = Game::new(8);
         assert_eq!(game.board_to_pack.len(), game.pack_to_board.len() * 2);
+        print!("{:?}", game);
+        let mut pos = Position::new(RefCell::new(game));
+        pos.inset_piece(Piece::new(0, Color::Black, true));
+        let c1 = &pos.cells[0];
+
+        let col = (*c1.get_piece().unwrap()).borrow_mut().color;
+        let set = pos.pieces.get_mut(&col);
+        let z = set.unwrap().contains(&c1.get_piece().unwrap().clone());
+        print!("{z}")
     }
 }
+
+

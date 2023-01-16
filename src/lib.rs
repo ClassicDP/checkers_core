@@ -1,15 +1,23 @@
+use std::borrow::BorrowMut;
 use std::cell::RefCell;
+use std::hash::Hash;
+use std::panic::RefUnwindSafe;
+use std::rc::Rc;
 
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 use ts_rs::TS;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::*;
+use crate::game::HashRcWrap;
+
 
 mod position;
 mod game;
 mod vector;
 mod mutable_iterator;
+
+
 
 #[wasm_bindgen]
 extern "C" {
@@ -35,15 +43,13 @@ fn from_js<T: DeserializeOwned>(js: JsValue)->Option<T> {
 }
 
 #[wasm_bindgen]
-#[derive(Copy, Clone, PartialOrd, Serialize, Deserialize, Debug, Default)]
+#[derive(Copy, Clone, PartialOrd, Serialize, Deserialize, Debug)]
 #[derive(TS)]
 #[ts(export)]
 #[derive (PartialEq, Eq, Hash)]
 pub enum Color {
-    Black,
-    White,
-    #[default]
-    None,
+    Black=0,
+    White=1,
 }
 
 impl Color {
@@ -60,18 +66,19 @@ impl Color {
 #[wasm_bindgen]
 #[derive(TS)]
 #[ts(export)]
-#[derive(Clone, Copy, Serialize, Deserialize, Debug, Default)]
-pub struct Figure {
+#[derive(Clone, Copy, Serialize, Deserialize, Debug, Eq, PartialEq)]
+pub struct Piece {
     pos: i16, // in pack_board
     color: Color,
     is_king: bool,
     stricken: bool,
 }
 
+
 #[wasm_bindgen]
-impl Figure {
-    pub fn new(pos: i16, color: Color, is_king: bool) -> Figure {
-        Figure {
+impl Piece {
+    pub fn new(pos: i16, color: Color, is_king: bool) -> Piece {
+        Piece {
             pos,
             color,
             is_king,
@@ -79,10 +86,10 @@ impl Figure {
         }
     }
 
-    pub fn new_fom_js(js: JsValue) -> Figure {
+    pub fn new_fom_js(js: JsValue) -> Option<Piece> {
         match from_js(js) {
             Some(fi) => fi,
-            None => {let fi: Figure = Default::default(); fi}
+            None => {None}
         }
 
     }
@@ -95,7 +102,7 @@ impl Figure {
     }
     #[wasm_bindgen(setter)]
     pub fn set_it(&mut self, js: JsValue) {
-        let model: Option<Figure> = from_js(js);
+        let model: Option<Piece> = from_js(js);
         match model {
             Some(val)=> *self = val,
             None => {}
@@ -103,22 +110,26 @@ impl Figure {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize, Debug)]
-#[derive(TS)]
-enum Cell {
-    None,
-    CellFigure(RefCell<Figure>),
-}
 
-trait MutFigure {
+type Cell = Option<HashRcWrap<Piece>>;
+
+
+trait MutPiece {
     fn set_pos(&self, new_pos: i16);
+    fn get_piece(&self) ->Option<HashRcWrap<Piece>>;
 }
 
-impl MutFigure for Cell {
+impl MutPiece for Cell {
     fn set_pos(&self, new_pos: i16) {
-        match self {
-            Cell::CellFigure(fig) => { fig.borrow_mut().pos = new_pos; }
-            _ => {},
+        if self.is_some() {
+            (*self.get_piece().unwrap()).borrow_mut().pos = new_pos;
         }
     }
+    fn get_piece(&self) ->std::option::Option<HashRcWrap<Piece>> {
+        match self {
+            Some(piece) => { Some(piece.clone()) },
+            _ => {None}
+        }
+    }
+
 }
