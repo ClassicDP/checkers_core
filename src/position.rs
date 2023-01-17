@@ -60,7 +60,6 @@ impl Position {
         x.insert(rc_piece.clone());
         print!("{:?}",x);
     }
-
     pub fn swap(&mut self, i: i16, j: i16) {
         self.cells.swap(i as usize, j as usize);
         self.cells[i as usize].set_pos(i);

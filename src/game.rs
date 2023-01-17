@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::cell::{RefCell, RefMut};
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 use std::rc::Rc;
@@ -30,8 +30,8 @@ impl<T> HashRcWrap<T> {
             value: Rc::new(RefCell::new(value))
         }
     }
-    pub fn get_rc(&self) -> Rc<RefCell<T>> {
-        self.value.clone()
+    pub fn get(&self) -> RefMut<'_, T> {
+        self.value.deref().try_borrow_mut().expect("already borrowed")
     }
 }
 
@@ -136,11 +136,8 @@ impl Game {
 
 #[cfg(test)]
 mod tests {
-    use std::borrow::BorrowMut;
     use std::cell::RefCell;
-    use std::ops::Deref;
-    use std::rc::Rc;
-    use crate::{Color, MutPiece, Piece};
+    use crate::{Color, Piece};
     use crate::game::Game;
     use crate::position::Position;
 
@@ -151,13 +148,11 @@ mod tests {
         print!("{:?}", game);
         let mut pos = Position::new(RefCell::new(game));
         pos.inset_piece(Piece::new(0, Color::Black, true));
-        let x = pos.cells[0].as_ref();
-        if x.is_some() {
-            let c1 = x.unwrap();
-            let col = c1.deref().borrow_mut().color;
-            let set = pos.pieces.get_mut(&col);
-            let z = set.unwrap().contains(&c1);
-            print!("{z}")
+        if let Some(piece) = pos.cells[0].clone() {
+            let col = piece.get().color;
+            if let Some(set) = pos.pieces.get_mut(&col) {
+                print!("{}", set.contains(&piece))
+            }
         }
     }
 }

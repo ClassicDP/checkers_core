@@ -1,5 +1,5 @@
 use std::borrow::BorrowMut;
-use std::cell::RefCell;
+use std::cell::{RefCell, RefMut};
 use std::hash::Hash;
 use std::panic::RefUnwindSafe;
 use std::rc::Rc;
@@ -116,18 +116,18 @@ type Cell = Option<HashRcWrap<Piece>>;
 
 trait MutPiece {
     fn set_pos(&self, new_pos: i16);
-    fn get_piece(&self) ->Option<HashRcWrap<Piece>>;
+    fn get_piece(&self) ->Option<RefMut<'_,Piece>>;
 }
 
 impl MutPiece for Cell {
     fn set_pos(&self, new_pos: i16) {
         if self.is_some() {
-            (*self.get_piece().unwrap()).borrow_mut().pos = new_pos;
+            self.get_piece().unwrap().pos = new_pos;
         }
     }
-    fn get_piece(&self) ->std::option::Option<HashRcWrap<Piece>> {
+    fn get_piece(&self) ->std::option::Option<RefMut<'_,Piece>> {
         match self {
-            Some(piece) => { Some(piece.clone()) },
+            Some(piece) => { Some(piece.get()) },
             _ => {None}
         }
     }
