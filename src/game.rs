@@ -7,6 +7,7 @@ use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::wasm_bindgen;
 use ts_rs::TS;
 use crate::position::Position;
+use crate::StraightStrike::BoardPos;
 use crate::vector::Vector;
 
 
@@ -30,7 +31,7 @@ impl<T> HashRcWrap<T> {
             value: Rc::new(RefCell::new(value))
         }
     }
-    pub fn get(&self) -> RefMut<'_, T> {
+    pub fn get_unwrap(&self) -> RefMut<'_, T> {
         self.value.deref().try_borrow_mut().expect("already borrowed")
     }
 }
@@ -57,9 +58,9 @@ impl<T> Hash for HashRcWrap<T> {
 pub struct Game {
     pub size: i8,
     position_history: Vec<Position>,
-    vectors_map: Vec<Vec<Vector<i16>>>,
-    board_to_pack: Vec<i16>,
-    pack_to_board: Vec<i16>,
+    vectors_map: Vec<HashRcWrap<Vec<HashRcWrap<Vector<BoardPos>>>>>,
+    board_to_pack: Vec<BoardPos>,
+    pack_to_board: Vec<BoardPos>,
 }
 
 #[wasm_bindgen]
@@ -67,25 +68,25 @@ impl Game {
     #[wasm_bindgen(constructor)]
     pub fn new(size: i8) -> Self {
         if size % 2 != 0 { panic!("Size must be even") }
-        let size2: i16 = (size * size) as i16;
-        let is_black_cell = |i: i16| -> bool {
-            (i / size as i16 + i % 2) % 2 == 0
+        let size2 = (size * size) as BoardPos;
+        let is_black_cell = |i: BoardPos| -> bool {
+            (i / size as BoardPos + i % 2) % 2 == 0
         };
-        let is_on_board = |i: i16| -> bool {
-            i >= 0 && i < size2 && is_black_cell(i)
+        let is_on_board = |i: BoardPos| -> bool {
+            i >= 0 && i < size2  && is_black_cell(i)
         };
         let d4 = vec![size + 1, size - 1, -(size + 1), -(size - 1)];
-        let mut vectors_map: Vec<Vec<Vector<i16>>> = Vec::with_capacity((size2 / 2) as usize);
-        let mut board_to_pack: Vec<i16> = Vec::with_capacity(size2 as usize);
+        let mut vectors_map = Vec::with_capacity((size2 / 2) as usize);
+        let mut board_to_pack: Vec<BoardPos> = Vec::with_capacity(size2 as usize);
         board_to_pack.resize(size2 as usize, 0);
-        let mut pack_to_board: Vec<i16> = Vec::with_capacity((size2 / 2) as usize);
+        let mut pack_to_board: Vec<BoardPos> = Vec::with_capacity((size2 / 2) as usize);
         pack_to_board.resize((size2 / 2) as usize, 0);
         // packing board is array with only black cells
-        let mut j: i16 = 0;
-        for i in 0..size2 {
+        let mut j: BoardPos = 0;
+        for i  in 0..size2 as BoardPos {
             if is_black_cell(i) {
-                board_to_pack[i as usize] = j;
-                pack_to_board[j as usize] = i;
+                board_to_pack[i] = j;
+                pack_to_board[j] = i;
                 j += 1;
             }
         }
@@ -93,21 +94,21 @@ impl Game {
         for i in 0..size2 {
             if is_black_cell(i) {
                 let mut direction_index: i8 = 0;
-                let mut d4_v_list: Vec<Vector<i16>> = Vec::new();
+                let mut d4_v_list= Vec::new();
                 for d in d4.iter() {
                     let mut p = i;
-                    let mut v =
+                    let mut v: Vector<BoardPos> =
                         Vector::new(direction_index, vec![board_to_pack[p as usize]]);
                     loop {
-                        p = p + *d as i16;
+                        p = ((p as i64) + (*d as i64)) as BoardPos;
                         if !is_on_board(p) { break; }
                         Rc::get_mut(&mut v.points).unwrap().push(board_to_pack[p as usize]);
                     }
 
-                    if v.points.len() > 1 { d4_v_list.push(v); }
+                    if v.points.len() > 1 { d4_v_list.push(HashRcWrap::new(v)); }
                     direction_index += 1;
                 }
-                vectors_map.push(d4_v_list);
+                vectors_map.push(HashRcWrap::new(d4_v_list));
             }
         }
         Game {
@@ -119,12 +120,12 @@ impl Game {
         }
     }
 
-    pub fn to_board(&self, pack_index: i16) -> i16 {
-        self.pack_to_board[pack_index as usize]
+    pub fn to_board(&self, pack_index: BoardPos) -> BoardPos {
+        self.pack_to_board[pack_index]
     }
 
-    pub fn to_pack(&self, board_index: i16) -> i16 {
-        self.board_to_pack[board_index as usize]
+    pub fn to_pack(&self, board_index: BoardPos) -> BoardPos {
+        self.board_to_pack[board_index]
     }
 
     pub fn js(&self) -> JsValue {
@@ -134,6 +135,11 @@ impl Game {
     }
 }
 
+impl Game {
+    pub fn get_vectors(&self, pos: usize) -> Vec<HashRcWrap<Vector<BoardPos>>> {
+        self.vectors_map[pos].get_unwrap().clone()
+    }
+}
 #[cfg(test)]
 mod tests {
     use std::cell::RefCell;
@@ -149,8 +155,7 @@ mod tests {
         let mut pos = Position::new(RefCell::new(game));
         pos.inset_piece(Piece::new(0, Color::Black, true));
         if let Some(piece) = pos.cells[0].clone() {
-            let col = piece.get().color;
-            if let Some(set) = pos.pieces.get_mut(&col) {
+            if let Some(set) = pos.pieces.get_mut(&piece.get_unwrap().color) {
                 print!("{}", set.contains(&piece))
             }
         }

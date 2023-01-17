@@ -10,13 +10,14 @@ use ts_rs::TS;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::*;
 use crate::game::HashRcWrap;
+use crate::StraightStrike::BoardPos;
 
 
 mod position;
 mod game;
 mod vector;
 mod mutable_iterator;
-
+mod StraightStrike;
 
 
 #[wasm_bindgen]
@@ -68,7 +69,7 @@ impl Color {
 #[ts(export)]
 #[derive(Clone, Copy, Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct Piece {
-    pos: i16, // in pack_board
+    pos: BoardPos, // in pack_board
     color: Color,
     is_king: bool,
     stricken: bool,
@@ -77,7 +78,7 @@ pub struct Piece {
 
 #[wasm_bindgen]
 impl Piece {
-    pub fn new(pos: i16, color: Color, is_king: bool) -> Piece {
+    pub fn new(pos: BoardPos, color: Color, is_king: bool) -> Piece {
         Piece {
             pos,
             color,
@@ -115,19 +116,19 @@ type Cell = Option<HashRcWrap<Piece>>;
 
 
 trait MutPiece {
-    fn set_pos(&self, new_pos: i16);
+    fn set_pos(&self, new_pos: BoardPos);
     fn get_piece(&self) ->Option<RefMut<'_,Piece>>;
 }
 
 impl MutPiece for Cell {
-    fn set_pos(&self, new_pos: i16) {
+    fn set_pos(&self, new_pos: BoardPos) {
         if self.is_some() {
             self.get_piece().unwrap().pos = new_pos;
         }
     }
     fn get_piece(&self) ->std::option::Option<RefMut<'_,Piece>> {
         match self {
-            Some(piece) => { Some(piece.get()) },
+            Some(piece) => { Some(piece.get_unwrap()) },
             _ => {None}
         }
     }

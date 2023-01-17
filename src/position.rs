@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::cell::{RefCell, RefMut};
 use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
@@ -6,7 +6,8 @@ use serde::{Deserialize, Serialize};
 use crate::{Cell, Color, MutPiece, Piece};
 use crate::game::{Game, HashRcWrap};
 use ts_rs::TS;
-
+use crate::StraightStrike::{BoardPos, StraightStrike};
+use crate::vector::Vector;
 
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -17,7 +18,6 @@ pub struct Position {
     #[serde(skip_serializing, skip_deserializing)]
     pub pieces: HashMap<Color, HashSet<HashRcWrap<Piece>>>,
 }
-
 
 
 impl Clone for Position {
@@ -33,7 +33,7 @@ impl Clone for Position {
         Position {
             cells: self.cells.clone(),
             game: self.game.clone(),
-            pieces: new_pieces
+            pieces: new_pieces,
         }
     }
 }
@@ -43,13 +43,13 @@ impl Position {
         let mut pos = Position { cells: Vec::new(), game, pieces: HashMap::new() };
         pos.cells = Vec::new();
         let size = pos.game.borrow_mut().size;
-        pos.cells.resize((size*size / 2) as usize, Cell::None);
+        pos.cells.resize((size * size / 2) as usize, Cell::None);
         pos
     }
     pub fn inset_piece(&mut self, piece: Piece) {
         let pos = piece.pos as usize;
         let color = piece.color;
-        let rc_piece = HashRcWrap::new( piece);
+        let rc_piece = HashRcWrap::new(piece);
         self.cells[pos] = Some(rc_piece.clone());
         let mut set = self.pieces.get_mut(&color);
         if set.is_none() {
@@ -58,11 +58,62 @@ impl Position {
         }
         let x = set.unwrap();
         x.insert(rc_piece.clone());
-        print!("{:?}",x);
+        print!("{:?}", x);
     }
-    pub fn swap(&mut self, i: i16, j: i16) {
+    pub fn get_piece(&mut self, pos: usize) -> Option<RefMut<'_, Piece>> {
+        self.cells[pos].get_piece()
+    }
+
+    pub fn get_piece_by_v(&self, v: &HashRcWrap<Vec<usize>>, i: usize) -> Option<RefMut<'_, Piece>> {
+        let pos = v.get_unwrap()[i];
+        self.cells[pos].get_piece()
+    }
+    pub fn swap(&mut self, i: BoardPos, j: BoardPos) {
         self.cells.swap(i as usize, j as usize);
         self.cells[i as usize].set_pos(i);
         self.cells[j as usize].set_pos(j);
+    }
+
+    pub fn get_strike_list(&mut self)  {
+        let mut straight_strike = |v: HashRcWrap<Vec<usize>>|->Option<StraightStrike> {
+            let mut piece_ = self.get_piece_by_v(&v, 0);
+            if piece_.is_none() || v.get_unwrap().len() < 3
+            { None } else {
+                let piece = piece_.unwrap();
+                let color = piece.color;
+                let max_search_steps = if piece.is_king { v.get_unwrap().len() } else { 2 };
+                let mut i: BoardPos = 2;
+                while i <= max_search_steps {
+                    let candidate = self.get_piece_by_v(&v, i - 1);
+                    if self.get_piece_by_v(&v, i).is_none() && candidate.is_some() && candidate.unwrap().color != color {
+                        let mut strike = StraightStrike{v:Vec::new(), to: i, take: i-1};
+                        strike.v.push(piece.pos);
+                        strike.v.push(i);
+                        while self.get_piece_by_v(&v, i+1).is_none() && i+1 <= max_search_steps {
+                            i += 1;
+                            strike.v.push(i);
+                        }
+                        return Some(strike)
+                    }
+                }
+                None
+            }
+        };
+        let mut pos_strike = |pos: i16, direction: i8| {
+            let game = self.game.borrow_mut();
+            let vectors = game.get_vectors(pos as usize);
+            let piece = self.cells[pos as usize].get_piece();
+            if let Some(piece) = piece {
+                for v in vectors {
+                    let directions;
+                    if !piece.is_king {
+                        directions = if piece.color == Color::White { [0, 1] } else { [2, 3] };
+                        if piece.is_king || directions.contains(&v.get_unwrap().direction) {
+                            // try to strike on this direction
+                        }
+                    }
+                }
+            }
+        };
     }
 }

@@ -8,7 +8,7 @@ use ts_rs::TS;
 #[derive(TS)]
 pub struct Vector<T> {
     pub(crate) points: Rc<Vec<T>>,
-    pub(crate) direction_index: i8,
+    pub(crate) direction: i8,
     // 0..3 (0 - UR, 1 - UL, 2 - DL, 3 - DR): used in Game
     range_a: Option<usize>,
     range_b: Option<usize>,
@@ -21,11 +21,12 @@ pub struct VectorIntoIterator<'a, T> {
 }
 
 
+
 impl<T> Vector<T> {
     pub fn new(direction: i8, points: Vec<T>) -> Vector<T> {
         Vector {
             points: Rc::new(points),
-            direction_index: direction,
+            direction,
             range_a: None,
             range_b: None,
         }
