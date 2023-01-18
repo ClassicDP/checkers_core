@@ -1,5 +1,6 @@
 use std::cell::{RefCell, RefMut};
 use std::collections::{HashMap, HashSet};
+use std::rc::Rc;
 
 use serde::{Deserialize, Serialize};
 
@@ -64,8 +65,8 @@ impl Position {
         self.cells[pos].get_piece()
     }
 
-    pub fn get_piece_by_v(&self, v: &HashRcWrap<Vec<usize>>, i: usize) -> Option<RefMut<'_, Piece>> {
-        let pos = v.get_unwrap()[i];
+    pub fn get_piece_by_v(&self, v: &Rc<Vec<BoardPos>>, i: usize) -> Option<RefMut<'_, Piece>> {
+        let pos = v[i];
         self.cells[pos].get_piece()
     }
     pub fn swap(&mut self, i: BoardPos, j: BoardPos) {
@@ -75,13 +76,13 @@ impl Position {
     }
 
     pub fn get_strike_list(&mut self)  {
-        let mut straight_strike = |v: HashRcWrap<Vec<usize>>|->Option<StraightStrike> {
+        let mut straight_strike = |v: &Rc<Vec<BoardPos>>|->Option<StraightStrike> {
             let mut piece_ = self.get_piece_by_v(&v, 0);
-            if piece_.is_none() || v.get_unwrap().len() < 3
+            if piece_.is_none() || v.len() < 3
             { None } else {
                 let piece = piece_.unwrap();
                 let color = piece.color;
-                let max_search_steps = if piece.is_king { v.get_unwrap().len() } else { 2 };
+                let max_search_steps = if piece.is_king { v.len() } else { 2 };
                 let mut i: BoardPos = 2;
                 while i <= max_search_steps {
                     let candidate = self.get_piece_by_v(&v, i - 1);
@@ -109,7 +110,7 @@ impl Position {
                     if !piece.is_king {
                         directions = if piece.color == Color::White { [0, 1] } else { [2, 3] };
                         if piece.is_king || directions.contains(&v.get_unwrap().direction) {
-                            // try to strike on this direction
+                            straight_strike(&v.get_unwrap().points);
                         }
                     }
                 }
