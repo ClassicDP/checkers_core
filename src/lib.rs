@@ -115,22 +115,4 @@ impl Piece {
 type Cell = Option<HashRcWrap<Piece>>;
 
 
-trait MutPiece {
-    fn set_pos(&self, new_pos: BoardPos);
-    fn get_piece(&self) ->Option<RefMut<'_,Piece>>;
-}
 
-impl MutPiece for Cell {
-    fn set_pos(&self, new_pos: BoardPos) {
-        if self.is_some() {
-            self.get_piece().unwrap().pos = new_pos;
-        }
-    }
-    fn get_piece(&self) ->std::option::Option<RefMut<'_,Piece>> {
-        match self {
-            Some(piece) => { Some(piece.get_unwrap()) },
-            _ => {None}
-        }
-    }
-
-}
