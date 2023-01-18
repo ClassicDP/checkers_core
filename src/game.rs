@@ -1,4 +1,4 @@
-use std::cell::{RefCell, RefMut};
+use std::cell::{Ref, RefCell, RefMut};
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 use std::rc::Rc;
@@ -31,8 +31,11 @@ impl<T> HashRcWrap<T> {
             value: Rc::new(RefCell::new(value))
         }
     }
-    pub fn get_unwrap(&self) -> RefMut<'_, T> {
+    pub fn get_unwrap_mut(&self) -> RefMut<'_, T> {
         self.value.deref().try_borrow_mut().expect("already borrowed")
+    }
+    pub fn get_unwrap(&self) -> Ref<'_, T> {
+        self.value.deref().borrow()
     }
 }
 
@@ -159,6 +162,7 @@ mod tests {
                 print!("{}", set.contains(&piece))
             }
         }
+        pos.get_strike_list(0, 3);
     }
 }
 

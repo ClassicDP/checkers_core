@@ -1,6 +1,9 @@
+use std::borrow::BorrowMut;
 use std::cell::{RefCell, RefMut};
 use std::collections::{HashMap, HashSet};
+use std::ops::DerefMut;
 use std::rc::Rc;
+use js_sys::Math::min;
 
 use serde::{Deserialize, Serialize};
 
@@ -65,7 +68,7 @@ impl Position {
 
     pub fn get_piece_by_v(&self, v: &Rc<Vec<BoardPos>>, i: usize) -> Option<HashRcWrap<Piece>> {
         let pos = v[i];
-        if let Some (piece)= self.cells[pos].clone() {
+        if let Some(piece) = self.cells[pos].clone() {
             Some(piece)
         } else { None }
     }
@@ -73,21 +76,21 @@ impl Position {
         self.cells.swap(i as usize, j as usize);
         let set_pos = |cell: &Cell, pos: BoardPos| {
             if cell.is_some() {
-                cell.as_ref().unwrap().get_unwrap().pos = pos;
+                cell.as_ref().unwrap().get_unwrap_mut().pos = pos;
             }
         };
         set_pos(&self.cells[i], i);
-        set_pos(&self.cells[j],j);
+        set_pos(&self.cells[j], j);
     }
 
     fn straight_strike(&mut self, v: &Rc<Vec<BoardPos>>) -> Option<StraightStrike> {
-        let mut piece_ = self.get_piece_by_v(&v, 0);
+        let mut piece_ = self.get_piece_by_v(&v, 0).clone();
         if piece_.is_none() || v.len() < 3
         { None } else {
             if let Some(piece_) = piece_ {
                 let piece = piece_.get_unwrap();
                 let color = piece.color;
-                let max_search_steps = if piece.is_king { v.len() } else { 2 };
+                let max_search_steps = if piece.is_king { v.len()-1 } else { 2 } ;
                 let mut i: BoardPos = 2;
                 while i <= max_search_steps {
                     let candidate = self.get_piece_by_v(&v, i - 1);
@@ -101,29 +104,36 @@ impl Position {
                         }
                         return Some(strike);
                     }
+                    i += 1;
                 }
                 None
             } else { None }
         }
     }
 
-    fn get_strike_list(&mut self, pos: BoardPos, direction: i8) {
-        let game = Game::new(0);// self.game.borrow_mut();
-        let vectors = game.get_vectors(pos);
-        let piece = self.get_piece_by_v(&vectors[0].get_unwrap().points,0);
-        if let Some(wrap_piece) = piece {
-            let piece = wrap_piece.get_unwrap();
-            for v in vectors {
-                let directions;
-                if !piece.is_king {
-                    directions = if piece.color == Color::White { [0, 1] } else { [2, 3] };
-                    if piece.is_king || directions.contains(&v.get_unwrap().direction) {
-                        self.straight_strike(&v.get_unwrap().points);
-                        self.swap(0,1);
+    pub fn get_strike_list(&mut self, pos: BoardPos, ban_direction: i8) {
+        let game = self.game.clone();// self.game.borrow_mut();
+        let vectors: Vec<HashRcWrap<Vector<BoardPos>>> =
+            game.borrow_mut().get_vectors(pos).into_iter().filter(|v|
+                v.get_unwrap().direction != ban_direction).collect();
+        if vectors.len() > 0 {
+            let piece = self.get_piece_by_v(&vectors[0].get_unwrap().points, 0);
+            if let Some(wrap_piece) = piece {
+                let piece = wrap_piece.get_unwrap();
+                for v in vectors {
+                    let directions: Vec<i8>;
+                    if !piece.is_king {
+                        directions = if piece.color == Color::White { vec![0, 1] } else { vec![2, 3] }
+                    } else { directions = vec![0, 1, 2, 3]; }
 
+                    if directions.contains(&v.get_unwrap().direction) {
+                        let vv = &v.get_unwrap().points;
+                        let strike = self.straight_strike(vv);
+                        self.swap(0, 1);
                     }
                 }
             }
         }
     }
 }
+
