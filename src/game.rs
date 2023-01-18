@@ -147,7 +147,7 @@ impl Game {
 mod tests {
     use std::cell::RefCell;
     use crate::{Color, Piece};
-    use crate::game::Game;
+    use crate::game::{Game, HashRcWrap};
     use crate::position::Position;
 
     #[test]
@@ -155,8 +155,10 @@ mod tests {
         let game = Game::new(8);
         assert_eq!(game.board_to_pack.len(), game.pack_to_board.len() * 2);
         print!("{:?}", game);
-        let mut pos = Position::new(RefCell::new(game));
+        let mut pos = Position::new(HashRcWrap::new(game));
         pos.inset_piece(Piece::new(0, Color::Black, true));
+        let p1 = pos.game.get_unwrap().board_to_pack[9];
+        pos.inset_piece(Piece::new(p1, Color::White, true));
         if let Some(piece) = pos.cells[0].clone() {
             if let Some(set) = pos.pieces.get_mut(&piece.get_unwrap().color) {
                 print!("{}", set.contains(&piece))

@@ -18,7 +18,7 @@ use crate::vector::Vector;
 #[derive(TS)]
 pub struct Position {
     pub cells: Vec<Cell>,
-    game: RefCell<Game>,
+    pub game: HashRcWrap<Game>,
     #[serde(skip_serializing, skip_deserializing)]
     pub pieces: HashMap<Color, HashSet<HashRcWrap<Piece>>>,
 }
@@ -43,10 +43,10 @@ impl Clone for Position {
 }
 
 impl Position {
-    pub fn new(game: RefCell<Game>) -> Position {
+    pub fn new(game: HashRcWrap<Game>) -> Position {
         let mut pos = Position { cells: Vec::new(), game, pieces: HashMap::new() };
         pos.cells = Vec::new();
-        let size = pos.game.borrow_mut().size;
+        let size = pos.game.get_unwrap().size;
         pos.cells.resize((size * size / 2) as usize, Cell::None);
         pos
     }
@@ -97,10 +97,10 @@ impl Position {
                     if self.get_piece_by_v(&v, i).is_none() && candidate.is_some() && candidate.unwrap().get_unwrap().color != color {
                         let mut strike = StraightStrike { v: Vec::new(), to: i, take: i - 1 };
                         strike.v.push(piece.pos);
-                        strike.v.push(i);
-                        while self.get_piece_by_v(&v, i + 1).is_none() && i + 1 <= max_search_steps {
+                        strike.v.push(v[i]);
+                        while i + 1 <= max_search_steps && self.get_piece_by_v(&v, i + 1).is_none() {
                             i += 1;
-                            strike.v.push(i);
+                            strike.v.push(v[i]);
                         }
                         return Some(strike);
                     }
@@ -114,7 +114,7 @@ impl Position {
     pub fn get_strike_list(&mut self, pos: BoardPos, ban_direction: i8) {
         let game = self.game.clone();// self.game.borrow_mut();
         let vectors: Vec<HashRcWrap<Vector<BoardPos>>> =
-            game.borrow_mut().get_vectors(pos).into_iter().filter(|v|
+            game.get_unwrap().get_vectors(pos).into_iter().filter(|v|
                 v.get_unwrap().direction != ban_direction).collect();
         if vectors.len() > 0 {
             let piece = self.get_piece_by_v(&vectors[0].get_unwrap().points, 0);
