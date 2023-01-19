@@ -1,4 +1,4 @@
-use std::borrow::BorrowMut;
+use std::borrow::{Borrow, BorrowMut};
 use std::cell::{RefCell, RefMut};
 use std::collections::{HashMap, HashSet};
 use std::ops::DerefMut;
@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use crate::{Cell, Color, Piece};
 use crate::game::{Game, HashRcWrap};
 use ts_rs::TS;
-use crate::StraightStrike::{BoardPos, StraightStrike};
+use crate::Moves::{BoardPos, PieceMove, StraightStrike};
 use crate::vector::Vector;
 
 
@@ -22,7 +22,6 @@ pub struct Position {
     #[serde(skip_serializing, skip_deserializing)]
     pub pieces: HashMap<Color, HashSet<HashRcWrap<Piece>>>,
 }
-
 
 impl Clone for Position {
     fn clone(&self) -> Self {
@@ -65,22 +64,39 @@ impl Position {
         print!("{:?}", x);
     }
 
+    pub fn make_move<T: PieceMove>(&mut self, mov: &T) {
+        self.swap(mov.from(), mov.to());
+        if let Some(take) = mov.take() {
+            if let Some(cell) = &self.cells[take] {
+                cell.get_unwrap_mut().stricken = true;
+            }
+        }
+    }
+
+    pub fn ummake_move<T: PieceMove>(&mut self, mov: &T) {
+        self.swap(mov.from(), mov.to());
+        if let Some(take) = mov.take() {
+            if let Some(cell) = &self.cells[take] {
+                cell.get_unwrap_mut().stricken = false;
+            }
+        }
+    }
 
     pub fn get_piece_by_v(&self, v: &Rc<Vec<BoardPos>>, i: usize) -> Option<HashRcWrap<Piece>> {
         let pos = v[i];
-        if let Some(piece) = self.cells[pos].clone() {
-            Some(piece)
+        if let Some(piece) = &self.cells[pos] {
+            Some(piece.clone())
         } else { None }
     }
     pub fn swap(&mut self, i: BoardPos, j: BoardPos) {
         self.cells.swap(i as usize, j as usize);
         let set_pos = |cell: &Cell, pos: BoardPos| {
-            if cell.is_some() {
-                cell.as_ref().unwrap().get_unwrap_mut().pos = pos;
+            if let Some(cell) = cell{
+                cell.get_unwrap_mut().pos = pos;
             }
         };
         set_pos(&self.cells[i], i);
-        set_pos(&self.cells[j], j);
+            set_pos(&self.cells[j], j);
     }
 
     fn straight_strike(&mut self, v: &Rc<Vec<BoardPos>>) -> Option<StraightStrike> {
@@ -95,7 +111,7 @@ impl Position {
                 while i <= max_search_steps {
                     let candidate = self.get_piece_by_v(&v, i - 1);
                     if self.get_piece_by_v(&v, i).is_none() && candidate.is_some() && candidate.unwrap().get_unwrap().color != color {
-                        let mut strike = StraightStrike { v: Vec::new(), to: i, take: i - 1 };
+                        let mut strike = StraightStrike { v: Vec::new(), from: v[0], to: v[i], take: v[i - 1] };
                         strike.v.push(piece.pos);
                         strike.v.push(v[i]);
                         while i + 1 <= max_search_steps && self.get_piece_by_v(&v, i + 1).is_none() {
@@ -118,18 +134,18 @@ impl Position {
                 v.get_unwrap().direction != ban_direction).collect();
         if vectors.len() > 0 {
             let piece = self.get_piece_by_v(&vectors[0].get_unwrap().points, 0);
-            if let Some(wrap_piece) = piece {
-                let piece = wrap_piece.get_unwrap();
+            if let Some(piece) = piece {
                 for v in vectors {
                     let directions: Vec<i8>;
-                    if !piece.is_king {
-                        directions = if piece.color == Color::White { vec![0, 1] } else { vec![2, 3] }
+                    if !piece.get_unwrap().is_king {
+                        directions = if piece.get_unwrap().color == Color::White { vec![0, 1] } else { vec![2, 3] }
                     } else { directions = vec![0, 1, 2, 3]; }
-
                     if directions.contains(&v.get_unwrap().direction) {
                         let vv = &v.get_unwrap().points;
                         let strike = self.straight_strike(vv);
-                        self.swap(0, 1);
+                        if let Some(strike) = strike {
+                            self.make_move(&strike);
+                        }
                     }
                 }
             }

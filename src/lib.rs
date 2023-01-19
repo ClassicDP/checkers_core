@@ -10,14 +10,14 @@ use ts_rs::TS;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::*;
 use crate::game::HashRcWrap;
-use crate::StraightStrike::BoardPos;
+use crate::Moves::BoardPos;
 
 
 mod position;
 mod game;
 mod vector;
 mod mutable_iterator;
-mod StraightStrike;
+mod Moves;
 
 
 #[wasm_bindgen]

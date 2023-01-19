@@ -1,4 +1,5 @@
 use std::cell::{Ref, RefCell, RefMut};
+use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 use std::rc::Rc;
@@ -7,7 +8,7 @@ use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::wasm_bindgen;
 use ts_rs::TS;
 use crate::position::Position;
-use crate::StraightStrike::BoardPos;
+use crate::Moves::BoardPos;
 use crate::vector::Vector;
 
 
@@ -25,7 +26,7 @@ impl<T> Deref for HashRcWrap<T> {
     }
 }
 
-impl<T> HashRcWrap<T> {
+impl<T: Debug> HashRcWrap<T> {
     pub fn new(value: T) -> HashRcWrap<T> {
         HashRcWrap {
             value: Rc::new(RefCell::new(value))
@@ -154,7 +155,6 @@ mod tests {
     fn game() {
         let game = Game::new(8);
         assert_eq!(game.board_to_pack.len(), game.pack_to_board.len() * 2);
-        print!("{:?}", game);
         let mut pos = Position::new(HashRcWrap::new(game));
         pos.inset_piece(Piece::new(0, Color::Black, true));
         let p1 = pos.game.get_unwrap().board_to_pack[9];
@@ -165,6 +165,7 @@ mod tests {
             }
         }
         pos.get_strike_list(0, 3);
+        print!("--- {:?}  ---", pos.cells);
     }
 }
 
