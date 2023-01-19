@@ -161,11 +161,10 @@ mod tests {
         pos.inset_piece(Piece::new(p1, Color::White, true));
         if let Some(piece) = pos.cells[0].clone() {
             if let Some(set) = pos.pieces.get_mut(&piece.get_unwrap().color) {
-                print!("{}", set.contains(&piece))
+                print!(" -piece {}  ", set.contains(&piece))
             }
         }
         pos.get_strike_list(0, 3);
-        print!("--- {:?}  ---", pos.cells);
     }
 }
 

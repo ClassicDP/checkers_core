@@ -73,6 +73,5 @@ mod tests {
             assert!(ptr::eq(x, y));
             assert_eq!(x, y);
         }
-        print!(" v: {:?}  {:?}", v, v2);
     }
 }
