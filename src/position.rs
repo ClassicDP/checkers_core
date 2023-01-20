@@ -91,12 +91,12 @@ impl Position {
     pub fn swap(&mut self, i: BoardPos, j: BoardPos) {
         self.cells.swap(i as usize, j as usize);
         let set_pos = |cell: &Cell, pos: BoardPos| {
-            if let Some(cell) = cell{
+            if let Some(cell) = cell {
                 cell.get_unwrap_mut().pos = pos;
             }
         };
         set_pos(&self.cells[i], i);
-            set_pos(&self.cells[j], j);
+        set_pos(&self.cells[j], j);
     }
 
     fn straight_strike(&mut self, v: &Rc<Vec<BoardPos>>) -> Option<StraightStrike> {
@@ -106,7 +106,7 @@ impl Position {
             if let Some(piece_) = piece_ {
                 let piece = piece_.get_unwrap();
                 let color = piece.color;
-                let max_search_steps = if piece.is_king { v.len()-1 } else { 2 } ;
+                let max_search_steps = if piece.is_king { v.len() - 1 } else { 2 };
                 let mut i: BoardPos = 2;
                 while i <= max_search_steps {
                     let candidate = self.get_piece_by_v(&v, i - 1);
@@ -128,7 +128,7 @@ impl Position {
     }
 
     pub fn get_strike_list(&mut self, pos: BoardPos, ban_direction: i8) {
-        let game = self.game.clone();// self.game.borrow_mut();
+        let game = &self.game;// self.game.borrow_mut();
         let vectors: Vec<HashRcWrap<Vector<BoardPos>>> =
             game.get_unwrap().get_vectors(pos).into_iter().filter(|v|
                 v.get_unwrap().direction != ban_direction).collect();
@@ -136,16 +136,21 @@ impl Position {
             let piece = self.get_piece_by_v(&vectors[0].get_unwrap().points, 0);
             if let Some(piece) = piece {
                 for v in vectors {
-                    let directions: Vec<i8>;
-                    if !piece.get_unwrap().is_king {
-                        directions = if piece.get_unwrap().color == Color::White { vec![0, 1] } else { vec![2, 3] }
-                    } else { directions = vec![0, 1, 2, 3]; }
-                    if directions.contains(&v.get_unwrap().direction) {
-                        let vv = &v.get_unwrap().points;
-                        let strike = self.straight_strike(vv);
-                        if let Some(strike) = strike {
-                            self.make_move(&strike);
-                        }
+                    let directions = {
+                        let piece = piece.get_unwrap();
+                        if !piece.is_king {
+                            if piece.color == Color::White { vec![0, 1] } else { vec![2, 3] }
+                        } else { vec![0, 1, 2, 3] }
+                    };
+                    let strike = {
+                        let v = v.get_unwrap();
+                        if directions.contains(&v.direction) {
+                            let vv = &v.points;
+                            self.straight_strike(vv)
+                        } else { None }
+                    };
+                    if let Some(strike) = strike {
+                        self.make_move(&strike);
                     }
                 }
             }
