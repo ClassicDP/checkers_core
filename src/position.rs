@@ -84,8 +84,8 @@ impl Position {
 
     pub fn get_piece_by_v(&self, v: &Rc<Vec<BoardPos>>, i: usize) -> Option<HashRcWrap<Piece>> {
         let pos = v[i];
-        if let Some(piece) = &self.cells[pos] {
-            Some(piece.clone())
+        if let Some(piece) = self.cells[pos].clone() {
+            Some(piece)
         } else { None }
     }
     pub fn swap(&mut self, i: BoardPos, j: BoardPos) {
@@ -100,31 +100,33 @@ impl Position {
     }
 
     fn straight_strike(&mut self, v: &Rc<Vec<BoardPos>>) -> Option<StraightStrike> {
-        let mut piece_ = self.get_piece_by_v(&v, 0).clone();
-        if piece_.is_none() || v.len() < 3
-        { None } else {
-            if let Some(piece_) = piece_ {
-                let piece = piece_.get_unwrap();
-                let color = piece.color;
-                let max_search_steps = if piece.is_king { v.len() - 1 } else { 2 };
-                let mut i: BoardPos = 2;
-                while i <= max_search_steps {
-                    let candidate = self.get_piece_by_v(&v, i - 1);
-                    if self.get_piece_by_v(&v, i).is_none() && candidate.is_some() && candidate.unwrap().get_unwrap().color != color {
-                        let mut strike = StraightStrike { v: Vec::new(), from: v[0], to: v[i], take: v[i - 1] };
-                        strike.v.push(piece.pos);
-                        strike.v.push(v[i]);
-                        while i + 1 <= max_search_steps && self.get_piece_by_v(&v, i + 1).is_none() {
-                            i += 1;
+        if v.len() < 3 { return None; }
+
+        if let Some(piece) = self.get_piece_by_v(&v, 0) {
+            let piece = piece.get_unwrap();
+            let color = piece.color;
+            let max_search_steps = if piece.is_king { v.len() - 1 } else { 2 };
+            let mut i: BoardPos = 2;
+            while i <= max_search_steps {
+                if let Some(candidate) = self.get_piece_by_v(&v, i - 1) {
+                    if self.get_piece_by_v(&v, i).is_none() {
+                        let candidate = candidate.get_unwrap();
+                        if candidate.color !=color && !candidate.stricken {
+                            let mut strike = StraightStrike { v: Vec::new(), from: v[0], to: v[i], take: v[i - 1] };
+                            strike.v.push(piece.pos);
                             strike.v.push(v[i]);
+                            while i + 1 <= max_search_steps && self.get_piece_by_v(&v, i + 1).is_none() {
+                                i += 1;
+                                strike.v.push(v[i]);
+                            }
+                            return Some(strike);
                         }
-                        return Some(strike);
-                    }
-                    i += 1;
+                    } else { break }
                 }
-                None
-            } else { None }
+                i += 1;
+            }
         }
+        None
     }
 
     pub fn get_strike_list(&mut self, pos: BoardPos, ban_direction: i8) {
@@ -145,7 +147,7 @@ impl Position {
                     let strike = {
                         let v = v.get_unwrap();
                         if directions.contains(&v.direction) {
-                            self.straight_strike( &v.points)
+                            self.straight_strike(&v.points)
                         } else { None }
                     };
                     if let Some(strike) = strike {
