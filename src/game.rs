@@ -165,6 +165,7 @@ mod tests {
             }
         }
         pos.get_strike_list(0, 3);
+        print!("{:?}", pos.cells);
     }
 }
 

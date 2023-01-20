@@ -145,8 +145,7 @@ impl Position {
                     let strike = {
                         let v = v.get_unwrap();
                         if directions.contains(&v.direction) {
-                            let vv = &v.points;
-                            self.straight_strike(vv)
+                            self.straight_strike( &v.points)
                         } else { None }
                     };
                     if let Some(strike) = strike {
