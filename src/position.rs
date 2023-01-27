@@ -1,7 +1,7 @@
 use std::borrow::{Borrow, BorrowMut};
 use std::cell::{RefCell, RefMut};
 use std::collections::{HashMap, HashSet};
-use std::ops::DerefMut;
+use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 use js_sys::Math::min;
 
@@ -64,11 +64,21 @@ impl Position {
         print!("{:?}", x);
     }
 
-    pub fn make_move<T: PieceMove>(&mut self, mov: &T) {
+    pub fn make_move<T: PieceMove>(&mut self, mov: &mut T) {
+
         self.swap(mov.from(), mov.to());
         if let Some(take) = mov.take() {
             if let Some(cell) = &self.cells[take] {
                 cell.get_unwrap_mut().stricken = true;
+            }
+        }
+        if let Some(piece) = &self.cells[mov.to()] {
+            let mut piece = piece.get_unwrap_mut();
+            if !piece.is_king {
+                if self.game.get_unwrap().is_king_row(piece.deref()) {
+                    piece.is_king = true;
+                    mov.set_as_king();
+                }
             }
         }
     }
@@ -112,12 +122,21 @@ impl Position {
                     if self.get_piece_by_v(&v, i).is_none() {
                         let candidate = candidate.get_unwrap();
                         if candidate.color != color && !candidate.stricken {
-                            let mut strike = StraightStrike { v: Vec::new(), from: v[0], to: v[i], take: v[i - 1], rest: v[i] };
-                            strike.v.push(piece.pos);
-                            strike.v.push(v[i]);
-                            while i + 1 <= max_search_steps && self.get_piece_by_v(&v, i + 1).is_none() {
-                                i += 1;
-                                strike.v.push(v[i]);
+                            let strike = StraightStrike {
+                                v: HashRcWrap::new(Vec::new()),
+                                from: v[0],
+                                to: v[i],
+                                take: v[i - 1],
+                                king_move: false
+                            };
+                            {
+                                let mut ve = strike.v.get_unwrap_mut();
+                                ve.push(piece.pos);
+                                ve.push(v[i]);
+                                while i + 1 <= max_search_steps && self.get_piece_by_v(&v, i + 1).is_none() {
+                                    i += 1;
+                                    ve.push(v[i]);
+                                }
                             }
                             return Some(strike);
                         }
@@ -129,7 +148,7 @@ impl Position {
         None
     }
 
-    pub fn get_strike_list(&mut self, pos: BoardPos, ban_directions: &Vec<i8>) {
+    pub fn get_strike_list(&mut self, pos: BoardPos, ban_directions: &Vec<i8>, move_chain: &Vec<Box<dyn PieceMove>>) {
         let game = &self.game;// self.game.borrow_mut();
         let vectors: Vec<HashRcWrap<Vector<BoardPos>>> =
             game.get_unwrap().get_vectors(pos).into_iter()
@@ -152,11 +171,14 @@ impl Position {
                             self.straight_strike(&v.points)
                         } else { None }
                     };
-                    if let Some(strike) = strike {
-                        self.make_move(&strike);
+                    if let Some(mut strike) = strike {
                         let mut ban_directions = vec![v.get_unwrap().get_ban_direction()];
-                        for pos in strike {
-                            self.get_strike_list(pos, &ban_directions);
+                        for pos in &strike {
+                            let mut strike_move = strike.clone();
+                            strike_move.to = pos;
+                            self.make_move(&mut strike_move);
+                            self.get_strike_list(pos, &ban_directions, move_chain);
+                            self.ummake_move(&strike_move);
                             if ban_directions.len() < 2 {
                                 ban_directions.push(v.get_unwrap().direction);
                             }

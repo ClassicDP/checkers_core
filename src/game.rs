@@ -9,6 +9,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use ts_rs::TS;
 use crate::position::Position;
 use crate::Moves::BoardPos;
+use crate::{Color, Piece};
 use crate::vector::Vector;
 
 
@@ -137,6 +138,11 @@ impl Game {
             .to_string();
         JsValue::from_str(&s)
     }
+
+    pub fn is_king_row (&self, piece: &Piece)-> bool {
+        let size = (self.size / 2) as usize;
+        if piece.color == Color::White { piece.pos > size * (size - 1) } else { piece.pos < size }
+    }
 }
 
 impl Game {
@@ -149,6 +155,7 @@ mod tests {
     use std::cell::RefCell;
     use crate::{Color, Piece};
     use crate::game::{Game, HashRcWrap};
+    use crate::Moves::PieceMove;
     use crate::position::Position;
 
     #[test]
@@ -164,7 +171,8 @@ mod tests {
                 print!(" -piece {}  ", set.contains(&piece))
             }
         }
-        pos.get_strike_list(0, &vec![3]);
+        let mut list: Vec<Box<dyn PieceMove>> = Vec::new();
+        pos.get_strike_list(0, &vec![3], &list);
         print!("{:?}", pos.cells);
     }
 }
