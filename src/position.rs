@@ -64,7 +64,7 @@ impl Position {
         print!("{:?}", x);
     }
 
-    pub fn make_move<T: PieceMove>(&mut self, mov: &mut T) {
+    pub fn make_move(&mut self, mov: &mut dyn PieceMove) {
 
         self.swap(mov.from(), mov.to());
         if let Some(take) = mov.take() {
@@ -83,11 +83,16 @@ impl Position {
         }
     }
 
-    pub fn ummake_move<T: PieceMove>(&mut self, mov: &T) {
+    pub fn ummake_move(&mut self, mov: &dyn PieceMove) {
         self.swap(mov.from(), mov.to());
         if let Some(take) = mov.take() {
             if let Some(cell) = &self.cells[take] {
                 cell.get_unwrap_mut().stricken = false;
+            }
+        }
+        if mov.is_king() {
+            if let Some(piece) = &self.cells[mov.from()] {
+                piece.get_unwrap_mut().is_king = false;
             }
         }
     }
