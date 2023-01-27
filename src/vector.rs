@@ -1,6 +1,6 @@
 use std::rc::Rc;
 use std::slice::IterMut;
-use js_sys::Math::min;
+use js_sys::Math::min as other_min;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -21,7 +21,6 @@ pub struct VectorIntoIterator<'a, T> {
 }
 
 
-
 impl<T> Vector<T> {
     pub fn new(direction: i8, points: Vec<T>) -> Vector<T> {
         Vector {
@@ -32,6 +31,9 @@ impl<T> Vector<T> {
         }
     }
 
+    pub fn get_ban_direction(&self) -> i8 {
+        (self.direction + 2) % 4
+    }
     pub fn set_range(&mut self, a: usize, b: usize) {
         self.range_a = Some(a);
         self.range_b = Some(b);
@@ -53,27 +55,30 @@ impl<'a, T> Iterator for VectorIntoIterator<'a, T> {
     }
 }
 
+fn min<T: PartialOrd>(a: T, b: T) -> T {
+    if a < b { a } else { b }
+}
 
 impl<'a, T> IntoIterator for &'a Vector<T> {
     type Item = &'a T;
     type IntoIter = VectorIntoIterator<'a, T>;
     fn into_iter(self) -> Self::IntoIter {
         let a = if self.range_a.is_some() {
-            min(self.range_a.unwrap() as f64,
-                self.points.len() as f64)
+            min(self.range_a.unwrap(),
+                self.points.len())
         } else {
-            0f64
+            0
         };
         let b = if self.range_b.is_some() {
-            min(self.range_b.unwrap() as f64,
-                self.points.len() as f64)
+            min(self.range_b.unwrap(),
+                self.points.len())
         } else {
-            self.points.len() as f64
+            self.points.len()
         };
         VectorIntoIterator {
-            index: a as usize,
+            index: a,
             vector: &self,
-            range_b: b as usize,
+            range_b: b,
         }
     }
 }

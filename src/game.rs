@@ -164,7 +164,7 @@ mod tests {
                 print!(" -piece {}  ", set.contains(&piece))
             }
         }
-        pos.get_strike_list(0, 3);
+        pos.get_strike_list(0, &vec![3]);
         print!("{:?}", pos.cells);
     }
 }

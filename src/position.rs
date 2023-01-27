@@ -111,8 +111,8 @@ impl Position {
                 if let Some(candidate) = self.get_piece_by_v(&v, i - 1) {
                     if self.get_piece_by_v(&v, i).is_none() {
                         let candidate = candidate.get_unwrap();
-                        if candidate.color !=color && !candidate.stricken {
-                            let mut strike = StraightStrike { v: Vec::new(), from: v[0], to: v[i], take: v[i - 1] };
+                        if candidate.color != color && !candidate.stricken {
+                            let mut strike = StraightStrike { v: Vec::new(), from: v[0], to: v[i], take: v[i - 1], rest: v[i] };
                             strike.v.push(piece.pos);
                             strike.v.push(v[i]);
                             while i + 1 <= max_search_steps && self.get_piece_by_v(&v, i + 1).is_none() {
@@ -121,7 +121,7 @@ impl Position {
                             }
                             return Some(strike);
                         }
-                    } else { break }
+                    } else { break; }
                 }
                 i += 1;
             }
@@ -129,11 +129,13 @@ impl Position {
         None
     }
 
-    pub fn get_strike_list(&mut self, pos: BoardPos, ban_direction: i8) {
+    pub fn get_strike_list(&mut self, pos: BoardPos, ban_directions: &Vec<i8>) {
         let game = &self.game;// self.game.borrow_mut();
         let vectors: Vec<HashRcWrap<Vector<BoardPos>>> =
-            game.get_unwrap().get_vectors(pos).into_iter().filter(|v|
-                v.get_unwrap().direction != ban_direction).collect();
+            game.get_unwrap().get_vectors(pos).into_iter()
+                .filter(|v|
+                    !ban_directions.contains(&v.get_unwrap().direction)
+                ).collect();
         if vectors.len() > 0 {
             let piece = self.get_piece_by_v(&vectors[0].get_unwrap().points, 0);
             if let Some(piece) = piece {
@@ -152,6 +154,13 @@ impl Position {
                     };
                     if let Some(strike) = strike {
                         self.make_move(&strike);
+                        let mut ban_directions = vec![v.get_unwrap().get_ban_direction()];
+                        for pos in strike {
+                            self.get_strike_list(pos, &ban_directions);
+                            if ban_directions.len() < 2 {
+                                ban_directions.push(v.get_unwrap().direction);
+                            }
+                        }
                     }
                 }
             }
