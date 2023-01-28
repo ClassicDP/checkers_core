@@ -154,7 +154,7 @@ impl Position {
         None
     }
 
-    pub fn get_strike_list(&mut self, pos: BoardPos, ban_directions: &Vec<i8>, move_list: &MoveList) {
+    pub fn get_strike_list(&mut self, pos: BoardPos, ban_directions: &Vec<i8>, move_list: &mut MoveList) {
         let game = &self.game;// self.game.borrow_mut();
         let vectors: Vec<HashRcWrap<Vector<BoardPos>>> =
             game.get_unwrap().get_vectors(pos).into_iter()
@@ -183,12 +183,16 @@ impl Position {
                             let mut strike_move = strike.clone();
                             strike_move.to = pos;
                             self.make_move(&mut strike_move);
+                            move_list.push_chain_link(strike.clone());
                             self.get_strike_list(pos, &ban_directions, move_list);
+                            move_list.pop_chain_link();
                             self.ummake_move(&strike_move);
                             if ban_directions.len() < 2 {
                                 ban_directions.push(v.get_unwrap().direction);
                             }
                         }
+                    } else {
+                        move_list.complete_chain();
                     }
                 }
             }
