@@ -11,6 +11,7 @@ use crate::{Cell, Color, Piece};
 use crate::game::{Game, HashRcWrap};
 use ts_rs::TS;
 use crate::Moves::{BoardPos, PieceMove, StraightStrike};
+use crate::MovesList::MoveList;
 use crate::vector::Vector;
 
 
@@ -153,7 +154,7 @@ impl Position {
         None
     }
 
-    pub fn get_strike_list(&mut self, pos: BoardPos, ban_directions: &Vec<i8>, move_chain: &Vec<Box<dyn PieceMove>>) {
+    pub fn get_strike_list(&mut self, pos: BoardPos, ban_directions: &Vec<i8>, move_list: &MoveList) {
         let game = &self.game;// self.game.borrow_mut();
         let vectors: Vec<HashRcWrap<Vector<BoardPos>>> =
             game.get_unwrap().get_vectors(pos).into_iter()
@@ -182,7 +183,7 @@ impl Position {
                             let mut strike_move = strike.clone();
                             strike_move.to = pos;
                             self.make_move(&mut strike_move);
-                            self.get_strike_list(pos, &ban_directions, move_chain);
+                            self.get_strike_list(pos, &ban_directions, move_list);
                             self.ummake_move(&strike_move);
                             if ban_directions.len() < 2 {
                                 ban_directions.push(v.get_unwrap().direction);

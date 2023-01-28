@@ -18,6 +18,7 @@ mod game;
 mod vector;
 mod mutable_iterator;
 mod Moves;
+mod MovesList;
 
 
 #[wasm_bindgen]

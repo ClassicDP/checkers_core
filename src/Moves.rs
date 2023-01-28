@@ -5,7 +5,9 @@ use crate::game::HashRcWrap;
 
 pub type BoardPos = usize;
 
-#[derive(Debug)]
+
+
+#[derive(Debug, Clone)]
 pub struct StraightStrike {
     pub(crate) v: HashRcWrap<Vec<BoardPos>>,
     pub(crate) from: BoardPos,
@@ -14,17 +16,17 @@ pub struct StraightStrike {
     pub(crate) king_move: bool
 }
 
-impl Clone for StraightStrike {
-    fn clone(&self) -> Self {
-        StraightStrike {
-            v: self.v.clone(),
-            from: self.from,
-            to: self.to,
-            take: self.take,
-            king_move: self.king_move,
-        }
-    }
-}
+// impl Clone for StraightStrike {
+//     fn clone(&self) -> Self {
+//         StraightStrike {
+//             v: self.v.clone(),
+//             from: self.from,
+//             to: self.to,
+//             take: self.take,
+//             king_move: self.king_move,
+//         }
+//     }
+// }
 
 
 pub struct StraightStrikeIter {
@@ -55,7 +57,7 @@ impl IntoIterator for &StraightStrike {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Move {
     pub(crate) v: Vec<BoardPos>,
     pub(crate) from: BoardPos,
@@ -75,7 +77,7 @@ impl PieceMove for Move {
     fn take(&self) -> Option<BoardPos> {
         None
     }
-    
+
     fn set_as_king(&mut self) {
         self.king_move = true;
     }
