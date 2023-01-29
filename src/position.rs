@@ -66,7 +66,6 @@ impl Position {
     }
 
     pub fn make_move(&mut self, mov: &mut dyn PieceMove) {
-
         self.swap(mov.from(), mov.to());
         if let Some(take) = mov.take() {
             if let Some(cell) = &self.cells[take] {
@@ -124,17 +123,17 @@ impl Position {
             let max_search_steps = if piece.is_king { v.len() - 1 } else { 2 };
             let mut i: usize = 2;
             while i <= max_search_steps {
-                if let Some(candidate) = self.get_piece_by_v(&v, i - 1) {
+                if let Some(take_candidate) = self.get_piece_by_v(&v, i - 1) {
                     if self.get_piece_by_v(&v, i).is_none() {
-                        let candidate = candidate.get_unwrap();
+                        let candidate = take_candidate.get_unwrap();
                         if candidate.color != color && !candidate.stricken {
                             let strike = StraightStrike {
                                 v: HashRcWrap::new(Vec::new()),
                                 from: v[0],
                                 to: v[i],
-                                i_to: i,
+                                i_to: i - 1,
                                 take: v[i - 1],
-                                king_move: false
+                                king_move: false,
                             };
                             {
                                 let mut ve = strike.v.get_unwrap_mut();
@@ -156,6 +155,7 @@ impl Position {
     }
 
     pub fn get_strike_list(&mut self, pos: BoardPos, ban_directions: &Vec<i8>, move_list: &mut MoveList) -> bool {
+        move_list.current_depth += 1;
         let game = &self.game;
         let vectors: Vec<HashRcWrap<Vector<BoardPos>>> =
             game.get_unwrap().get_vectors(pos).into_iter()
@@ -164,8 +164,7 @@ impl Position {
                 ).collect();
         let mut chain = false;
         if vectors.len() > 0 {
-            let piece = self.cells[pos].clone();
-            if let Some(piece) = piece {
+            if let Some(piece) = self.cells[pos].clone() {
                 let directions = {
                     let piece = piece.get_unwrap();
                     if !piece.is_king {
@@ -187,7 +186,7 @@ impl Position {
                             let mut strike_move = strike.clone();
                             strike_move.to = pos;
                             self.make_move(&mut strike_move);
-                            move_list.push_chain_link(strike_move.clone());
+                            move_list.push_chain_link(strike_move.clone(), move_list.current_depth);
                             if self.get_strike_list(pos, &ban_directions, move_list) {
                                 recurrent_chain = true;
                             } else { move_list.pop_chain_link(); }
@@ -200,14 +199,15 @@ impl Position {
                             for pos in &strike {
                                 let mut strike_move = strike.clone();
                                 strike_move.to = pos;
-                                move_list.push_chain_link(strike_move);
+                                move_list.push_chain_link(strike_move, move_list.current_depth);
                                 move_list.complete_chain();
-                                move_list.pop_chain_link();
-                            } }
+                            }
+                        }
                     }
                 }
             }
         }
+        move_list.current_depth -= 1;
         chain
     }
 }

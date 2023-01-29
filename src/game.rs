@@ -166,7 +166,10 @@ mod tests {
         let mut pos = Position::new(HashRcWrap::new(game));
         pos.inset_piece(Piece::new(0, Color::Black, true));
         let p1 = pos.game.get_unwrap().board_to_pack[9];
-        pos.inset_piece(Piece::new(p1, Color::White, true));
+        pos.inset_piece(Piece::new(4, Color::White, true));
+        pos.inset_piece(Piece::new(21, Color::White, true));
+        pos.inset_piece(Piece::new(20, Color::White, true));
+        pos.inset_piece(Piece::new(12, Color::White, true));
         if let Some(piece) = pos.cells[0].clone() {
             if let Some(set) = pos.pieces.get_mut(&piece.get_unwrap().color) {
                 print!(" -piece {}  ", set.contains(&piece))
