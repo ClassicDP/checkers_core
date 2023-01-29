@@ -3,7 +3,10 @@ use crate::Moves::{Move, StraightStrike};
 
 #[derive(Clone)]
 pub enum MoveItem {
-    StrikeChain(Vec<StraightStrike>),
+    StrikeChain {
+        chain: Vec<StraightStrike>,
+        complete: bool,
+    },
     Move(Move),
 }
 
@@ -20,29 +23,32 @@ impl MoveList {
         let mut i = self.list.len();
         if i == 0 { return; }
         i -= 1;
-        match &self.list[i] {
-            MoveItem::StrikeChain(chain) => {
-                if chain.len() > 0 { self.list.push(self.list[i].clone()); }
-            }
-            _ => {}
+        if let MoveItem::StrikeChain { chain: ref mut _chain, ref mut complete } = self.list[i] {
+            *complete = true;
         }
     }
-    pub fn pop_chain_link(&mut self) -> Option<StraightStrike> {
+    pub fn pop_chain_link(&mut self) {
         let mut i = self.list.len();
-        if i == 0 { return None; }
+        if i == 0 { return }
         i -= 1;
-        if let MoveItem::StrikeChain(chain) = self.list[i].borrow_mut() {
-            chain.pop()
-        } else { None }
+        if let MoveItem::StrikeChain { chain, complete } = self.list[i].borrow_mut() {
+            if !*complete {
+                chain.pop();
+                if chain.len() == 0 { self.list.pop(); }
+            }
+        }
     }
 
     pub fn push_chain_link(&mut self, strike: StraightStrike) {
-        let mut move_item = self.list.pop();
-        if move_item.is_none() { move_item = Some(MoveItem::StrikeChain(Vec::new())); }
-        self.list.push(move_item.unwrap());
+        if self.list.len() == 0 || *{
+            match self.list.last().borrow_mut().unwrap() {
+                MoveItem::StrikeChain { chain, complete } => complete,
+                _ => &false
+            }
+        } { self.list.push(MoveItem::StrikeChain { chain: Vec::new(), complete: false }); }
         let i = self.list.len() - 1;
-        if let MoveItem::StrikeChain(mi) = self.list[i].borrow_mut() {
-            mi.push(strike);
+        if let MoveItem::StrikeChain { chain, complete } = self.list[i].borrow_mut() {
+            chain.push(strike);
         }
     }
 }

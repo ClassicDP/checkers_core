@@ -13,6 +13,7 @@ pub struct StraightStrike {
     pub(crate) from: BoardPos,
     pub(crate) take: BoardPos,
     pub(crate) to: BoardPos,
+    pub(crate) i_to: usize,
     pub(crate) king_move: bool
 }
 
@@ -51,7 +52,7 @@ impl IntoIterator for &StraightStrike {
 
     fn into_iter(self) -> Self::IntoIter {
         StraightStrikeIter {
-            rest: self.to,
+            rest: self.i_to,
             v: self.v.clone(),
         }
     }

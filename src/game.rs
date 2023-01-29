@@ -156,6 +156,7 @@ mod tests {
     use crate::{Color, Piece};
     use crate::game::{Game, HashRcWrap};
     use crate::Moves::PieceMove;
+    use crate::MovesList::MoveList;
     use crate::position::Position;
 
     #[test]
@@ -171,8 +172,8 @@ mod tests {
                 print!(" -piece {}  ", set.contains(&piece))
             }
         }
-        let mut list: Vec<Box<dyn PieceMove>> = Vec::new();
-        pos.get_strike_list(0, &vec![3], &list);
+        let mut list = MoveList::new();
+        pos.get_strike_list(0, &vec![3], &mut list);
         print!("{:?}", pos.cells);
     }
 }

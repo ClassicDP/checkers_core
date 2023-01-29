@@ -122,7 +122,7 @@ impl Position {
             let piece = piece.get_unwrap();
             let color = piece.color;
             let max_search_steps = if piece.is_king { v.len() - 1 } else { 2 };
-            let mut i: BoardPos = 2;
+            let mut i: usize = 2;
             while i <= max_search_steps {
                 if let Some(candidate) = self.get_piece_by_v(&v, i - 1) {
                     if self.get_piece_by_v(&v, i).is_none() {
@@ -132,6 +132,7 @@ impl Position {
                                 v: HashRcWrap::new(Vec::new()),
                                 from: v[0],
                                 to: v[i],
+                                i_to: i,
                                 take: v[i - 1],
                                 king_move: false
                             };
@@ -154,23 +155,24 @@ impl Position {
         None
     }
 
-    pub fn get_strike_list(&mut self, pos: BoardPos, ban_directions: &Vec<i8>, move_list: &mut MoveList) {
-        let game = &self.game;// self.game.borrow_mut();
+    pub fn get_strike_list(&mut self, pos: BoardPos, ban_directions: &Vec<i8>, move_list: &mut MoveList) -> bool {
+        let game = &self.game;
         let vectors: Vec<HashRcWrap<Vector<BoardPos>>> =
             game.get_unwrap().get_vectors(pos).into_iter()
                 .filter(|v|
                     !ban_directions.contains(&v.get_unwrap().direction)
                 ).collect();
+        let mut chain = false;
         if vectors.len() > 0 {
-            let piece = self.get_piece_by_v(&vectors[0].get_unwrap().points, 0);
+            let piece = self.cells[pos].clone();
             if let Some(piece) = piece {
+                let directions = {
+                    let piece = piece.get_unwrap();
+                    if !piece.is_king {
+                        if piece.color == Color::White { vec![0, 1] } else { vec![2, 3] }
+                    } else { vec![0, 1, 2, 3] }
+                };
                 for v in vectors {
-                    let directions = {
-                        let piece = piece.get_unwrap();
-                        if !piece.is_king {
-                            if piece.color == Color::White { vec![0, 1] } else { vec![2, 3] }
-                        } else { vec![0, 1, 2, 3] }
-                    };
                     let strike = {
                         let v = v.get_unwrap();
                         if directions.contains(&v.direction) {
@@ -178,25 +180,35 @@ impl Position {
                         } else { None }
                     };
                     if let Some(mut strike) = strike {
+                        chain = true;
                         let mut ban_directions = vec![v.get_unwrap().get_ban_direction()];
+                        let mut recurrent_chain = false;
                         for pos in &strike {
                             let mut strike_move = strike.clone();
                             strike_move.to = pos;
                             self.make_move(&mut strike_move);
-                            move_list.push_chain_link(strike.clone());
-                            self.get_strike_list(pos, &ban_directions, move_list);
-                            move_list.pop_chain_link();
+                            move_list.push_chain_link(strike_move.clone());
+                            if self.get_strike_list(pos, &ban_directions, move_list) {
+                                recurrent_chain = true;
+                            } else { move_list.pop_chain_link(); }
                             self.ummake_move(&strike_move);
                             if ban_directions.len() < 2 {
                                 ban_directions.push(v.get_unwrap().direction);
                             }
                         }
-                    } else {
-                        move_list.complete_chain();
+                        if !recurrent_chain {
+                            for pos in &strike {
+                                let mut strike_move = strike.clone();
+                                strike_move.to = pos;
+                                move_list.push_chain_link(strike_move);
+                                move_list.complete_chain();
+                                move_list.pop_chain_link();
+                            } }
                     }
                 }
             }
         }
+        chain
     }
 }
 
