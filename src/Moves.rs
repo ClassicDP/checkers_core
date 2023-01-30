@@ -16,10 +16,7 @@ pub struct StraightStrike {
 
 impl fmt::Debug for StraightStrike {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "\nfrom: {}, to: {}, take: {}",
-            self.from, self.to, self.take
+        write!(f, "\nfrom: {}, to: {}, take: {}", self.from, self.to, self.take
         )
     }
 }
@@ -56,7 +53,6 @@ impl IntoIterator for &StraightStrike {
 
 #[derive(Debug, Clone)]
 pub struct Move {
-    pub(crate) v: Vec<BoardPos>,
     pub(crate) from: BoardPos,
     pub(crate) to: BoardPos,
     pub(crate) king_move: bool,

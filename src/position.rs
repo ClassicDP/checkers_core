@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::game::Game;
 use crate::vector::Vector;
-use crate::Moves::{BoardPos, PieceMove, StraightStrike};
+use crate::Moves::{BoardPos, Move, PieceMove, StraightStrike};
 use crate::MovesList::{MoveItem, MoveList};
 use crate::{Color, Piece};
 use ts_rs::TS;
@@ -158,6 +158,42 @@ impl Position {
         None
     }
 
+    fn get_directions(&self, piece: &Piece) -> Vec<i8> {
+        if !piece.is_king {
+            if piece.color == Color::White {
+                vec![0, 1]
+            } else {
+                vec![2, 3]
+            }
+        } else {
+            vec![0, 1, 2, 3]
+        }
+    }
+    pub fn get_quiet_move_list(
+        &mut self,
+        pos: BoardPos,
+        move_list: &mut MoveList,
+    ) -> bool {
+        if let Some(piece) = &self.cells[pos] {
+            let directions = self.get_directions(&piece.get_unwrap());
+            let vectors: Vec<HashRcWrap<Vector<BoardPos>>> = (&self.game)
+                .get_unwrap()
+                .get_vectors(pos)
+                .into_iter()
+                .filter(|v| {
+                    let v_direction = &v.get_unwrap().direction;
+                    directions.contains(v_direction)
+                })
+                .collect();
+            for vector in vectors {
+                for point in &*vector.get_unwrap().points {
+                    if !self.cells[*point].is_none() { break; }
+                    move_list.list.push(MoveItem::Move(Move { from: pos, to: *point, king_move: false }))
+                }
+            }
+        }
+        move_list.list.len() > 0
+    }
     pub fn get_strike_list(
         &mut self,
         pos: BoardPos,
@@ -166,18 +202,7 @@ impl Position {
     ) -> bool {
         let mut success_call = false;
         if let Some(piece) = &self.cells[pos] {
-            let directions = {
-                let piece = piece.get_unwrap();
-                if !piece.is_king {
-                    if piece.color == Color::White {
-                        vec![0, 1]
-                    } else {
-                        vec![2, 3]
-                    }
-                } else {
-                    vec![0, 1, 2, 3]
-                }
-            };
+            let directions = self.get_directions(&piece.get_unwrap());
             let vectors: Vec<HashRcWrap<Vector<BoardPos>>> = (&self.game)
                 .get_unwrap()
                 .get_vectors(pos)
