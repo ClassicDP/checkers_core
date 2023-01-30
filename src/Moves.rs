@@ -1,4 +1,5 @@
-use std::fmt::Debug;
+use core::fmt;
+use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
 use std::vec::IntoIter;
 use crate::game::HashRcWrap;
@@ -7,7 +8,7 @@ pub type BoardPos = usize;
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct StraightStrike {
     pub(crate) v: HashRcWrap<Vec<BoardPos>>,
     pub(crate) from: BoardPos,
@@ -17,18 +18,11 @@ pub struct StraightStrike {
     pub(crate) king_move: bool
 }
 
-// impl Clone for StraightStrike {
-//     fn clone(&self) -> Self {
-//         StraightStrike {
-//             v: self.v.clone(),
-//             from: self.from,
-//             to: self.to,
-//             take: self.take,
-//             king_move: self.king_move,
-//         }
-//     }
-// }
-
+impl fmt::Debug for StraightStrike {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "\nfrom: {}, to: {}, take: {}", self.from, self.to, self.take)
+    }
+}
 
 pub struct StraightStrikeIter {
     v: HashRcWrap<Vec<BoardPos>>,
@@ -52,7 +46,7 @@ impl IntoIterator for &StraightStrike {
 
     fn into_iter(self) -> Self::IntoIter {
         StraightStrikeIter {
-            rest: self.i_to,
+            rest: self.i_to-1,
             v: self.v.clone(),
         }
     }

@@ -1,3 +1,5 @@
+extern crate core;
+
 use std::borrow::BorrowMut;
 use std::cell::{RefCell, RefMut};
 use std::hash::Hash;

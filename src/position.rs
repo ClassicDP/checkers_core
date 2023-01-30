@@ -11,7 +11,7 @@ use crate::{Cell, Color, Piece};
 use crate::game::{Game, HashRcWrap};
 use ts_rs::TS;
 use crate::Moves::{BoardPos, PieceMove, StraightStrike};
-use crate::MovesList::MoveList;
+use crate::MovesList::{MoveItem, MoveList};
 use crate::vector::Vector;
 
 
@@ -155,60 +155,58 @@ impl Position {
     }
 
     pub fn get_strike_list(&mut self, pos: BoardPos, ban_directions: &Vec<i8>, move_list: &mut MoveList) -> bool {
-        move_list.current_depth += 1;
-        let game = &self.game;
-        let vectors: Vec<HashRcWrap<Vector<BoardPos>>> =
-            game.get_unwrap().get_vectors(pos).into_iter()
-                .filter(|v|
-                    !ban_directions.contains(&v.get_unwrap().direction)
-                ).collect();
-        let mut chain = false;
-        if vectors.len() > 0 {
-            if let Some(piece) = self.cells[pos].clone() {
-                let directions = {
-                    let piece = piece.get_unwrap();
-                    if !piece.is_king {
-                        if piece.color == Color::White { vec![0, 1] } else { vec![2, 3] }
-                    } else { vec![0, 1, 2, 3] }
+        let mut success_call = false;
+        if let Some(piece) = &self.cells[pos] {
+            let directions = {
+                let piece = piece.get_unwrap();
+                if !piece.is_king {
+                    if piece.color == Color::White { vec![0, 1] } else { vec![2, 3] }
+                } else { vec![0, 1, 2, 3] }
+            };
+            let vectors: Vec<HashRcWrap<Vector<BoardPos>>> =
+                (&self.game).get_unwrap().get_vectors(pos).into_iter()
+                    .filter(|v| {
+                        let v_direction = &v.get_unwrap().direction;
+                        !ban_directions.contains(v_direction) && directions.contains(v_direction)
+                    }).collect();
+            for v in vectors {
+                let strike = {
+                    let v = v.get_unwrap();
+                    if directions.contains(&v.direction) {
+                        self.straight_strike(&v.points)
+                    } else { None }
                 };
-                for v in vectors {
-                    let strike = {
-                        let v = v.get_unwrap();
-                        if directions.contains(&v.direction) {
-                            self.straight_strike(&v.points)
-                        } else { None }
-                    };
-                    if let Some(mut strike) = strike {
-                        chain = true;
-                        let mut ban_directions = vec![v.get_unwrap().get_ban_direction()];
-                        let mut recurrent_chain = false;
+                if let Some(mut strike) = strike {
+                    success_call = true;
+                    let mut ban_directions = vec![v.get_unwrap().get_ban_direction()];
+                    let mut recurrent_chain = false;
+                    for pos in &strike {
+                        let mut strike_move = strike.clone();
+                        strike_move.to = pos;
+                        self.make_move(&mut strike_move);
+                        move_list.current_chain.push(strike_move.clone());
+                        if self.get_strike_list(pos, &ban_directions, move_list) {
+                            recurrent_chain = true;
+                        }
+                        move_list.current_chain.pop();
+                        self.ummake_move(&strike_move);
+                        if ban_directions.len() < 2 {
+                            ban_directions.push(v.get_unwrap().direction);
+                        }
+                    }
+                    if !recurrent_chain {
                         for pos in &strike {
                             let mut strike_move = strike.clone();
                             strike_move.to = pos;
-                            self.make_move(&mut strike_move);
-                            move_list.push_chain_link(strike_move.clone(), move_list.current_depth);
-                            if self.get_strike_list(pos, &ban_directions, move_list) {
-                                recurrent_chain = true;
-                            } else { move_list.pop_chain_link(); }
-                            self.ummake_move(&strike_move);
-                            if ban_directions.len() < 2 {
-                                ban_directions.push(v.get_unwrap().direction);
-                            }
-                        }
-                        if !recurrent_chain {
-                            for pos in &strike {
-                                let mut strike_move = strike.clone();
-                                strike_move.to = pos;
-                                move_list.push_chain_link(strike_move, move_list.current_depth);
-                                move_list.complete_chain();
-                            }
+                            let mut chain = move_list.current_chain.clone();
+                            chain.push(strike_move);
+                            move_list.list.push(MoveItem::StrikeChain(chain));
                         }
                     }
                 }
             }
         }
-        move_list.current_depth -= 1;
-        chain
+        success_call
     }
 }
 

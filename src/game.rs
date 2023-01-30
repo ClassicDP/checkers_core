@@ -177,7 +177,7 @@ mod tests {
         }
         let mut list = MoveList::new();
         pos.get_strike_list(0, &vec![3], &mut list);
-        print!("{:?}", pos.cells);
+        print!("\n\n{:?}", list);
     }
 }
 
