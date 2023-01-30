@@ -186,7 +186,7 @@ impl Position {
                 })
                 .collect();
             for vector in vectors {
-                for point in &*vector.get_unwrap().points {
+                for point in &(*vector.get_unwrap().points)[1..] {
                     if !self.cells[*point].is_none() { break; }
                     move_list.list.push(MoveItem::Move(Move { from: pos, to: *point, king_move: false }))
                 }
@@ -197,8 +197,8 @@ impl Position {
     pub fn get_strike_list(
         &mut self,
         pos: BoardPos,
-        ban_directions: &Vec<i8>,
         move_list: &mut MoveList,
+        ban_directions: &Vec<i8>,
     ) -> bool {
         let mut success_call = false;
         if let Some(piece) = &self.cells[pos] {
@@ -223,7 +223,7 @@ impl Position {
                         strike_move.to = pos;
                         self.make_move(&mut strike_move);
                         move_list.current_chain.push(strike_move.clone());
-                        if self.get_strike_list(pos, &ban_directions, move_list) {
+                        if self.get_strike_list(pos, move_list, &ban_directions) {
                             recurrent_chain = true;
                         }
                         move_list.current_chain.pop();

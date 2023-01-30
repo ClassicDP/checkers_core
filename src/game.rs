@@ -139,7 +139,11 @@ mod tests {
             }
         }
         let mut list = MoveList::new();
-        pos.get_strike_list(22, &vec![3], &mut list);
+        pos.get_strike_list(22, &mut list, &vec![]);
         print!("\n\n{:?}", list);
+        let mut list = MoveList::new();
+        pos.get_quiet_move_list(21, &mut list);
+        print!("\n\n{:?}", list);
+
     }
 }
