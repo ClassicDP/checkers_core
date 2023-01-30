@@ -116,11 +116,10 @@ impl Position {
 
     fn straight_strike(&mut self, v: &Rc<Vec<BoardPos>>) -> Option<StraightStrike> {
         if v.len() < 3 { return None; }
-
         if let Some(piece) = self.get_piece_by_v(&v, 0) {
             let piece = piece.get_unwrap();
             let color = piece.color;
-            let max_search_steps = if piece.is_king { v.len() - 1 } else { 2 };
+            let max_search_steps = if piece.is_king { v.len() } else { 3 };
             let mut i: usize = 2;
             while i <= max_search_steps {
                 if let Some(take_candidate) = self.get_piece_by_v(&v, i - 1) {
@@ -131,17 +130,15 @@ impl Position {
                                 v: HashRcWrap::new(Vec::new()),
                                 from: v[0],
                                 to: v[i],
-                                i_to: i - 1,
+                                i_to: 0,
                                 take: v[i - 1],
                                 king_move: false,
                             };
                             {
                                 let mut ve = strike.v.get_unwrap_mut();
-                                ve.push(piece.pos);
-                                ve.push(v[i]);
-                                while i + 1 <= max_search_steps && self.get_piece_by_v(&v, i + 1).is_none() {
-                                    i += 1;
+                                while i < max_search_steps && self.get_piece_by_v(&v, i).is_none() {
                                     ve.push(v[i]);
+                                    i += 1;
                                 }
                             }
                             return Some(strike);

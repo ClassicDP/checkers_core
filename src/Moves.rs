@@ -46,7 +46,7 @@ impl IntoIterator for &StraightStrike {
 
     fn into_iter(self) -> Self::IntoIter {
         StraightStrikeIter {
-            rest: self.i_to-1,
+            rest: self.i_to,
             v: self.v.clone(),
         }
     }

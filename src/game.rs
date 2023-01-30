@@ -164,19 +164,20 @@ mod tests {
         let game = Game::new(8);
         assert_eq!(game.board_to_pack.len(), game.pack_to_board.len() * 2);
         let mut pos = Position::new(HashRcWrap::new(game));
-        pos.inset_piece(Piece::new(0, Color::Black, true));
-        let p1 = pos.game.get_unwrap().board_to_pack[9];
-        pos.inset_piece(Piece::new(4, Color::White, true));
-        pos.inset_piece(Piece::new(21, Color::White, true));
-        pos.inset_piece(Piece::new(20, Color::White, true));
-        pos.inset_piece(Piece::new(12, Color::White, true));
+        pos.inset_piece(Piece::new(22, Color::White, false));
+        pos.inset_piece(Piece::new(4, Color::Black, true));
+        pos.inset_piece(Piece::new(21, Color::Black, true));
+        pos.inset_piece(Piece::new(20, Color::Black, true));
+        pos.inset_piece(Piece::new(12, Color::Black, true));
+        pos.inset_piece(Piece::new(13, Color::Black, true));
+        pos.inset_piece(Piece::new(26, Color::Black, true));
         if let Some(piece) = pos.cells[0].clone() {
             if let Some(set) = pos.pieces.get_mut(&piece.get_unwrap().color) {
                 print!(" -piece {}  ", set.contains(&piece))
             }
         }
         let mut list = MoveList::new();
-        pos.get_strike_list(0, &vec![3], &mut list);
+        pos.get_strike_list(22, &vec![3], &mut list);
         print!("\n\n{:?}", list);
     }
 }
