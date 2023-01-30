@@ -170,12 +170,7 @@ impl Position {
                         !ban_directions.contains(v_direction) && directions.contains(v_direction)
                     }).collect();
             for v in vectors {
-                let strike = {
-                    let v = v.get_unwrap();
-                    if directions.contains(&v.direction) {
-                        self.straight_strike(&v.points)
-                    } else { None }
-                };
+                let strike = self.straight_strike(&v.get_unwrap().points);
                 if let Some(mut strike) = strike {
                     success_call = true;
                     let mut ban_directions = vec![v.get_unwrap().get_ban_direction()];
