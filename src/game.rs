@@ -1,65 +1,20 @@
+use crate::position::Position;
+use crate::vector::Vector;
+use crate::Moves::BoardPos;
+use crate::{Color, Piece};
+use serde::{Deserialize, Serialize};
 use std::cell::{Ref, RefCell, RefMut};
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 use std::rc::Rc;
-use serde::{Deserialize, Serialize};
-use wasm_bindgen::JsValue;
-use wasm_bindgen::prelude::wasm_bindgen;
 use ts_rs::TS;
-use crate::position::Position;
-use crate::Moves::BoardPos;
-use crate::{Color, Piece};
-use crate::vector::Vector;
-
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[derive(TS)]
-pub struct HashRcWrap<T> {
-    value: Rc<RefCell<T>>,
-}
-
-impl<T> Deref for HashRcWrap<T> {
-    type Target = RefCell<T>;
-
-    fn deref(&self) -> &Self::Target {
-        self.value.deref()
-    }
-}
-
-impl<T: Debug> HashRcWrap<T> {
-    pub fn new(value: T) -> HashRcWrap<T> {
-        HashRcWrap {
-            value: Rc::new(RefCell::new(value))
-        }
-    }
-    pub fn get_unwrap_mut(&self) -> RefMut<'_, T> {
-        self.value.deref().try_borrow_mut().expect("already borrowed")
-    }
-    pub fn get_unwrap(&self) -> Ref<'_, T> {
-        self.value.deref().borrow()
-    }
-}
-
-impl<T> PartialEq<Self> for HashRcWrap<T> {
-    fn eq(&self, other: &Self) -> bool {
-        (*self.value).as_ptr() == (*other.value).as_ptr()
-    }
-}
-
-impl<T> Eq for HashRcWrap<T> {}
-
-impl<T> Hash for HashRcWrap<T> {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        let ptr = (*self.value).as_ptr();
-        ptr.hash(state)
-    }
-}
-
+use wasm_bindgen::prelude::wasm_bindgen;
+use wasm_bindgen::JsValue;
+use crate::HashRcWrap::HashRcWrap;
 
 #[wasm_bindgen]
-#[derive(Clone, Deserialize, Serialize, Debug)]
-#[derive(TS)]
+#[derive(Clone, Deserialize, Serialize, Debug, TS)]
 pub struct Game {
     pub size: i8,
     position_history: Vec<Position>,
@@ -72,14 +27,12 @@ pub struct Game {
 impl Game {
     #[wasm_bindgen(constructor)]
     pub fn new(size: i8) -> Self {
-        if size % 2 != 0 { panic!("Size must be even") }
+        if size % 2 != 0 {
+            panic!("Size must be even")
+        }
         let size2 = (size * size) as BoardPos;
-        let is_black_cell = |i: BoardPos| -> bool {
-            (i / size as BoardPos + i % 2) % 2 == 0
-        };
-        let is_on_board = |i: BoardPos| -> bool {
-            i >= 0 && i < size2  && is_black_cell(i)
-        };
+        let is_black_cell = |i: BoardPos| -> bool { (i / size as BoardPos + i % 2) % 2 == 0 };
+        let is_on_board = |i: BoardPos| -> bool { i >= 0 && i < size2 && is_black_cell(i) };
         let d4 = vec![size + 1, size - 1, -(size + 1), -(size - 1)];
         let mut vectors_map = Vec::with_capacity((size2 / 2) as usize);
         let mut board_to_pack: Vec<BoardPos> = Vec::with_capacity(size2 as usize);
@@ -88,7 +41,7 @@ impl Game {
         pack_to_board.resize((size2 / 2) as usize, 0);
         // packing board is array with only black cells
         let mut j: BoardPos = 0;
-        for i  in 0..size2 as BoardPos {
+        for i in 0..size2 as BoardPos {
             if is_black_cell(i) {
                 board_to_pack[i] = j;
                 pack_to_board[j] = i;
@@ -99,18 +52,24 @@ impl Game {
         for i in 0..size2 {
             if is_black_cell(i) {
                 let mut direction_index: i8 = 0;
-                let mut d4_v_list= Vec::new();
+                let mut d4_v_list = Vec::new();
                 for d in d4.iter() {
                     let mut p = i;
                     let mut v: Vector<BoardPos> =
                         Vector::new(direction_index, vec![board_to_pack[p as usize]]);
                     loop {
                         p = ((p as i64) + (*d as i64)) as BoardPos;
-                        if !is_on_board(p) { break; }
-                        Rc::get_mut(&mut v.points).unwrap().push(board_to_pack[p as usize]);
+                        if !is_on_board(p) {
+                            break;
+                        }
+                        Rc::get_mut(&mut v.points)
+                            .unwrap()
+                            .push(board_to_pack[p as usize]);
                     }
 
-                    if v.points.len() > 1 { d4_v_list.push(HashRcWrap::new(v)); }
+                    if v.points.len() > 1 {
+                        d4_v_list.push(HashRcWrap::new(v));
+                    }
                     direction_index += 1;
                 }
                 vectors_map.push(HashRcWrap::new(d4_v_list));
@@ -134,14 +93,19 @@ impl Game {
     }
 
     pub fn js(&self) -> JsValue {
-        let s = serde_json::to_value(self).expect("Game serialize error")
+        let s = serde_json::to_value(self)
+            .expect("Game serialize error")
             .to_string();
         JsValue::from_str(&s)
     }
 
-    pub fn is_king_row (&self, piece: &Piece)-> bool {
+    pub fn is_king_row(&self, piece: &Piece) -> bool {
         let size = (self.size / 2) as usize;
-        if piece.color == Color::White { piece.pos > size * (size - 1) } else { piece.pos < size }
+        if piece.color == Color::White {
+            piece.pos > size * (size - 1)
+        } else {
+            piece.pos < size
+        }
     }
 }
 
@@ -152,12 +116,13 @@ impl Game {
 }
 #[cfg(test)]
 mod tests {
-    use std::cell::RefCell;
-    use crate::{Color, Piece};
-    use crate::game::{Game, HashRcWrap};
+    use crate::game::Game;
+    use crate::position::Position;
     use crate::Moves::PieceMove;
     use crate::MovesList::MoveList;
-    use crate::position::Position;
+    use crate::{Color, Piece};
+    use std::cell::RefCell;
+    use crate::HashRcWrap::HashRcWrap;
 
     #[test]
     fn game() {
@@ -181,5 +146,3 @@ mod tests {
         print!("\n\n{:?}", list);
     }
 }
-
-

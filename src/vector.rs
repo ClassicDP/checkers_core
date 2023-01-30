@@ -1,11 +1,10 @@
-use std::rc::Rc;
-use std::slice::IterMut;
 use js_sys::Math::min as other_min;
 use serde::{Deserialize, Serialize};
+use std::rc::Rc;
+use std::slice::IterMut;
 use ts_rs::TS;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[derive(TS)]
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
 pub struct Vector<T> {
     pub(crate) points: Rc<Vec<T>>,
     pub(crate) direction: i8,
@@ -19,7 +18,6 @@ pub struct VectorIntoIterator<'a, T> {
     index: usize,
     range_b: usize,
 }
-
 
 impl<T> Vector<T> {
     pub fn new(direction: i8, points: Vec<T>) -> Vector<T> {
@@ -51,12 +49,18 @@ impl<'a, T> Iterator for VectorIntoIterator<'a, T> {
             let i = self.index;
             self.index += 1;
             Some(&self.vector.points[i])
-        } else { None }
+        } else {
+            None
+        }
     }
 }
 
 fn min<T: PartialOrd>(a: T, b: T) -> T {
-    if a < b { a } else { b }
+    if a < b {
+        a
+    } else {
+        b
+    }
 }
 
 impl<'a, T> IntoIterator for &'a Vector<T> {
@@ -64,14 +68,12 @@ impl<'a, T> IntoIterator for &'a Vector<T> {
     type IntoIter = VectorIntoIterator<'a, T>;
     fn into_iter(self) -> Self::IntoIter {
         let a = if self.range_a.is_some() {
-            min(self.range_a.unwrap(),
-                self.points.len())
+            min(self.range_a.unwrap(), self.points.len())
         } else {
             0
         };
         let b = if self.range_b.is_some() {
-            min(self.range_b.unwrap(),
-                self.points.len())
+            min(self.range_b.unwrap(), self.points.len())
         } else {
             self.points.len()
         };
@@ -85,8 +87,8 @@ impl<'a, T> IntoIterator for &'a Vector<T> {
 
 #[cfg(test)]
 mod tests {
-    use std::ptr::eq;
     use crate::vector::Vector;
+    use std::ptr::eq;
 
     #[test]
     fn vector() {

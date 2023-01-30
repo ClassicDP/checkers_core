@@ -30,8 +30,16 @@ impl<'a, T> Iterator for MutIter<'a, T> {
 
 impl<'a, T> MutIter<'a, T> {
     fn new(v: &'a Vec<T>, range_a: Option<usize>, range_b: Option<usize>) -> MutIter<'a, T> {
-        let index = if range_a.is_some() { range_a.unwrap() } else { 0 };
-        let len = if range_b.is_some() { min(range_b.unwrap(), v.len()) } else { v.len() };
+        let index = if range_a.is_some() {
+            range_a.unwrap()
+        } else {
+            0
+        };
+        let len = if range_b.is_some() {
+            min(range_b.unwrap(), v.len())
+        } else {
+            v.len()
+        };
         MutIter {
             v,
             index,
@@ -50,16 +58,19 @@ struct St0 {
 
 #[cfg(test)]
 mod tests {
-    use std::cell::{RefCell};
+    use crate::mutable_iterator::{MutIter, St0};
+    use std::cell::RefCell;
     use std::ptr;
     use std::rc::Rc;
-    use crate::mutable_iterator::{MutIter, St0};
 
     #[test]
     fn vector() {
         let st = RefCell::new(St0 { a: 0, b: 0 });
-        let v = vec![Rc::new(st.clone()), Rc::new(st.clone()),
-                     Rc::new(st.clone())];
+        let v = vec![
+            Rc::new(st.clone()),
+            Rc::new(st.clone()),
+            Rc::new(st.clone()),
+        ];
         let i1 = MutIter::new(&v, None, Some(3));
         let mut v2: Vec<Rc<RefCell<St0>>> = Vec::new();
         for i in &i1 {

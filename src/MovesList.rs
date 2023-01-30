@@ -1,10 +1,9 @@
-use std::borrow::{Borrow, BorrowMut};
 use crate::Moves::{Move, StraightStrike};
 
 pub type Chain = Vec<StraightStrike>;
 #[derive(Clone, Debug)]
 pub enum MoveItem {
-    StrikeChain (Chain),
+    StrikeChain(Chain),
     Move(Move),
 }
 
@@ -16,6 +15,9 @@ pub struct MoveList {
 
 impl MoveList {
     pub fn new() -> MoveList {
-        MoveList { list: Vec::new(), current_chain: Vec::new() }
+        MoveList {
+            list: Vec::new(),
+            current_chain: Vec::new(),
+        }
     }
 }

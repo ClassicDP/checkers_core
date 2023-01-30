@@ -1,26 +1,20 @@
 extern crate core;
-
-use std::borrow::BorrowMut;
-use std::cell::{RefCell, RefMut};
-use std::hash::Hash;
-use std::panic::RefUnwindSafe;
-use std::rc::Rc;
-
-use serde::{Deserialize, Serialize};
-use serde::de::DeserializeOwned;
-use ts_rs::TS;
-use wasm_bindgen::JsValue;
-use wasm_bindgen::prelude::*;
-use crate::game::HashRcWrap;
 use crate::Moves::BoardPos;
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
+use std::hash::Hash;
+use ts_rs::TS;
+use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsValue;
 
-
-mod position;
-mod game;
-mod vector;
-mod mutable_iterator;
 mod Moves;
 mod MovesList;
+mod game;
+mod mutable_iterator;
+mod position;
+mod vector;
+mod HashRcWrap;
+
 
 
 #[wasm_bindgen]
@@ -38,22 +32,24 @@ fn to_js<T: Serialize>(val: T) -> JsValue {
     }
 }
 
-fn from_js<T: DeserializeOwned>(js: JsValue)->Option<T> {
+fn from_js<T: DeserializeOwned>(js: JsValue) -> Option<T> {
     let val = serde_wasm_bindgen::from_value(js);
     match val {
-        Ok(val) => {  Some(val) }
-        Err(err) => { log(&format!("{}", err)); None }
+        Ok(val) => Some(val),
+        Err(err) => {
+            log(&format!("{}", err));
+            None
+        }
     }
 }
 
 #[wasm_bindgen]
-#[derive(Copy, Clone, PartialOrd, Serialize, Deserialize, Debug)]
-#[derive(TS)]
+#[derive(Copy, Clone, PartialOrd, Serialize, Deserialize, Debug, TS)]
 #[ts(export)]
-#[derive (PartialEq, Eq, Hash)]
+#[derive(PartialEq, Eq, Hash)]
 pub enum Color {
-    Black=0,
-    White=1,
+    Black = 0,
+    White = 1,
 }
 
 impl Color {
@@ -66,7 +62,6 @@ impl Color {
     }
 }
 
-
 #[wasm_bindgen]
 #[derive(TS)]
 #[ts(export)]
@@ -77,7 +72,6 @@ pub struct Piece {
     is_king: bool,
     stricken: bool,
 }
-
 
 #[wasm_bindgen]
 impl Piece {
@@ -93,12 +87,9 @@ impl Piece {
     pub fn new_fom_js(js: JsValue) -> Option<Piece> {
         match from_js(js) {
             Some(fi) => fi,
-            None => {None}
+            None => None,
         }
-
     }
-
-
 
     #[wasm_bindgen(getter)]
     pub fn it(self) -> JsValue {
@@ -108,14 +99,10 @@ impl Piece {
     pub fn set_it(&mut self, js: JsValue) {
         let model: Option<Piece> = from_js(js);
         match model {
-            Some(val)=> *self = val,
+            Some(val) => *self = val,
             None => {}
         }
     }
 }
-
-
-type Cell = Option<HashRcWrap<Piece>>;
-
 
 

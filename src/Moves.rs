@@ -1,12 +1,8 @@
+use crate::HashRcWrap::HashRcWrap;
 use core::fmt;
 use std::fmt::{Debug, Formatter};
-use std::rc::Rc;
-use std::vec::IntoIter;
-use crate::game::HashRcWrap;
 
 pub type BoardPos = usize;
-
-
 
 #[derive(Clone)]
 pub struct StraightStrike {
@@ -15,12 +11,16 @@ pub struct StraightStrike {
     pub(crate) take: BoardPos,
     pub(crate) to: BoardPos,
     pub(crate) i_to: usize,
-    pub(crate) king_move: bool
+    pub(crate) king_move: bool,
 }
 
 impl fmt::Debug for StraightStrike {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "\nfrom: {}, to: {}, take: {}", self.from, self.to, self.take)
+        write!(
+            f,
+            "\nfrom: {}, to: {}, take: {}",
+            self.from, self.to, self.take
+        )
     }
 }
 
@@ -36,7 +36,9 @@ impl Iterator for StraightStrikeIter {
         if self.rest < self.v.get_unwrap().len() {
             self.rest += 1;
             Some(self.v.get_unwrap()[self.rest - 1])
-        } else { None }
+        } else {
+            None
+        }
     }
 }
 
@@ -57,7 +59,7 @@ pub struct Move {
     pub(crate) v: Vec<BoardPos>,
     pub(crate) from: BoardPos,
     pub(crate) to: BoardPos,
-    pub(crate) king_move: bool
+    pub(crate) king_move: bool,
 }
 
 impl PieceMove for Move {
@@ -82,7 +84,6 @@ impl PieceMove for Move {
     }
 }
 
-
 impl PieceMove for StraightStrike {
     fn from(&self) -> BoardPos {
         self.from
@@ -104,7 +105,6 @@ impl PieceMove for StraightStrike {
         self.king_move
     }
 }
-
 
 pub trait PieceMove: Debug {
     fn from(&self) -> BoardPos;

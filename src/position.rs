@@ -1,22 +1,22 @@
+use js_sys::Math::min;
 use std::borrow::{Borrow, BorrowMut};
 use std::cell::{RefCell, RefMut};
 use std::collections::{HashMap, HashSet};
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
-use js_sys::Math::min;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{Cell, Color, Piece};
-use crate::game::{Game, HashRcWrap};
-use ts_rs::TS;
+use crate::game::Game;
+use crate::vector::Vector;
 use crate::Moves::{BoardPos, PieceMove, StraightStrike};
 use crate::MovesList::{MoveItem, MoveList};
-use crate::vector::Vector;
+use crate::{Color, Piece};
+use ts_rs::TS;
+use crate::HashRcWrap::HashRcWrap;
 
-
-#[derive(Deserialize, Serialize, Debug)]
-#[derive(TS)]
+pub type Cell = Option<HashRcWrap<Piece>>;
+#[derive(Deserialize, Serialize, Debug, TS)]
 pub struct Position {
     pub cells: Vec<Cell>,
     pub game: HashRcWrap<Game>,
@@ -44,7 +44,11 @@ impl Clone for Position {
 
 impl Position {
     pub fn new(game: HashRcWrap<Game>) -> Position {
-        let mut pos = Position { cells: Vec::new(), game, pieces: HashMap::new() };
+        let mut pos = Position {
+            cells: Vec::new(),
+            game,
+            pieces: HashMap::new(),
+        };
         pos.cells = Vec::new();
         let size = pos.game.get_unwrap().size;
         pos.cells.resize((size * size / 2) as usize, Cell::None);
@@ -101,7 +105,9 @@ impl Position {
         let pos = v[i];
         if let Some(piece) = self.cells[pos].clone() {
             Some(piece)
-        } else { None }
+        } else {
+            None
+        }
     }
     pub fn swap(&mut self, i: BoardPos, j: BoardPos) {
         self.cells.swap(i as usize, j as usize);
@@ -115,7 +121,9 @@ impl Position {
     }
 
     fn straight_strike(&mut self, v: &Rc<Vec<BoardPos>>) -> Option<StraightStrike> {
-        if v.len() < 3 { return None; }
+        if v.len() < 3 {
+            return None;
+        }
         if let Some(piece) = self.get_piece_by_v(&v, 0) {
             let piece = piece.get_unwrap();
             let color = piece.color;
@@ -143,7 +151,9 @@ impl Position {
                             }
                             return Some(strike);
                         }
-                    } else { break; }
+                    } else {
+                        break;
+                    }
                 }
                 i += 1;
             }
@@ -151,21 +161,35 @@ impl Position {
         None
     }
 
-    pub fn get_strike_list(&mut self, pos: BoardPos, ban_directions: &Vec<i8>, move_list: &mut MoveList) -> bool {
+    pub fn get_strike_list(
+        &mut self,
+        pos: BoardPos,
+        ban_directions: &Vec<i8>,
+        move_list: &mut MoveList,
+    ) -> bool {
         let mut success_call = false;
         if let Some(piece) = &self.cells[pos] {
             let directions = {
                 let piece = piece.get_unwrap();
                 if !piece.is_king {
-                    if piece.color == Color::White { vec![0, 1] } else { vec![2, 3] }
-                } else { vec![0, 1, 2, 3] }
+                    if piece.color == Color::White {
+                        vec![0, 1]
+                    } else {
+                        vec![2, 3]
+                    }
+                } else {
+                    vec![0, 1, 2, 3]
+                }
             };
-            let vectors: Vec<HashRcWrap<Vector<BoardPos>>> =
-                (&self.game).get_unwrap().get_vectors(pos).into_iter()
-                    .filter(|v| {
-                        let v_direction = &v.get_unwrap().direction;
-                        !ban_directions.contains(v_direction) && directions.contains(v_direction)
-                    }).collect();
+            let vectors: Vec<HashRcWrap<Vector<BoardPos>>> = (&self.game)
+                .get_unwrap()
+                .get_vectors(pos)
+                .into_iter()
+                .filter(|v| {
+                    let v_direction = &v.get_unwrap().direction;
+                    !ban_directions.contains(v_direction) && directions.contains(v_direction)
+                })
+                .collect();
             for v in vectors {
                 let strike = self.straight_strike(&v.get_unwrap().points);
                 if let Some(mut strike) = strike {
@@ -201,4 +225,3 @@ impl Position {
         success_call
     }
 }
-
