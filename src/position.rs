@@ -1,8 +1,5 @@
-use js_sys::Math::min;
-use std::borrow::{Borrow, BorrowMut};
-use std::cell::{RefCell, RefMut};
 use std::collections::{HashMap, HashSet};
-use std::ops::{Deref, DerefMut};
+use std::ops::{Deref};
 use std::rc::Rc;
 
 use serde::{Deserialize, Serialize};
@@ -16,6 +13,7 @@ use ts_rs::TS;
 use crate::HashRcWrap::HashRcWrap;
 
 pub type Cell = Option<HashRcWrap<Piece>>;
+
 #[derive(Deserialize, Serialize, Debug, TS)]
 pub struct Position {
     pub cells: Vec<Cell>,
@@ -66,7 +64,6 @@ impl Position {
         }
         let x = set.unwrap();
         x.insert(rc_piece.clone());
-        print!("{:?}", x);
     }
 
     pub fn make_move(&mut self, mov: &mut dyn PieceMove) {
@@ -129,7 +126,7 @@ impl Position {
             let color = piece.color;
             let max_search_steps = if piece.is_king { v.len() } else { 3 };
             let mut i: usize = 2;
-            while i <= max_search_steps {
+            while i < max_search_steps {
                 if let Some(take_candidate) = self.get_piece_by_v(&v, i - 1) {
                     if self.get_piece_by_v(&v, i).is_none() {
                         let candidate = take_candidate.get_unwrap();
