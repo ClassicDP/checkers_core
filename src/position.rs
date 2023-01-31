@@ -6,15 +6,16 @@ use serde::{Deserialize, Serialize};
 
 use crate::game::Game;
 use crate::vector::Vector;
-use crate::Moves::{BoardPos, Move, PieceMove, StraightStrike};
+use crate::Moves::{BoardPos, QuietMove, PieceMove, StraightStrike};
 use crate::MovesList::{MoveItem, MoveList};
 use crate::{Color, Piece};
 use ts_rs::TS;
 use crate::HashRcWrap::HashRcWrap;
+use crate::MovesList::MoveItem::{Move, StrikeChain};
 
 pub type Cell = Option<HashRcWrap<Piece>>;
 
-#[derive(Deserialize, Serialize, Debug, TS)]
+#[derive(Deserialize, Serialize, Debug, TS, Clone)]
 pub struct Position {
     pub cells: Vec<Cell>,
     pub game: HashRcWrap<Game>,
@@ -22,23 +23,24 @@ pub struct Position {
     pub pieces: HashMap<Color, HashSet<HashRcWrap<Piece>>>,
 }
 
-impl Clone for Position {
-    fn clone(&self) -> Self {
-        let mut new_pieces: HashMap<Color, HashSet<HashRcWrap<Piece>>> = HashMap::new();
-        for (col, hash_set) in &self.pieces {
-            let mut new_hashset: HashSet<HashRcWrap<Piece>> = HashSet::new();
-            for x in hash_set {
-                new_hashset.insert(x.clone());
-            }
-            new_pieces.insert(col.clone(), new_hashset);
-        }
-        Position {
-            cells: self.cells.clone(),
-            game: self.game.clone(),
-            pieces: new_pieces,
-        }
-    }
-}
+// impl Clone for Position {
+//     fn clone(&self) -> Self {
+//         let mut new_pieces: HashMap<Color, HashSet<HashRcWrap<Piece>>> = HashMap::new();
+//         for (col, hash_set) in &self.pieces {
+//             let mut new_hashset: HashSet<HashRcWrap<Piece>> = HashSet::new();
+//             for x in hash_set {
+//                 new_hashset.insert(x.clone());
+//             }
+//             new_pieces.insert(col.clone(), new_hashset);
+//         }
+//         Position {
+//             cells: self.cells.clone(),
+//             game: self.game.clone(),
+//             pieces: self.pieces.clone(),
+//             took_pieces: self.took_pieces.clone()
+//         }
+//     }
+// }
 
 impl Position {
     pub fn new(game: HashRcWrap<Game>) -> Position {
@@ -66,7 +68,7 @@ impl Position {
         x.insert(rc_piece.clone());
     }
 
-    pub fn make_move(&mut self, mov: &mut dyn PieceMove) {
+    pub fn make_strike_or_move(&mut self, mov: &mut dyn PieceMove) {
         self.swap(mov.from(), mov.to());
         if let Some(take) = mov.take() {
             if let Some(cell) = &self.cells[take] {
@@ -84,7 +86,7 @@ impl Position {
         }
     }
 
-    pub fn ummake_move(&mut self, mov: &dyn PieceMove) {
+    pub fn unmake_strike_or_move(&mut self, mov: &dyn PieceMove) {
         self.swap(mov.from(), mov.to());
         if let Some(take) = mov.take() {
             if let Some(cell) = &self.cells[take] {
@@ -99,12 +101,7 @@ impl Position {
     }
 
     pub fn get_piece_by_v(&self, v: &Rc<Vec<BoardPos>>, i: usize) -> Option<HashRcWrap<Piece>> {
-        let pos = v[i];
-        if let Some(piece) = self.cells[pos].clone() {
-            Some(piece)
-        } else {
-            None
-        }
+        self.cells[v[i]].clone()
     }
     pub fn swap(&mut self, i: BoardPos, j: BoardPos) {
         self.cells.swap(i as usize, j as usize);
@@ -188,7 +185,7 @@ impl Position {
             for vector in vectors {
                 for point in &(*vector.get_unwrap().points)[1..] {
                     if !self.cells[*point].is_none() { break; }
-                    move_list.list.push(MoveItem::Move(Move { from: pos, to: *point, king_move: false }))
+                    move_list.list.push(MoveItem::Move(QuietMove { from: pos, to: *point, king_move: false }))
                 }
             }
         }
@@ -221,13 +218,13 @@ impl Position {
                     for pos in &strike {
                         let mut strike_move = strike.clone();
                         strike_move.to = pos;
-                        self.make_move(&mut strike_move);
-                        move_list.current_chain.push(strike_move.clone());
+                        self.make_strike_or_move(&mut strike_move);
+                        move_list.current_chain.vec.push(strike_move.clone());
                         if self.get_strike_list(pos, move_list, &ban_directions) {
                             recurrent_chain = true;
                         }
-                        move_list.current_chain.pop();
-                        self.ummake_move(&strike_move);
+                        move_list.current_chain.vec.pop();
+                        self.unmake_strike_or_move(&strike_move);
                         if ban_directions.len() < 2 {
                             ban_directions.push(v.get_unwrap().direction);
                         }
@@ -237,7 +234,7 @@ impl Position {
                             let mut strike_move = strike.clone();
                             strike_move.to = pos;
                             let mut chain = move_list.current_chain.clone();
-                            chain.push(strike_move);
+                            chain.vec.push(strike_move);
                             move_list.list.push(MoveItem::StrikeChain(chain));
                         }
                     }
@@ -246,4 +243,46 @@ impl Position {
         }
         success_call
     }
+
+    pub fn make_move (&mut self, move_item: &mut MoveItem) {
+        match move_item {
+            Move(mov) => {
+                self.make_strike_or_move(mov);
+            },
+            StrikeChain(chain) => {
+                let take_pos_list: Vec<BoardPos> = chain.vec.iter().map(|it| it.take).collect();
+                if let Some(piece) = &self.cells[take_pos_list[0]] {
+                    let took_color = piece.get_unwrap().color;
+                    let set = self.pieces.get_mut(&took_color).unwrap();
+                    take_pos_list.iter().for_each(|pos| {
+                        if let Some(piece) = &self.cells[*pos] {
+                            set.remove(piece);
+                            chain.took_pieces.insert(piece.clone());
+                        }
+                        self.cells[*pos] = None;
+                    });
+                    let n = chain.vec.len() -1;
+                    let ref mut mov = QuietMove{from: chain.vec[0].from, to: chain.vec[n].to, king_move: false};
+                    self.make_strike_or_move(mov);
+                }
+
+            }
+        }
+    }
+
+    pub fn unmake_move (&mut self, move_item: &mut MoveItem) {
+        match move_item {
+            Move(mov) => {
+                self.unmake_strike_or_move(mov);
+            },
+            StrikeChain(chain) => {
+                chain.took_pieces.iter().for_each(|piece|{
+                   self.cells[piece.get_unwrap().pos] = Some(piece.clone());
+                    self.pieces.get_mut(&piece.get_unwrap().color).unwrap().insert(piece.clone());
+                });
+                chain.took_pieces.clear();
+            }
+        }
+    }
+
 }

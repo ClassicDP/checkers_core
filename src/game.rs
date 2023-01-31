@@ -141,6 +141,10 @@ mod tests {
         let mut list = MoveList::new();
         pos.get_strike_list(22, &mut list, &vec![]);
         print!("\n\n{:?}", list);
+        pos.make_move(&mut list.list[0]);
+        print!("\n\n{:?}", pos);
+        pos.unmake_move(&mut list.list[0]);
+        print!("\n\n{:?}", pos);
         let mut list = MoveList::new();
         pos.get_quiet_move_list(21, &mut list);
         print!("\n\n{:?}", list);

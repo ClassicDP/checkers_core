@@ -1,10 +1,18 @@
-use crate::Moves::{Move, StraightStrike};
+use std::collections::HashSet;
+use crate::HashRcWrap::HashRcWrap;
+use crate::Moves::{QuietMove, StraightStrike};
+use crate::Piece;
 
-pub type Chain = Vec<StraightStrike>;
+#[derive(Clone, Debug)]
+pub struct Chain {
+    pub vec: Vec<StraightStrike>,
+    pub took_pieces: HashSet<HashRcWrap<Piece>>,
+}
+
 #[derive(Clone, Debug)]
 pub enum MoveItem {
     StrikeChain(Chain),
-    Move(Move),
+    Move(QuietMove),
 }
 
 #[derive(Debug)]
@@ -17,7 +25,7 @@ impl MoveList {
     pub fn new() -> MoveList {
         MoveList {
             list: Vec::new(),
-            current_chain: Vec::new(),
+            current_chain: Chain { vec: Vec::new(), took_pieces: HashSet::new() },
         }
     }
 }

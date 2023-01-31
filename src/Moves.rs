@@ -52,13 +52,13 @@ impl IntoIterator for &StraightStrike {
 }
 
 #[derive(Debug, Clone)]
-pub struct Move {
+pub struct QuietMove {
     pub(crate) from: BoardPos,
     pub(crate) to: BoardPos,
     pub(crate) king_move: bool,
 }
 
-impl PieceMove for Move {
+impl PieceMove for QuietMove {
     fn from(&self) -> BoardPos {
         self.from
     }
