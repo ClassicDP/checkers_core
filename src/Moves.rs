@@ -2,6 +2,7 @@ use crate::HashRcWrap::HashRcWrap;
 use core::fmt;
 use std::fmt::{Debug, Formatter};
 
+
 pub type BoardPos = usize;
 
 #[derive(Clone)]

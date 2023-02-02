@@ -3,9 +3,13 @@ use crate::Moves::BoardPos;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
+use std::time::Instant;
 use ts_rs::TS;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsValue;
+use crate::game::Game;
+use crate::MovesList::MoveList;
+use crate::position::Position;
 
 mod Moves;
 mod MovesList;
@@ -67,10 +71,10 @@ impl Color {
 #[ts(export)]
 #[derive(Clone, Copy, Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct Piece {
-    pos: BoardPos, // in pack_board
-    color: Color,
-    is_king: bool,
-    stricken: bool,
+    pub pos: BoardPos, // in pack_board
+    pub color: Color,
+    pub is_king: bool,
+    pub stricken: bool,
 }
 
 #[wasm_bindgen]
@@ -104,5 +108,7 @@ impl Piece {
         }
     }
 }
+
+
 
 

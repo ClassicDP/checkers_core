@@ -15,6 +15,17 @@ use crate::MovesList::MoveItem::{Move, StrikeChain};
 
 pub type Cell = Option<HashRcWrap<Piece>>;
 
+pub struct PositionListItem {
+    pub cells: Vec<Option<Piece>>,
+    pub move_item: MoveItem
+}
+
+impl PartialEq  for PositionListItem{
+    fn eq(&self, other: &Self) -> bool {
+        self.cells.iter().enumerate().all(|it|other.cells[it.0]==*it.1)
+    }
+}
+
 #[derive(Deserialize, Serialize, Debug, TS, Clone)]
 pub struct Position {
     pub cells: Vec<Cell>,
@@ -281,8 +292,21 @@ impl Position {
                     self.pieces.get_mut(&piece.get_unwrap().color).unwrap().insert(piece.clone());
                 });
                 chain.took_pieces.clear();
+                let n = chain.vec.len() -1;
+                let ref mut mov = QuietMove{from: chain.vec[0].from, to: chain.vec[n].to, king_move: false};
+                self.unmake_strike_or_move(mov);
             }
         }
+    }
+
+    pub fn get_positions_list_item (&mut self, move_item: &mut MoveItem) -> PositionListItem {
+        self.make_move(move_item);
+        let cells: Vec<_> = self.cells.iter().map(|cell|{
+            if let Some(piece) = cell {
+                Some(piece.get_unwrap().clone())
+            } else { None }
+        }).collect();
+        PositionListItem{cells, move_item: move_item.clone()}
     }
 
 }

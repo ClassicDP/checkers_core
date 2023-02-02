@@ -1,7 +1,11 @@
 import * as wasm from "../pkg/lib1"
 import {Figure} from "../bindings/Figure";
+import {Game} from "../pkg/lib1";
 
 let game = new wasm.Game(8);
+console.time('test')
+Game.test();
+console.timeEnd('test')
 let ch = wasm.Piece.new_fom_js(<Figure> {pos:0,color: "Black", stricken: false, is_king: true})
 console.log(ch)
 ch.free()

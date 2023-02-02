@@ -1,14 +1,16 @@
 use crate::position::Position;
-use crate::vector::Vector;
 use crate::Moves::BoardPos;
 use crate::{Color, Piece};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::rc::Rc;
+use std::time::Instant;
 use ts_rs::TS;
 use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::JsValue;
 use crate::HashRcWrap::HashRcWrap;
+use crate::MovesList::MoveList;
+use crate::vector::Vector;
 
 #[wasm_bindgen]
 #[derive(Clone, Deserialize, Serialize, Debug, TS)]
@@ -17,7 +19,7 @@ pub struct Game {
     position_history: Vec<Position>,
     vectors_map: Vec<HashRcWrap<Vec<HashRcWrap<Vector<BoardPos>>>>>,
     board_to_pack: Vec<BoardPos>,
-    pack_to_board: Vec<BoardPos>,
+     pack_to_board: Vec<BoardPos>,
 }
 
 #[wasm_bindgen]
@@ -104,6 +106,35 @@ impl Game {
             piece.pos < size
         }
     }
+    #[wasm_bindgen]
+    pub fn test() {
+        let game = Game::new(8);
+        let mut pos = Position::new(HashRcWrap::new(game));
+        pos.inset_piece(Piece::new(22, Color::White, false));
+        pos.inset_piece(Piece::new(4, Color::Black, true));
+        pos.inset_piece(Piece::new(21, Color::Black, true));
+        pos.inset_piece(Piece::new(20, Color::Black, true));
+        pos.inset_piece(Piece::new(12, Color::Black, true));
+        pos.inset_piece(Piece::new(13, Color::Black, true));
+        pos.inset_piece(Piece::new(26, Color::Black, true));
+        if let Some(piece) = pos.cells[0].clone() {
+            if let Some(set) = pos.pieces.get_mut(&piece.get_unwrap().color) {
+                print!(" -piece {}  ", set.contains(&piece))
+            }
+        }
+
+        let mut list = MoveList::new();
+        pos.get_strike_list(22, &mut list, &vec![]);
+        print!("\n\n list: {:?}", list);
+
+        for _i in 0..100000 {
+            let mut list = MoveList::new();
+            pos.get_strike_list(22, &mut list, &vec![]);
+            pos.make_move(&mut list.list[0]);
+            pos.unmake_move(&mut list.list[0]);
+        }
+
+    }
 }
 
 impl Game {
@@ -111,6 +142,8 @@ impl Game {
         self.vectors_map[pos].get_unwrap().clone()
     }
 }
+
+
 #[cfg(test)]
 mod tests {
     use crate::game::Game;
@@ -119,6 +152,7 @@ mod tests {
     use crate::MovesList::MoveList;
     use crate::{Color, Piece};
     use std::cell::RefCell;
+    use std::time::Instant;
     use crate::HashRcWrap::HashRcWrap;
 
     #[test]
@@ -133,14 +167,34 @@ mod tests {
         pos.inset_piece(Piece::new(12, Color::Black, true));
         pos.inset_piece(Piece::new(13, Color::Black, true));
         pos.inset_piece(Piece::new(26, Color::Black, true));
+
+        for _i in 0..100000 {
+            let mut list = MoveList::new();
+            pos.get_strike_list(22, &mut list, &vec![]);
+            pos.make_move(&mut list.list[0]);
+            pos.unmake_move(&mut list.list[0]);
+        }
+        return;
+        let mut list = MoveList::new();
         if let Some(piece) = pos.cells[0].clone() {
             if let Some(set) = pos.pieces.get_mut(&piece.get_unwrap().color) {
                 print!(" -piece {}  ", set.contains(&piece))
             }
         }
-        let mut list = MoveList::new();
+
+
         pos.get_strike_list(22, &mut list, &vec![]);
         print!("\n\n{:?}", list);
+
+        let start = Instant::now();
+        for i in 0..100000 {
+            pos.get_strike_list(22, &mut list, &vec![]);
+            // pos.make_move(&mut list.list[0]);
+            // pos.unmake_move(&mut list.list[0]);
+        }
+        let duration = start.elapsed();
+        println!("\n\nTime elapsed is: {:?}\n", duration);
+
         pos.make_move(&mut list.list[0]);
         print!("\n\n{:?}", pos);
         pos.unmake_move(&mut list.list[0]);
