@@ -171,8 +171,10 @@ mod tests {
         for _i in 0..100000 {
             let mut list = MoveList::new();
             pos.get_strike_list(22, &mut list, &vec![]);
-            pos.make_move(&mut list.list[0]);
+            let po = pos.make_move_and_get_position(&mut list.list[0]);
+            if po!=po { break; }
             pos.unmake_move(&mut list.list[0]);
+
         }
         return;
         let mut list = MoveList::new();

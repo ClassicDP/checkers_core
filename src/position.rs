@@ -17,12 +17,12 @@ pub type Cell = Option<HashRcWrap<Piece>>;
 
 pub struct PositionListItem {
     pub cells: Vec<Option<Piece>>,
-    pub move_item: MoveItem
+    pub move_item: MoveItem,
 }
 
-impl PartialEq  for PositionListItem{
+impl PartialEq for PositionListItem {
     fn eq(&self, other: &Self) -> bool {
-        self.cells.iter().enumerate().all(|it|other.cells[it.0]==*it.1)
+        self.cells.iter().enumerate().all(|it| other.cells[it.0] == *it.1)
     }
 }
 
@@ -255,11 +255,11 @@ impl Position {
         success_call
     }
 
-    pub fn make_move (&mut self, move_item: &mut MoveItem) {
+    pub fn make_move(&mut self, move_item: &mut MoveItem) {
         match move_item {
             Move(mov) => {
                 self.make_strike_or_move(mov);
-            },
+            }
             StrikeChain(chain) => {
                 let take_pos_list: Vec<BoardPos> = chain.vec.iter().map(|it| it.take).collect();
                 if let Some(piece) = &self.cells[take_pos_list[0]] {
@@ -272,41 +272,39 @@ impl Position {
                         }
                         self.cells[*pos] = None;
                     });
-                    let n = chain.vec.len() -1;
-                    let ref mut mov = QuietMove{from: chain.vec[0].from, to: chain.vec[n].to, king_move: false};
+                    let n = chain.vec.len() - 1;
+                    let ref mut mov = QuietMove { from: chain.vec[0].from, to: chain.vec[n].to, king_move: false };
                     self.make_strike_or_move(mov);
                 }
-
             }
         }
     }
 
-    pub fn unmake_move (&mut self, move_item: &mut MoveItem) {
+    pub fn unmake_move(&mut self, move_item: &mut MoveItem) {
         match move_item {
             Move(mov) => {
                 self.unmake_strike_or_move(mov);
-            },
+            }
             StrikeChain(chain) => {
-                chain.took_pieces.iter().for_each(|piece|{
-                   self.cells[piece.get_unwrap().pos] = Some(piece.clone());
+                chain.took_pieces.iter().for_each(|piece| {
+                    self.cells[piece.get_unwrap().pos] = Some(piece.clone());
                     self.pieces.get_mut(&piece.get_unwrap().color).unwrap().insert(piece.clone());
                 });
                 chain.took_pieces.clear();
-                let n = chain.vec.len() -1;
-                let ref mut mov = QuietMove{from: chain.vec[0].from, to: chain.vec[n].to, king_move: false};
+                let n = chain.vec.len() - 1;
+                let ref mut mov = QuietMove { from: chain.vec[0].from, to: chain.vec[n].to, king_move: false };
                 self.unmake_strike_or_move(mov);
             }
         }
     }
 
-    pub fn get_positions_list_item (&mut self, move_item: &mut MoveItem) -> PositionListItem {
+    pub fn make_move_and_get_position(&mut self, move_item: &mut MoveItem) -> PositionListItem {
         self.make_move(move_item);
-        let cells: Vec<_> = self.cells.iter().map(|cell|{
+        let cells: Vec<_> = self.cells.iter().map(|cell| {
             if let Some(piece) = cell {
                 Some(piece.get_unwrap().clone())
             } else { None }
         }).collect();
-        PositionListItem{cells, move_item: move_item.clone()}
+        PositionListItem { cells, move_item: move_item.clone() }
     }
-
 }
