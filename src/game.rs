@@ -1,8 +1,10 @@
+use std::borrow::{Borrow, BorrowMut};
 use crate::position::Position;
 use crate::Moves::BoardPos;
 use crate::{Color, Piece};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
+use std::ops::Deref;
 use std::rc::Rc;
 use std::time::Instant;
 use ts_rs::TS;
@@ -17,9 +19,9 @@ use crate::vector::Vector;
 pub struct Game {
     pub size: i8,
     position_history: Vec<Position>,
-    vectors_map: Vec<HashRcWrap<Vec<HashRcWrap<Vector<BoardPos>>>>>,
+    vectors_map: Vec<Vec<Rc<Vector<BoardPos>>>>,
     board_to_pack: Vec<BoardPos>,
-     pack_to_board: Vec<BoardPos>,
+    pack_to_board: Vec<BoardPos>,
 }
 
 #[wasm_bindgen]
@@ -54,24 +56,24 @@ impl Game {
                 let mut d4_v_list = Vec::new();
                 for d in d4.iter() {
                     let mut p = i;
-                    let mut v: Vector<BoardPos> =
-                        Vector::new(direction_index, vec![board_to_pack[p as usize]]);
+
+                    let mut points = vec![board_to_pack[p]];
                     loop {
                         p = ((p as i64) + (*d as i64)) as BoardPos;
                         if !is_on_board(p) {
                             break;
                         }
-                        Rc::get_mut(&mut v.points)
-                            .unwrap()
-                            .push(board_to_pack[p as usize]);
+                        points.push(board_to_pack[p as usize]);
                     }
+                    let v: Vector<BoardPos> =
+                        Vector::new(direction_index, points);
 
                     if v.points.len() > 1 {
-                        d4_v_list.push(HashRcWrap::new(v));
+                        d4_v_list.push(Rc::new(v));
                     }
                     direction_index += 1;
                 }
-                vectors_map.push(HashRcWrap::new(d4_v_list));
+                vectors_map.push(d4_v_list);
             }
         }
         Game {
@@ -107,9 +109,9 @@ impl Game {
         }
     }
     #[wasm_bindgen]
-    pub fn test() {
+    pub fn test() -> bool {
         let game = Game::new(8);
-        let mut pos = Position::new(HashRcWrap::new(game));
+        let mut pos = Position::new(Rc::new(game));
         pos.inset_piece(Piece::new(22, Color::White, false));
         pos.inset_piece(Piece::new(4, Color::Black, true));
         pos.inset_piece(Piece::new(21, Color::Black, true));
@@ -117,29 +119,52 @@ impl Game {
         pos.inset_piece(Piece::new(12, Color::Black, true));
         pos.inset_piece(Piece::new(13, Color::Black, true));
         pos.inset_piece(Piece::new(26, Color::Black, true));
-        if let Some(piece) = pos.cells[0].clone() {
-            if let Some(set) = pos.pieces.get_mut(&piece.get_unwrap().color) {
-                print!(" -piece {}  ", set.contains(&piece))
-            }
-        }
+
 
         let mut list = MoveList::new();
-        pos.get_strike_list(22, &mut list, &vec![]);
-        print!("\n\n list: {:?}", list);
+        // pos.get_strike_list(22, &mut list, &vec![]);
+        // print!("\n\n list: {:?}", list);
+
+        // for _i in 0..100000 {
+        //     let mut list = MoveList::new();
+        //     pos.get_strike_list(22, &mut list, &vec![]);
+        //     pos.make_move(&mut list.list[0]);
+        //     pos.unmake_move(&mut list.list[0]);
+        //     let mut p0 = pos.make_move_and_get_position(&mut list.list[0]);
+        //     pos.unmake_move(p0.move_item.borrow_mut());
+        //     let mut p1 = pos.make_move_and_get_position(&mut list.list[0]);
+        //     if p0 != p1 { break; }
+        //     pos.unmake_move(p1.move_item.borrow_mut());
+        // }
+        // let mut list = MoveList::new();
+        // // pos.get_strike_list(22, &mut list, &vec![]);
+        // // let mut p0 = pos.make_move_and_get_position(&mut list.list[0]);
+        // // pos.unmake_move(p0.move_item.borrow_mut());
+        //
 
         for _i in 0..100000 {
             let mut list = MoveList::new();
             pos.get_strike_list(22, &mut list, &vec![]);
-            pos.make_move(&mut list.list[0]);
-            pos.unmake_move(&mut list.list[0]);
-        }
+            let mut p0 = pos.make_move_and_get_position(&mut list.list[0]);
+            pos.unmake_move(p0.move_item.borrow_mut());
+            let p1 = p0.clone();
+            if p0!= p1 {break;}
+        };
 
+        let mut list = MoveList::new();
+        pos.get_strike_list(22, &mut list, &vec![])
+
+
+        // for _i  in 0..100000 {
+        //     let mut p1 = p0.clone();
+        //     if p0!= p1 {break;}
+        // }
     }
 }
 
 impl Game {
-    pub fn get_vectors(&self, pos: usize) -> Vec<HashRcWrap<Vector<BoardPos>>> {
-        self.vectors_map[pos].get_unwrap().clone()
+    pub fn get_vectors(&self, pos: usize) -> &Vec<Rc<Vector<BoardPos>>> {
+        &self.vectors_map[pos]
     }
 }
 
@@ -152,14 +177,16 @@ mod tests {
     use crate::MovesList::MoveList;
     use crate::{Color, Piece};
     use std::cell::RefCell;
+    use std::rc::Rc;
     use std::time::Instant;
     use crate::HashRcWrap::HashRcWrap;
 
     #[test]
     fn game() {
+        Game::test();
         let game = Game::new(8);
         assert_eq!(game.board_to_pack.len(), game.pack_to_board.len() * 2);
-        let mut pos = Position::new(HashRcWrap::new(game));
+        let mut pos = Position::new(Rc::new(game));
         pos.inset_piece(Piece::new(22, Color::White, false));
         pos.inset_piece(Piece::new(4, Color::Black, true));
         pos.inset_piece(Piece::new(21, Color::Black, true));
@@ -172,17 +199,12 @@ mod tests {
             let mut list = MoveList::new();
             pos.get_strike_list(22, &mut list, &vec![]);
             let po = pos.make_move_and_get_position(&mut list.list[0]);
-            if po!=po { break; }
+            if po != po { break; }
             pos.unmake_move(&mut list.list[0]);
-
         }
         return;
         let mut list = MoveList::new();
-        if let Some(piece) = pos.cells[0].clone() {
-            if let Some(set) = pos.pieces.get_mut(&piece.get_unwrap().color) {
-                print!(" -piece {}  ", set.contains(&piece))
-            }
-        }
+
 
 
         pos.get_strike_list(22, &mut list, &vec![]);
@@ -204,6 +226,5 @@ mod tests {
         let mut list = MoveList::new();
         pos.get_quiet_move_list(21, &mut list);
         print!("\n\n{:?}", list);
-
     }
 }

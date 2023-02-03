@@ -1,13 +1,15 @@
 use crate::HashRcWrap::HashRcWrap;
 use core::fmt;
 use std::fmt::{Debug, Formatter};
+use std::rc::Rc;
+use crate::MovesList::Chain;
 
 
 pub type BoardPos = usize;
 
 #[derive(Clone)]
 pub struct StraightStrike {
-    pub(crate) v: HashRcWrap<Vec<BoardPos>>,
+    pub(crate) v: Rc<Vec<BoardPos>>,
     pub(crate) from: BoardPos,
     pub(crate) take: BoardPos,
     pub(crate) to: BoardPos,
@@ -23,7 +25,7 @@ impl fmt::Debug for StraightStrike {
 }
 
 pub struct StraightStrikeIter {
-    v: HashRcWrap<Vec<BoardPos>>,
+    v: Rc<Vec<BoardPos>>,
     rest: BoardPos,
 }
 
@@ -31,9 +33,9 @@ impl Iterator for StraightStrikeIter {
     type Item = BoardPos;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.rest < self.v.get_unwrap().len() {
+        if self.rest < self.v.len() {
             self.rest += 1;
-            Some(self.v.get_unwrap()[self.rest - 1])
+            Some(self.v[self.rest - 1])
         } else {
             None
         }
@@ -59,29 +61,11 @@ pub struct QuietMove {
     pub(crate) king_move: bool,
 }
 
+
 impl PieceMove for QuietMove {
-    fn from(&self) -> BoardPos {
-        self.from
-    }
-
-    fn to(&self) -> BoardPos {
-        self.to
-    }
-
     fn take(&self) -> Option<BoardPos> {
         None
     }
-
-    fn set_as_king(&mut self) {
-        self.king_move = true;
-    }
-
-    fn is_king(&self) -> bool {
-        self.king_move
-    }
-}
-
-impl PieceMove for StraightStrike {
     fn from(&self) -> BoardPos {
         self.from
     }
@@ -90,8 +74,46 @@ impl PieceMove for StraightStrike {
         self.to
     }
 
+    fn set_as_king(&mut self) {
+        self.king_move = true;
+    }
+
+    fn is_king(&self) -> bool {
+        self.king_move
+    }
+}
+
+
+impl PieceMove for StraightStrike {
     fn take(&self) -> Option<BoardPos> {
         Some(self.take)
+    }
+    fn from(&self) -> BoardPos {
+        self.from
+    }
+
+    fn to(&self) -> BoardPos {
+        self.to
+    }
+
+
+    fn set_as_king(&mut self) {
+        self.king_move = true;
+    }
+
+    fn is_king(&self) -> bool {
+        self.king_move
+    }
+
+}
+
+impl ChainPieceMove for Chain {
+    fn from(&self) -> BoardPos {
+        self.vec[0].from
+    }
+
+    fn to(&self) -> BoardPos {
+        self.vec[self.vec.len() - 1].to
     }
 
     fn set_as_king(&mut self) {
@@ -103,10 +125,19 @@ impl PieceMove for StraightStrike {
     }
 }
 
+
+
 pub trait PieceMove: Debug {
+    fn take(&self) -> Option<BoardPos>;
     fn from(&self) -> BoardPos;
     fn to(&self) -> BoardPos;
-    fn take(&self) -> Option<BoardPos>;
+    fn set_as_king(&mut self);
+    fn is_king(&self) -> bool;
+}
+
+pub trait ChainPieceMove: Debug {
+    fn from(&self) -> BoardPos;
+    fn to(&self) -> BoardPos;
     fn set_as_king(&mut self);
     fn is_king(&self) -> bool;
 }

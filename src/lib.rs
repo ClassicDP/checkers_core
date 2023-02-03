@@ -69,7 +69,7 @@ impl Color {
 #[wasm_bindgen]
 #[derive(TS)]
 #[ts(export)]
-#[derive(Clone, Copy, Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct Piece {
     pub pos: BoardPos, // in pack_board
     pub color: Color,
