@@ -1,8 +1,4 @@
-use std::collections::HashSet;
-use wasm_bindgen::prelude::wasm_bindgen;
-use crate::HashRcWrap::HashRcWrap;
-use crate::Moves::{QuietMove, StraightStrike};
-use crate::MovesList::MoveItem::{Move, StrikeChain};
+use crate::moves::{QuietMove, StraightStrike};
 use crate::Piece;
 
 #[derive(Clone, Debug)]

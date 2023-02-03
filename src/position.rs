@@ -1,30 +1,26 @@
-use std::borrow::{Borrow, BorrowMut};
-use std::collections::{HashMap, HashSet};
-use std::ops::{Deref};
 use std::rc::Rc;
 
 use serde::{Deserialize, Serialize};
 
 use crate::game::Game;
 use crate::vector::Vector;
-use crate::Moves::{BoardPos, QuietMove, PieceMove, StraightStrike, ChainPieceMove};
-use crate::MovesList::{MoveItem, MoveList};
+use crate::moves::{BoardPos, QuietMove, PieceMove, StraightStrike};
+use crate::moves_list::{MoveItem, MoveList};
 use crate::{Color, Piece};
 use ts_rs::TS;
-use crate::HashRcWrap::HashRcWrap;
-use crate::MovesList::MoveItem::{Move, StrikeChain};
+use crate::moves_list::MoveItem::{Move, StrikeChain};
 
 pub type Cell = Option<Piece>;
 
 #[derive(Clone)]
 pub struct PositionListItem {
-    pub cells: Vec<Cell>,
+    pub position: Position,
     pub move_item: MoveItem,
 }
 
 impl PartialEq for PositionListItem {
     fn eq(&self, other: &Self) -> bool {
-        self.cells.iter().enumerate().all(|it| other.cells[it.0] == *it.1)
+        self.position.cells.iter().enumerate().all(|it| other.position.cells[it.0] == *it.1)
     }
 }
 
@@ -34,25 +30,6 @@ pub struct Position {
     pub cells: Vec<Cell>,
     pub game: Rc<Game>,
 }
-
-// impl Clone for Position {
-//     fn clone(&self) -> Self {
-//         let mut new_pieces: HashMap<Color, HashSet<HashRcWrap<Piece>>> = HashMap::new();
-//         for (col, hash_set) in &self.pieces {
-//             let mut new_hashset: HashSet<HashRcWrap<Piece>> = HashSet::new();
-//             for x in hash_set {
-//                 new_hashset.insert(x.clone());
-//             }
-//             new_pieces.insert(col.clone(), new_hashset);
-//         }
-//         Position {
-//             cells: self.cells.clone(),
-//             game: self.game.clone(),
-//             pieces: self.pieces.clone(),
-//             took_pieces: self.took_pieces.clone()
-//         }
-//     }
-// }
 
 impl Position {
     pub fn new(game: Rc<Game>) -> Position {
@@ -70,7 +47,7 @@ impl Position {
         self.cells[pos] = Some(piece);
     }
 
-    pub fn make_strike_or_move(&mut self, mov: &mut dyn PieceMove) {
+    fn make_strike_or_move(&mut self, mov: &mut dyn PieceMove) {
         self.swap(mov.from(), mov.to());
         if let Some(take) = mov.take() {
             if let Some(ref mut piece) = self.cells[take] {
@@ -87,7 +64,7 @@ impl Position {
         }
     }
 
-    pub fn unmake_strike_or_move(&mut self, mov: &dyn PieceMove) {
+    fn unmake_strike_or_move(&mut self, mov: &dyn PieceMove) {
         self.swap(mov.from(), mov.to());
         if let Some(take) = mov.take() {
             if let Some(ref mut piece) = self.cells[take] {
@@ -101,7 +78,7 @@ impl Position {
         }
     }
 
-    pub fn get_piece_by_v(&self, v: &Rc<Vec<BoardPos>>, i: usize) -> &Cell {
+    fn get_piece_by_v(&self, v: &Rc<Vec<BoardPos>>, i: usize) -> &Cell {
         &self.cells[v[i]]
     }
     pub fn swap(&mut self, i: BoardPos, j: BoardPos) {
@@ -120,30 +97,29 @@ impl Position {
             return None;
         }
         if let Some(piece) = self.get_piece_by_v(v, 0) {
-            let max_search_steps = if piece.is_king { v.len() } else { 3 };
+            let search_steps_top = if piece.is_king { v.len() } else { 3 };
             let mut i: usize = 2;
-            while i < max_search_steps {
+            while i < search_steps_top {
                 if let Some(candidate) = self.get_piece_by_v(v, i - 1) {
-                    if self.get_piece_by_v(&v, i).is_none() {
-                        if candidate.color != piece.color && !candidate.stricken {
-                            let strike = StraightStrike {
-                                v: {
-                                    let mut i_next = i;
-                                    let mut ve = Vec::new();
-                                    while i_next < max_search_steps && self.get_piece_by_v(&v, i_next).is_none() {
-                                        ve.push(v[i_next]);
-                                        i_next += 1;
-                                    }
-                                    Rc::new(ve)
-                                },
-                                from: v[0],
-                                to: v[i],
-                                i_to: 0,
-                                take: v[i - 1],
-                                king_move: false,
-                            };
-                            return Some(strike);
-                        }
+                    if self.get_piece_by_v(&v, i).is_none() && candidate.color != piece.color
+                        && !candidate.stricken {
+                        let strike = StraightStrike {
+                            v: {
+                                let mut i_next = i;
+                                let mut ve = Vec::new();
+                                while i_next < search_steps_top && self.get_piece_by_v(&v, i_next).is_none() {
+                                    ve.push(v[i_next]);
+                                    i_next += 1;
+                                }
+                                Rc::new(ve)
+                            },
+                            from: v[0],
+                            to: v[i],
+                            i_to: 0,
+                            take: v[i - 1],
+                            king_move: false,
+                        };
+                        return Some(strike);
                     } else {
                         break;
                     }
@@ -155,8 +131,7 @@ impl Position {
     }
 
     fn get_vectors(&self, pos: BoardPos, ban_directions: &Vec<i8>) -> Vec<Rc<Vector<BoardPos>>> {
-        let d2_4 =
-        match &self.cells[pos] {
+        let d2_4 = match &self.cells[pos] {
             Some(piece) => {
                 if !piece.is_king {
                     if piece.color == Color::White {
@@ -190,9 +165,9 @@ impl Position {
                 move_list.list.push(MoveItem::Move(QuietMove { from: pos, to: *point, king_move: false }))
             }
         }
-
         move_list.list.len() > 0
     }
+
     pub fn get_strike_list(
         &mut self,
         pos: BoardPos,
@@ -204,16 +179,16 @@ impl Position {
         for v in vectors {
             let points = &v.points;
             let strike = self.straight_strike(points);
-            if let Some(mut strike) = strike {
+            if let Some(straight_strike) = strike {
                 success_call = true;
                 let mut ban_directions = vec![v.get_ban_direction()];
                 let mut recurrent_chain = false;
-                let mut strike_move = strike.clone();
-                for pos in &strike {
+                let mut strike_move = straight_strike.clone();
+                for pos in &straight_strike {
                     strike_move.to = pos;
                     self.make_strike_or_move(&mut strike_move);
                     move_list.current_chain.vec.push(strike_move.clone());
-                    if strike_move.king_move {move_list.current_chain.king_move = true;}
+                    if strike_move.king_move { move_list.current_chain.king_move = true; }
                     if self.get_strike_list(pos, move_list, &ban_directions) {
                         recurrent_chain = true;
                     }
@@ -224,11 +199,11 @@ impl Position {
                     }
                 }
                 if !recurrent_chain {
-                    for pos in &strike {
-                        let mut strike_move = strike.clone();
+                    for pos in &straight_strike {
+                        let mut strike_move = straight_strike.clone();
                         strike_move.to = pos;
                         let mut chain = move_list.current_chain.clone();
-                        if strike_move.king_move {chain.king_move = true;}
+                        if strike_move.king_move { chain.king_move = true; }
                         chain.vec.push(strike_move);
                         move_list.list.push(MoveItem::StrikeChain(chain));
                     }
@@ -245,7 +220,7 @@ impl Position {
             }
             StrikeChain(chain) => {
                 let take_pos_list: Vec<BoardPos> = chain.vec.iter().map(|it| it.take).collect();
-                if let Some(piece) = &self.cells[take_pos_list[0]] {
+                if self.cells[take_pos_list[0]].is_some() {
                     take_pos_list.iter().for_each(|pos| {
                         if let Some(ref mut piece) = self.cells[*pos] {
                             chain.took_pieces.push(piece.clone());
@@ -265,9 +240,9 @@ impl Position {
             Move(ref mov) => {
                 self.unmake_strike_or_move(mov);
             }
-            StrikeChain(mut chain) => {
+            StrikeChain(chain) => {
                 let from = chain.vec[0].from;
-                let to =  chain.vec[chain.vec.len()-1].to;
+                let to = chain.vec[chain.vec.len() - 1].to;
                 for piece in chain.took_pieces {
                     let pos = piece.pos;
                     self.cells[pos] = Some(piece);
@@ -280,11 +255,6 @@ impl Position {
 
     pub fn make_move_and_get_position(&mut self, move_item: &mut MoveItem) -> PositionListItem {
         self.make_move(move_item);
-        let cells: Vec<_> = self.cells.iter().map(|cell| {
-            if let Some(piece) = cell {
-                Some(piece.clone())
-            } else { None }
-        }).collect();
-        PositionListItem { cells, move_item: move_item.clone() }
+        PositionListItem { position: self.clone(), move_item: move_item.clone() }
     }
 }

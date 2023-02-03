@@ -1,17 +1,14 @@
-use std::borrow::{Borrow, BorrowMut};
+use std::borrow::{BorrowMut};
 use crate::position::Position;
-use crate::Moves::BoardPos;
+use crate::moves::BoardPos;
 use crate::{Color, Piece};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
-use std::ops::Deref;
 use std::rc::Rc;
-use std::time::Instant;
 use ts_rs::TS;
 use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::JsValue;
-use crate::HashRcWrap::HashRcWrap;
-use crate::MovesList::MoveList;
+use crate::moves_list::MoveList;
 use crate::vector::Vector;
 
 #[wasm_bindgen]
@@ -33,10 +30,10 @@ impl Game {
         }
         let size2 = (size * size) as BoardPos;
         let is_black_cell = |i: BoardPos| -> bool { (i / size as BoardPos + i % 2) % 2 == 0 };
-        let is_on_board = |i: BoardPos| -> bool { i >= 0 && i < size2 && is_black_cell(i) };
+        let is_on_board = |i: BoardPos| -> bool { i < size2 && is_black_cell(i) };
         let d4 = vec![size + 1, size - 1, -(size + 1), -(size - 1)];
-        let mut vectors_map = Vec::with_capacity((size2 / 2) as usize);
-        let mut board_to_pack: Vec<BoardPos> = Vec::with_capacity(size2 as usize);
+        let mut vectors_map = Vec::new();
+        let mut board_to_pack: Vec<BoardPos> = Vec::new();
         board_to_pack.resize(size2 as usize, 0);
         let mut pack_to_board: Vec<BoardPos> = Vec::with_capacity((size2 / 2) as usize);
         pack_to_board.resize((size2 / 2) as usize, 0);
@@ -173,13 +170,11 @@ impl Game {
 mod tests {
     use crate::game::Game;
     use crate::position::Position;
-    use crate::Moves::PieceMove;
-    use crate::MovesList::MoveList;
+    use crate::moves_list::MoveList;
     use crate::{Color, Piece};
-    use std::cell::RefCell;
     use std::rc::Rc;
     use std::time::Instant;
-    use crate::HashRcWrap::HashRcWrap;
+
 
     #[test]
     fn game() {

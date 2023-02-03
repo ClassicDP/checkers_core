@@ -1,25 +1,19 @@
 extern crate core;
-use crate::Moves::BoardPos;
+use crate::moves::BoardPos;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
-use std::time::Instant;
 use ts_rs::TS;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsValue;
-use crate::game::Game;
-use crate::MovesList::MoveList;
-use crate::position::Position;
 
-mod Moves;
-mod MovesList;
+
+mod moves;
+mod moves_list;
 mod game;
 mod mutable_iterator;
 mod position;
 mod vector;
-mod HashRcWrap;
-
-
 
 #[wasm_bindgen]
 extern "C" {

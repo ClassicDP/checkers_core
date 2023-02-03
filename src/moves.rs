@@ -1,8 +1,7 @@
-use crate::HashRcWrap::HashRcWrap;
 use core::fmt;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
-use crate::MovesList::Chain;
+use crate::moves_list::Chain;
 
 
 pub type BoardPos = usize;
