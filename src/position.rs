@@ -2,14 +2,18 @@ use std::rc::Rc;
 
 use serde::{Deserialize, Serialize};
 
-use crate::game::Game;
+use crate::position_environment::PositionEnvironment;
 use crate::vector::Vector;
-use crate::moves::{BoardPos, QuietMove, PieceMove, StraightStrike};
+use crate::moves::{BoardPos, PieceMove, QuietMove, StraightStrike};
 use crate::moves_list::{MoveItem, MoveList};
-use crate::{Color, Piece};
-use ts_rs::TS;
-use crate::moves_list::MoveItem::{Move, StrikeChain};
+use crate::color::Color;
+use tsify::declare;
+use wasm_bindgen::prelude::wasm_bindgen;
+use wasm_bindgen::JsValue;
+use crate::piece::Piece;
 
+
+#[declare]
 pub type Cell = Option<Piece>;
 
 #[derive(Clone)]
@@ -25,23 +29,25 @@ impl PartialEq for PositionListItem {
 }
 
 
-#[derive(Deserialize, Serialize, Debug, TS, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Position {
     pub cells: Vec<Cell>,
-    pub game: Rc<Game>,
+    pub environment: Rc<PositionEnvironment>,
 }
 
+
 impl Position {
-    pub fn new(game: Rc<Game>) -> Position {
+    pub fn new(environment: Rc<PositionEnvironment>) -> Position {
         let mut pos = Position {
             cells: Vec::new(),
-            game,
+            environment,
         };
         pos.cells = Vec::new();
-        let size = pos.game.size;
+        let size = pos.environment.size;
         pos.cells.resize((size * size / 2) as usize, Cell::None);
         pos
     }
+
     pub fn inset_piece(&mut self, piece: Piece) {
         let pos = piece.pos as usize;
         self.cells[pos] = Some(piece);
@@ -56,7 +62,7 @@ impl Position {
         }
         if let Some(ref mut piece) = self.cells[mov.to()] {
             if !piece.is_king {
-                if self.game.is_king_row(&piece) {
+                if self.environment.is_king_row(&piece) {
                     piece.is_king = true;
                     mov.set_as_king();
                 }
@@ -145,7 +151,7 @@ impl Position {
             }
             None => vec![0, 1, 2, 3]
         };
-        let vectors = self.game.get_vectors(pos);
+        let vectors = self.environment.get_vectors(pos);
         let mut res = Vec::new();
         for v in vectors {
             if d2_4.contains(&v.direction) && !ban_directions.contains(&v.direction) { res.push(v.clone()); }
@@ -162,7 +168,8 @@ impl Position {
         for vector in vectors {
             for point in &(vector.points)[1..] {
                 if !self.cells[*point].is_none() { break; }
-                move_list.list.push(MoveItem::Move(QuietMove { from: pos, to: *point, king_move: false }))
+                move_list.list.push(
+                    MoveItem { mov: Some(QuietMove { from: pos, to: *point, king_move: false }), strike: None })
             }
         }
         move_list.list.len() > 0
@@ -205,7 +212,7 @@ impl Position {
                         let mut chain = move_list.current_chain.clone();
                         if strike_move.king_move { chain.king_move = true; }
                         chain.vec.push(strike_move);
-                        move_list.list.push(MoveItem::StrikeChain(chain));
+                        move_list.list.push(MoveItem { strike: Some(chain), mov: None });
                     }
                 }
             }
@@ -214,42 +221,36 @@ impl Position {
     }
 
     pub fn make_move(&mut self, move_item: &mut MoveItem) {
-        match move_item {
-            Move(mov) => {
+        if let Some(ref mut mov) = move_item.mov {
+            self.make_strike_or_move(mov);
+        } else if let Some(ref mut strike) = move_item.strike {
+            let take_pos_list: Vec<BoardPos> = strike.vec.iter().map(|it| it.take).collect();
+            if self.cells[take_pos_list[0]].is_some() {
+                take_pos_list.iter().for_each(|pos| {
+                    if let Some(ref mut piece) = self.cells[*pos] {
+                        strike.took_pieces.push(piece.clone());
+                    }
+                    self.cells[*pos] = None;
+                });
+                let n = strike.vec.len() - 1;
+                let ref mut mov = QuietMove { from: strike.vec[0].from, to: strike.vec[n].to, king_move: false };
                 self.make_strike_or_move(mov);
-            }
-            StrikeChain(chain) => {
-                let take_pos_list: Vec<BoardPos> = chain.vec.iter().map(|it| it.take).collect();
-                if self.cells[take_pos_list[0]].is_some() {
-                    take_pos_list.iter().for_each(|pos| {
-                        if let Some(ref mut piece) = self.cells[*pos] {
-                            chain.took_pieces.push(piece.clone());
-                        }
-                        self.cells[*pos] = None;
-                    });
-                    let n = chain.vec.len() - 1;
-                    let ref mut mov = QuietMove { from: chain.vec[0].from, to: chain.vec[n].to, king_move: false };
-                    self.make_strike_or_move(mov);
-                }
             }
         }
     }
 
-    pub fn unmake_move(&mut self, move_item: &MoveItem) {
-        match move_item.clone() {
-            Move(ref mov) => {
-                self.unmake_strike_or_move(mov);
+    pub fn unmake_move(&mut self, move_item: &mut MoveItem) {
+        if let Some(ref mut mov) = move_item.mov {
+            self.unmake_strike_or_move(mov);
+        } else if let Some(strike) = &move_item.strike {
+            let from = strike.vec[0].from;
+            let to = strike.vec[strike.vec.len() - 1].to;
+            for piece in &strike.took_pieces {
+                let pos = piece.pos;
+                self.cells[pos] = Some(piece.clone());
             }
-            StrikeChain(chain) => {
-                let from = chain.vec[0].from;
-                let to = chain.vec[chain.vec.len() - 1].to;
-                for piece in chain.took_pieces {
-                    let pos = piece.pos;
-                    self.cells[pos] = Some(piece);
-                }
-                let ref mut mov = QuietMove { from, to, king_move: chain.king_move };
-                self.unmake_strike_or_move(mov);
-            }
+            let ref mut mov = QuietMove { from, to, king_move: strike.king_move };
+            self.unmake_strike_or_move(mov);
         }
     }
 

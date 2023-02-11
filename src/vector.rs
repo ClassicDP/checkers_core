@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use ts_rs::TS;
 
-#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Vector<T> {
     pub(crate) points: Rc<Vec<T>>,
     pub(crate) direction: i8,

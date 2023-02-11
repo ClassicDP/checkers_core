@@ -6,7 +6,7 @@ use ts_rs::TS;
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
-#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct HashRcWrap<T> {
     value: Rc<RefCell<T>>,
 }

@@ -1,12 +1,20 @@
 use core::fmt;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
-use crate::moves_list::Chain;
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+use ts_rs::TS;
+use crate::moves_list::Strike;
+use tsify::{declare, Tsify};
+use wasm_bindgen::prelude::*;
 
-
+#[declare]
 pub type BoardPos = usize;
 
-#[derive(Clone)]
+
+#[derive(Clone, Deserialize, Serialize, TS)]
+#[wasm_bindgen]
+#[ts(export)]
 pub struct StraightStrike {
     pub(crate) v: Rc<Vec<BoardPos>>,
     pub(crate) from: BoardPos,
@@ -53,11 +61,14 @@ impl IntoIterator for &StraightStrike {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[derive(Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
+#[ts(export)]
 pub struct QuietMove {
-    pub(crate) from: BoardPos,
-    pub(crate) to: BoardPos,
-    pub(crate) king_move: bool,
+    pub from: BoardPos,
+    pub to: BoardPos,
+    pub king_move: bool,
 }
 
 
@@ -106,7 +117,7 @@ impl PieceMove for StraightStrike {
 
 }
 
-impl ChainPieceMove for Chain {
+impl ChainPieceMove for Strike {
     fn from(&self) -> BoardPos {
         self.vec[0].from
     }
