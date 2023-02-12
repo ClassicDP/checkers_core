@@ -23,7 +23,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const wasm = __importStar(require("../pkg/lib1"));
+const wasm = __importStar(require("../pkg/checkers_core"));
 const pkg_1 = require("../pkg");
 class Game {
     constructor(size, color) {
