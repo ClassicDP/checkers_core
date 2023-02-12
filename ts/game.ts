@@ -18,7 +18,7 @@ type MoveVariants = {
 class Game {
     game: wasm.Game
     moveColor: Color
-    private moveChainInd: number = 0
+    private strikeChainInd: number = 0
     private moveList?: MoveList
 
     static color(color?: ColorType): Color | undefined {
@@ -71,16 +71,16 @@ class Game {
             if (!color) return {void: true}
             this.moveList = <MoveList>this.game.get_move_list(color!)
         }
-        let moveItems = getMoveChainElements(this.moveList, this.moveChainInd)
+        let moveItems = getMoveChainElements(this.moveList, this.strikeChainInd)
         if (!moveItems.length) {
-            if (this.moveChainInd) {
-                this.moveChainInd = 0;
+            if (this.strikeChainInd) {
+                this.strikeChainInd = 0;
                 return {done: true}
             }
             return {void: true}
         }
         // if user solve to change move piece
-        if (!this.moveChainInd) {
+        if (!this.strikeChainInd) {
             let moveItems_ = moveItems.filter(x => x.from == pos)
             if (moveItems_.length) return {list: moveItems_}
         }
@@ -88,11 +88,11 @@ class Game {
         if (moveItems_.length) {
             let isStrike = moveItems_[0].take !== undefined
             if (isStrike) {
-                this.moveList.list = this.moveList.list.filter(x => x.strike!.vec[this.moveChainInd]?.to == pos)
+                this.moveList.list = this.moveList.list.filter(x => x.strike!.vec[this.strikeChainInd]?.to == pos)
                 let done = this.moveList.list.length == 0
                 if (done) {
                     this.moveList = undefined
-                    this.moveChainInd = 0
+                    this.strikeChainInd = 0
                 }
                 return {done: done, list: moveItems_}
             } else {
