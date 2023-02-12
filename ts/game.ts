@@ -1,18 +1,17 @@
 import * as wasm from "../pkg/lib1"
 import {Color} from "../pkg";
-import {Strike} from "../bindings/Strike";
 import {Position} from "../bindings/Position";
 import {ColorType} from "../bindings/ColorType";
 import {MoveList} from "../bindings/MoveList";
 import {MoveItem} from "../bindings/MoveItem";
 
 
-type MoveIterationsItem = {
+type MoveChainElement = {
     from: number, to: number, take?: number,
     kingMove?: boolean,
 }
-type MoveIterations = {
-    list?: MoveIterationsItem[]
+type MoveVariants = {
+    list?: MoveChainElement[]
     void?: boolean, done?: boolean
 }
 
@@ -41,11 +40,11 @@ class Game {
     }
 
 
-    frontClick(pos: number): MoveIterations {
-        let getMoveIterationsItems = (moveList: MoveList | undefined, i: number ) => {
+    frontClick(pos: number): MoveVariants {
+        let getMoveChainElements = (moveList: MoveList | undefined, i: number) => {
             if (moveList?.list.length) {
                 let moveKey: keyof MoveItem = moveList.list[0].strike ? 'strike' : 'mov'
-                let res: MoveIterationsItem[] = []
+                let res: MoveChainElement[] = []
                 for (let move of moveList.list) {
                     if (moveKey == 'strike') {
                         let candidate = move[moveKey]!.vec[i]
@@ -68,8 +67,11 @@ class Game {
         }
 
         let color = Game.color((this.game.position as Position).cells[this.game.to_pack(pos)]?.color)
-        if (!this.moveChainInd && color == this.moveColor) this.moveList = this.game.get_move_list(color)
-        let moveItems = getMoveIterationsItems(this.moveList, this.moveChainInd)
+        if (!this.moveList) {
+            if (!color) return {void: true}
+            this.moveList = <MoveList>this.game.get_move_list(color!)
+        }
+        let moveItems = getMoveChainElements(this.moveList, this.moveChainInd)
         if (!moveItems.length) {
             if (this.moveChainInd) {
                 this.moveChainInd = 0;
@@ -77,6 +79,7 @@ class Game {
             }
             return {void: true}
         }
+        // if user solve to change move piece
         if (!this.moveChainInd) {
             let moveItems_ = moveItems.filter(x => x.from == pos)
             if (moveItems_.length) return {list: moveItems_}
@@ -85,10 +88,16 @@ class Game {
         if (moveItems_.length) {
             let isStrike = moveItems_[0].take !== undefined
             if (isStrike) {
-                this.moveChainInd++
-                return {list: moveItems_}
+                this.moveList.list = this.moveList.list.filter(x => x.strike!.vec[this.moveChainInd]?.to == pos)
+                let done = this.moveList.list.length == 0
+                if (done) {
+                    this.moveList = undefined
+                    this.moveChainInd = 0
+                }
+                return {done: done, list: moveItems_}
             } else {
-                return {done: true}
+                this.moveList = undefined
+                return {done: true, list: moveItems_}
             }
         }
         return {void: true}
