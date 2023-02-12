@@ -1,4 +1,4 @@
-import * as wasm from "../pkg/lib1"
+import * as wasm from "../pkg/checkers_core"
 import {Color} from "../pkg";
 import {Position} from "../bindings/Position";
 import {ColorType} from "../bindings/ColorType";
