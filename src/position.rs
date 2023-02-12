@@ -7,14 +7,9 @@ use crate::vector::Vector;
 use crate::moves::{BoardPos, PieceMove, QuietMove, StraightStrike};
 use crate::moves_list::{MoveItem, MoveList};
 use crate::color::Color;
-use tsify::declare;
-use wasm_bindgen::prelude::wasm_bindgen;
-use wasm_bindgen::JsValue;
 use crate::piece::Piece;
+use ts_rs::*;
 
-
-#[declare]
-pub type Cell = Option<Piece>;
 
 #[derive(Clone)]
 pub struct PositionListItem {
@@ -30,9 +25,12 @@ impl PartialEq for PositionListItem {
 
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(TS)]
+#[ts(export)]
 pub struct Position {
-    pub cells: Vec<Cell>,
-    pub environment: Rc<PositionEnvironment>,
+    pub cells: Vec<Option<Piece>>,
+    #[serde(skip_serializing)]
+    environment: Rc<PositionEnvironment>,
 }
 
 
@@ -44,14 +42,16 @@ impl Position {
         };
         pos.cells = Vec::new();
         let size = pos.environment.size;
-        pos.cells.resize((size * size / 2) as usize, Cell::None);
+        pos.cells.resize((size * size / 2) as usize, None);
         pos
     }
+
 
     pub fn inset_piece(&mut self, piece: Piece) {
         let pos = piece.pos as usize;
         self.cells[pos] = Some(piece);
     }
+
 
     fn make_strike_or_move(&mut self, mov: &mut dyn PieceMove) {
         self.swap(mov.from(), mov.to());
@@ -84,7 +84,7 @@ impl Position {
         }
     }
 
-    fn get_piece_by_v(&self, v: &Rc<Vec<BoardPos>>, i: usize) -> &Cell {
+    fn get_piece_by_v(&self, v: &Rc<Vec<BoardPos>>, i: usize) -> &Option<Piece> {
         &self.cells[v[i]]
     }
     pub fn swap(&mut self, i: BoardPos, j: BoardPos) {
@@ -180,6 +180,7 @@ impl Position {
         pos: BoardPos,
         move_list: &mut MoveList,
         ban_directions: &Vec<i8>,
+        front_list: bool
     ) -> bool {
         let mut success_call = false;
         let vectors: Vec<_> = self.get_vectors(pos, ban_directions);
@@ -196,12 +197,12 @@ impl Position {
                     self.make_strike_or_move(&mut strike_move);
                     move_list.current_chain.vec.push(strike_move.clone());
                     if strike_move.king_move { move_list.current_chain.king_move = true; }
-                    if self.get_strike_list(pos, move_list, &ban_directions) {
+                    if self.get_strike_list(pos, move_list, &ban_directions, front_list) {
                         recurrent_chain = true;
                     }
                     move_list.current_chain.vec.pop();
                     self.unmake_strike_or_move(&strike_move);
-                    if ban_directions.len() < 2 {
+                    if !front_list && ban_directions.len() < 2 {
                         ban_directions.push(v.direction);
                     }
                 }

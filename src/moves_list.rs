@@ -4,6 +4,7 @@ use crate::piece::Piece;
 use wasm_bindgen::prelude::wasm_bindgen;
 use ts_rs::TS;
 
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[derive(TS)]
 #[ts(export)]

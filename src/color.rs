@@ -1,7 +1,7 @@
 use wasm_bindgen::prelude::wasm_bindgen;
 use serde::{Deserialize, Serialize};
-use schemars::JsonSchema;
-use ts_rs::TS;
+use ts_rs::*;
+
 
 impl Color {
     pub fn reverse(&mut self) {
@@ -15,9 +15,11 @@ impl Color {
 
 #[wasm_bindgen]
 #[derive(Copy, Clone, PartialOrd, Serialize, Deserialize, Debug)]
-#[derive(PartialEq, Eq, Hash, JsonSchema, TS)]
+#[derive(PartialEq, Eq)]
+#[derive(TS)]
 #[ts(export)]
+#[ts(rename = "ColorType")]
 pub enum Color {
-    Black,
-    White
+    Black = 0,
+    White = 1
 }

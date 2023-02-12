@@ -1,5 +1,4 @@
 use std::borrow::BorrowMut;
-use std::cell::RefCell;
 use crate::position::Position;
 use crate::moves::BoardPos;
 use crate::color::Color;
@@ -10,15 +9,17 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::JsValue;
 use crate::moves_list::MoveList;
 use crate::piece::Piece;
+use ts_rs::TS;
 use crate::vector::Vector;
 
 #[wasm_bindgen]
-#[derive(Clone, Deserialize, Serialize, Debug)]
+#[derive(Clone, Deserialize, Serialize, Debug, TS)]
+#[ts(export)]
 pub struct PositionEnvironment {
     pub size: i8,
     vectors_map: Vec<Vec<Rc<Vector<BoardPos>>>>,
-    board_to_pack: Vec<BoardPos>,
-    pack_to_board: Vec<BoardPos>,
+    pub(crate) board_to_pack: Vec<BoardPos>,
+    pub(crate) pack_to_board: Vec<BoardPos>,
 }
 
 #[wasm_bindgen]
@@ -82,14 +83,6 @@ impl PositionEnvironment {
     }
 
 
-    pub fn to_board(&self, pack_index: BoardPos) -> BoardPos {
-        self.pack_to_board[pack_index]
-    }
-
-    pub fn to_pack(&self, board_index: BoardPos) -> BoardPos {
-        self.board_to_pack[board_index]
-    }
-
     pub fn js(&self) -> JsValue {
         let s = serde_json::to_value(self)
             .expect("Game serialize error")
@@ -141,7 +134,7 @@ impl PositionEnvironment {
 
         for _i in 0..100000 {
             let mut list = MoveList::new();
-            pos.get_strike_list(22, &mut list, &vec![]);
+            pos.get_strike_list(22, &mut list, &vec![], false);
             let mut p0 = pos.make_move_and_get_position(&mut list.list[0]);
             pos.unmake_move(p0.move_item.borrow_mut());
             let p1 = p0.clone();
@@ -149,7 +142,7 @@ impl PositionEnvironment {
         };
 
         let mut list = MoveList::new();
-        pos.get_strike_list(22, &mut list, &vec![]);
+        pos.get_strike_list(22, &mut list, &vec![], false);
         match serde_wasm_bindgen::to_value(&list) {
             Ok(js) => js,
             Err(_err) => JsValue::UNDEFINED,
@@ -198,7 +191,7 @@ mod tests {
 
         for _i in 0..100000 {
             let mut list = MoveList::new();
-            pos.get_strike_list(22, &mut list, &vec![]);
+            pos.get_strike_list(22, &mut list, &vec![], false);
             let po = pos.make_move_and_get_position(&mut list.list[0]);
             if po != po { break; }
             pos.unmake_move(&mut list.list[0]);
@@ -208,12 +201,12 @@ mod tests {
 
 
 
-        pos.get_strike_list(22, &mut list, &vec![]);
+        pos.get_strike_list(22, &mut list, &vec![], false);
         print!("\n\n{:?}", list);
 
         let start = Instant::now();
         for i in 0..100000 {
-            pos.get_strike_list(22, &mut list, &vec![]);
+            pos.get_strike_list(22, &mut list, &vec![], false);
             // pos.make_move(&mut list.list[0]);
             // pos.unmake_move(&mut list.list[0]);
         }

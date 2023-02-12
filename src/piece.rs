@@ -6,7 +6,7 @@ use ts_rs::TS;
 use crate::moves::BoardPos;
 use crate::color::Color;
 use crate::log;
-use js_object::js_object;
+
 
 fn to_js<T: Serialize>(val: T) -> JsValue {
     match serde_wasm_bindgen::to_value(&val) {
