@@ -145,6 +145,7 @@ pub trait PieceMove: Debug {
     fn is_king(&self) -> bool;
 }
 
+
 pub trait ChainPieceMove: Debug {
     fn from(&self) -> BoardPos;
     fn to(&self) -> BoardPos;

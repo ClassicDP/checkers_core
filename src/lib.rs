@@ -1,3 +1,4 @@
+#![feature(extern_types)]
 extern crate core;
 use crate::moves::BoardPos;
 use serde::de::DeserializeOwned;
@@ -20,6 +21,7 @@ mod vector;
 mod piece;
 mod color;
 mod game;
+
 
 #[wasm_bindgen]
 extern "C" {
