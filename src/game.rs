@@ -69,6 +69,7 @@ impl Game {
         move_list
     }
 
+    #[wasm_bindgen]
     pub fn get_move_list(&mut self, color: Color) -> JsValue {
         let move_list = self.get_move_list_inner(color);
         match serde_wasm_bindgen::to_value(&move_list) {
@@ -98,15 +99,25 @@ impl Game {
         if !pos_list.is_empty() {
             if let Some(piece) = &self.current_position.cells[pos_list[0] as usize] {
                 let move_list = self.get_move_list_inner(piece.color);
-                let move_track: Vec<BoardPos> = std::vec::Vec::new();
                 for move_item in move_list.list {
                     let mut i = 1;
+                    let mut ok = true;
                     for mov in &move_item {
-                        if pos_list.len() <= i { break; }
-                        if pos_list[i] != mov.to() || pos_list[i - 1] != mov.from() { break; }
+                        if pos_list.len() <= i {
+                            ok = false;
+                            break;
+                        }
+                        if pos_list[i] != mov.to() || pos_list[i - 1] != mov.from() {
+                            ok = false;
+                            break;
+                        }
                         i += 1;
                     }
-                    if pos_list.len() == i {return Ok(Boolean::from(JsValue::TRUE))}
+                    if ok && pos_list.len() == i {
+                        self.position_history.push(self.current_position.clone());
+                        self.current_position.make_move(&mut move_item.clone());
+                        return Ok(Boolean::from(JsValue::TRUE));
+                    }
                 }
             }
         }

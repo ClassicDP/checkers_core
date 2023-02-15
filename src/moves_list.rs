@@ -55,7 +55,6 @@ impl <'a> IntoIterator for &'a MoveItem {
                     }
                 }
                 v
-
             },
             ind: 0,
         }
