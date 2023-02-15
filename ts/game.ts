@@ -21,7 +21,7 @@ export class Game {
     moveColor: Color
     private strikeChainInd: number = 0
     private moveList?: MoveList
-    private moveChainHistory: BoardPos[] = []
+    private moveChainPack: BoardPos[] = []
 
     static color(color?: ColorType): Color | undefined {
         if (!color) return undefined
@@ -117,14 +117,14 @@ export class Game {
     applyMove(pos: number): MoveVariants {
         let variants = this.frontClick(pos)
         if (variants.confirmed)
-            if (!this.moveChainHistory.length) {
-                this.moveChainHistory.push(variants.confirmed.from, variants.confirmed.to)
+            if (!this.moveChainPack.length) {
+                this.moveChainPack.push(variants.confirmed.from, variants.confirmed.to)
             } else {
-                this.moveChainHistory.push(variants.confirmed.to)
+                this.moveChainPack.push(variants.confirmed.to)
             }
         if (variants.done) {
-            this.game.make_move(this.moveChainHistory)
-            this.moveChainHistory = []
+            this.game.make_move(this.moveChainPack)
+            this.moveChainPack = []
         }
         return variants
     }
