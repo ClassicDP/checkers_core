@@ -15,7 +15,8 @@
     "alwaysStrict": true
   },
   "include": [
-    "."
+    ".",
+    "../node_modules/ts-jest/globals.d.ts"
   ],
   "exclude": [
     "./out",

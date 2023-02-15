@@ -4,11 +4,11 @@ import {Position} from "../bindings/Position";
 import {ColorType} from "../bindings/ColorType";
 import {MoveList} from "../bindings/MoveList";
 import {MoveItem} from "../bindings/MoveItem";
-import {Strike} from "../bindings/Strike";
 
+export type BoardPos = number
 
 type MoveChainElement = {
-    from: number, to: number, take?: number,
+    from: BoardPos, to: BoardPos, take?: BoardPos,
     kingMove?: boolean,
 }
 type MoveVariants = {
@@ -16,12 +16,12 @@ type MoveVariants = {
     confirmed: MoveChainElement | undefined, done?: boolean
 }
 
-class Game {
+export class Game {
     game: wasm.Game
     moveColor: Color
     private strikeChainInd: number = 0
     private moveList?: MoveList
-    private moveChainHistory: MoveChainElement[] = []
+    private moveChainHistory: BoardPos[] = []
 
     static color(color?: ColorType): Color | undefined {
         if (!color) return undefined
@@ -42,7 +42,7 @@ class Game {
     }
 
 
-    private frontClick(pos: number): MoveVariants {
+    private frontClick(pos: BoardPos): MoveVariants {
         let getMoveChainElements = (moveList: MoveList | undefined, i: number) => {
             if (moveList?.list.length) {
                 let moveKey: keyof MoveItem = moveList.list[0].strike ? 'strike' : 'mov'
@@ -52,14 +52,15 @@ class Game {
                         let candidate = move[moveKey]!.vec[i]
                         if (candidate) res.push(
                             {
-                                from: candidate.from,
-                                to: candidate.to,
+                                from: this.game.to_board(candidate.from),
+                                to: this.game.to_board(candidate.to),
                                 kingMove: candidate.king_move,
-                                take: candidate.take
+                                take: this.game.to_board(candidate.take)
                             })
                     } else {
                         res.push({
-                            from: move[moveKey]!.from, to: move[moveKey]!.to, kingMove: move[moveKey]!.king_move
+                            from: this.game.to_board(move[moveKey]!.from), to: this.game.to_board(move[moveKey]!.to),
+                            kingMove: move[moveKey]!.king_move
                         })
                     }
                 }
@@ -67,6 +68,7 @@ class Game {
             }
             return []
         }
+
 
         let color = Game.color((this.game.position as Position).cells[this.game.to_pack(pos)]?.color)
         if (!this.moveList) {
@@ -81,47 +83,52 @@ class Game {
             }
             return {confirmed: undefined}
         }
-        // if user solve to change move piece
-        if (!this.strikeChainInd) {
-            let moveItems_ = moveItems.filter(x => x.from == pos)
-            if (moveItems_.length) return {list: moveItems_, confirmed: undefined}
-        }
         let moveItems_ = moveItems.filter(x => x.to == pos)
         if (moveItems_.length) {
             let isStrike = moveItems_[0].take !== undefined
             if (isStrike) {
-                this.moveList.list = this.moveList.list.filter(x => x.strike!.vec[this.strikeChainInd]?.to == pos)
-                let done = this.moveList.list.length == 0
-                let confirmed: MoveChainElement | undefined = undefined
+                this.moveList.list = this.moveList.list.filter(x =>
+                    x.strike!.vec[this.strikeChainInd]?.to == this.game.to_pack(pos))
+                let done = this.moveList.list.length == 1
+                let confirmed = this.moveList.list[0].strike!.vec[this.strikeChainInd++]
                 if (done) {
                     this.moveList = undefined
                     this.strikeChainInd = 0
-                } else {
-                    confirmed = this.moveList.list[0].strike!.vec[this.strikeChainInd]
                 }
-                return {done: done, list: moveItems_, confirmed}
+                return {
+                    done: done,
+                    list: done ? undefined : getMoveChainElements(this.moveList, this.strikeChainInd),
+                    confirmed
+                }
             } else {
                 let confirmed = <MoveChainElement>this.moveList.list[0].mov
                 this.moveList = undefined
-                return {done: true, list: moveItems_ , confirmed}
+                return {done: true, list: moveItems_, confirmed}
             }
+        }
+        // if user solve to change move piece
+        if (!this.strikeChainInd) {
+            let moveItems_ = moveItems.filter(x => x.from == pos)
+            if (moveItems_.length) return {list: moveItems_, confirmed: undefined}
         }
         return {confirmed: undefined}
     }
 
     applyMove(pos: number): MoveVariants {
         let variants = this.frontClick(pos)
-        if (variants.confirmed) this.moveChainHistory.push(variants.confirmed)
+        if (variants.confirmed)
+            if (!this.moveChainHistory.length) {
+                this.moveChainHistory.push(variants.confirmed.from, variants.confirmed.to)
+            } else {
+                this.moveChainHistory.push(variants.confirmed.to)
+            }
         if (variants.done) {
-            
+            this.game.make_move(this.moveChainHistory)
             this.moveChainHistory = []
         }
         return variants
     }
-
-
 }
-
 
 
 

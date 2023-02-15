@@ -26,9 +26,9 @@ mod game;
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = Math)]
-    fn random() -> f64;
+    pub fn random() -> f64;
     #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
+    pub fn log(s: &str);
 }
 
 

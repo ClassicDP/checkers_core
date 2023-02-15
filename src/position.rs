@@ -121,7 +121,6 @@ impl Position {
                             },
                             from: v[0],
                             to: v[i],
-                            i_to: 0,
                             take: v[i - 1],
                             king_move: false,
                         };

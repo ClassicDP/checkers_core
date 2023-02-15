@@ -16,11 +16,11 @@ pub type BoardPos = usize;
 #[wasm_bindgen]
 #[ts(export)]
 pub struct StraightStrike {
+    #[serde(skip_serializing)]
     pub(crate) v: Rc<Vec<BoardPos>>,
     pub(crate) from: BoardPos,
     pub(crate) take: BoardPos,
     pub(crate) to: BoardPos,
-    pub(crate) i_to: usize,
     pub(crate) king_move: bool,
 }
 
@@ -55,7 +55,7 @@ impl IntoIterator for &StraightStrike {
 
     fn into_iter(self) -> Self::IntoIter {
         StraightStrikeIter {
-            rest: self.i_to,
+            rest: 0,
             v: self.v.clone(),
         }
     }
