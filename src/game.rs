@@ -51,37 +51,37 @@ impl Game {
         self.position_environment.board_to_pack[board_index]
     }
 
+    #[wasm_bindgen]
+    pub fn get_move_list_for_front(&mut self, color: Color) -> JsValue {
+        let move_list =  self.get_move_list(color, true);
+        match serde_wasm_bindgen::to_value(&move_list) {
+            Ok(js) => js,
+            Err(_err) => JsValue::UNDEFINED,
+        }
 
-    fn get_move_list_inner(&mut self, color: Color) -> MoveList {
+    }
+
+    fn get_move_list(&mut self, color: Color, for_front: bool) -> MoveList {
         let ps = &self.current_position;
-        let pieces: std::vec::Vec<_> = ps.cells.iter()
+        let pieces_pos: std::vec::Vec<_> = ps.cells.iter()
             .filter(|piece| if let Some(piece) = piece { piece.color == color } else { false })
             .map(|piece| if let Some(piece) = piece { piece.pos } else { panic!("Position problem in get_move_list"); })
             .collect();
         let mut move_list = MoveList::new();
-        for pos in &pieces {
-            self.current_position.get_strike_list(*pos, &mut move_list, &vec![], true);
+        for pos in &pieces_pos {
+            self.current_position.get_strike_list(*pos, &mut move_list, &vec![], for_front);
         }
         if move_list.list.is_empty() {
-            for pos in &pieces {
+            for pos in &pieces_pos {
                 self.current_position.get_quiet_move_list(*pos, &mut move_list);
             }
         }
         move_list
     }
 
-    #[wasm_bindgen]
-    pub fn get_move_list(&mut self, color: Color) -> JsValue {
-        let move_list = self.get_move_list_inner(color);
-        match serde_wasm_bindgen::to_value(&move_list) {
-            Ok(js) => js,
-            Err(_err) => JsValue::UNDEFINED,
-        }
-    }
-
 
     #[wasm_bindgen]
-    pub fn make_move(&mut self, pos_chain: &JsValue) -> Result<js_sys::Boolean, JsValue> {
+    pub fn make_move_for_front(&mut self, pos_chain: &JsValue) -> Result<js_sys::Boolean, JsValue> {
         let mut pos_list: Vec<BoardPos> = Vec::new();
         let iterator = js_sys::try_iter(pos_chain)?.ok_or_else(|| {
             "need to pass iterable JS values!"
@@ -98,7 +98,7 @@ impl Game {
         }
         if !pos_list.is_empty() {
             if let Some(piece) = &self.current_position.cells[pos_list[0] as usize] {
-                let move_list = self.get_move_list_inner(piece.color);
+                let move_list = self.get_move_list(piece.color, true);
                 for move_item in move_list.list {
                     let mut i = 1;
                     let mut ok = true;

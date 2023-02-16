@@ -87,7 +87,7 @@ export class GameProcess {
         let color = GameProcess.color((this.game.position as Position).cells[this.game.to_pack(pos)]?.color)
         if (!this.moveList) {
             if (!color) return {confirmed: undefined}
-            this.moveList = <MoveList>this.game.get_move_list(color!)
+            this.moveList = <MoveList>this.game.get_move_list_for_front(color!)
         }
         let moveItems = getMoveChainElements(this.moveList, this.strikeChainInd)
         if (!moveItems.length) {
@@ -146,7 +146,7 @@ export class GameProcess {
             }
         }
         if (variants.done) {
-            this.game.make_move(this.moveChainPack.map(x => this.game.to_pack(x)))
+            if (this.game.make_move_for_front(this.moveChainPack.map(x => this.game.to_pack(x)))) this.invertMoveColor()
             this.moveChainPack = []
         }
 

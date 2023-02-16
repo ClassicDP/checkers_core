@@ -179,7 +179,7 @@ impl Position {
         pos: BoardPos,
         move_list: &mut MoveList,
         ban_directions: &Vec<i8>,
-        front_list: bool
+        for_front: bool
     ) -> bool {
         let mut success_call = false;
         let vectors: Vec<_> = self.get_vectors(pos, ban_directions);
@@ -196,12 +196,12 @@ impl Position {
                     self.make_strike_or_move(&mut strike_move);
                     move_list.current_chain.vec.push(strike_move.clone());
                     if strike_move.king_move { move_list.current_chain.king_move = true; }
-                    if self.get_strike_list(pos, move_list, &ban_directions, front_list) {
+                    if self.get_strike_list(pos, move_list, &ban_directions, for_front) {
                         recurrent_chain = true;
                     }
                     move_list.current_chain.vec.pop();
                     self.unmake_strike_or_move(&strike_move);
-                    if !front_list && ban_directions.len() < 2 {
+                    if !for_front && ban_directions.len() < 2 {
                         ban_directions.push(v.direction);
                     }
                 }
