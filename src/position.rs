@@ -340,7 +340,10 @@ mod tests {
         let mut g1 = Game::new(8);
         let mut g2 = Game::new(8);
         g1.insert_piece(Piece::new(0, Color::White, true));
-        g1.insert_piece(Piece::new(0, Color::White, true));
-        assert_eq!(g1.current_position, g2.current_position)
+        g2.insert_piece(Piece::new(0, Color::White, true));
+        assert_eq!(g1.current_position, g2.current_position);
+        g1.insert_piece(Piece::new(1, Color::White, true));
+        g2.insert_piece(Piece::new(1, Color::Black, true));
+        assert_ne!(g1.current_position, g2.current_position)
     }
 }
