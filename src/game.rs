@@ -6,13 +6,13 @@ use crate::log;
 use crate::moves::BoardPos;
 use crate::moves_list::{MoveList};
 use crate::piece::Piece;
-use crate::position::{Position};
+use crate::position::{Position, PositionHistoryItem};
 use crate::position_environment::PositionEnvironment;
 
 
 #[wasm_bindgen]
 pub struct Game {
-    position_history: std::vec::Vec<Position>,
+    position_history: std::vec::Vec<PositionHistoryItem>,
     position_environment: Rc<PositionEnvironment>,
     current_position: Position,
 }
@@ -53,12 +53,11 @@ impl Game {
 
     #[wasm_bindgen]
     pub fn get_move_list_for_front(&mut self, color: Color) -> JsValue {
-        let move_list =  self.get_move_list(color, true);
+        let move_list = self.get_move_list(color, true);
         match serde_wasm_bindgen::to_value(&move_list) {
             Ok(js) => js,
             Err(_err) => JsValue::UNDEFINED,
         }
-
     }
 
     fn get_move_list(&mut self, color: Color, for_front: bool) -> MoveList {
@@ -99,7 +98,7 @@ impl Game {
         if !pos_list.is_empty() {
             if let Some(piece) = &self.current_position.cells[pos_list[0] as usize] {
                 let move_list = self.get_move_list(piece.color, true);
-                for move_item in move_list.list {
+                for mut move_item in move_list.list {
                     let mut i = 1;
                     let mut ok = true;
                     for mov in &move_item {
@@ -114,8 +113,8 @@ impl Game {
                         i += 1;
                     }
                     if ok && pos_list.len() == i {
-                        self.position_history.push(self.current_position.clone());
-                        self.current_position.make_move(&mut move_item.clone());
+                        self.current_position.make_move(&mut move_item);
+                        self.position_history.push(PositionHistoryItem { move_item, position: self.current_position.clone() });
                         return Ok(Boolean::from(JsValue::TRUE));
                     }
                 }
