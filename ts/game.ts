@@ -89,8 +89,9 @@ export class Game {
             if (isStrike) {
                 this.moveList.list = this.moveList.list.filter(x =>
                     x.strike!.vec[this.strikeChainInd]?.to == this.game.to_pack(pos))
-                let done = this.moveList.list.length == 1
                 let confirmed = this.moveList.list[0].strike!.vec[this.strikeChainInd++]
+                let done = this.moveList.list.length == 1 &&
+                    this.moveList.list[0].strike!.vec.length == this.strikeChainInd
                 if (done) {
                     this.moveList = undefined
                     this.strikeChainInd = 0
@@ -114,18 +115,27 @@ export class Game {
         return {confirmed: undefined}
     }
 
-    applyMove(pos: number): MoveVariants {
+    applyFrontClick(pos: number): MoveVariants {
         let variants = this.frontClick(pos)
-        if (variants.confirmed)
+
+        if (variants.confirmed) {
+            variants.confirmed = <MoveChainElement>{
+                from: this.game.to_board(variants.confirmed.from),
+                to: this.game.to_board(variants.confirmed.to),
+                take: !variants.confirmed.take ? false : this.game.to_board(variants.confirmed.take),
+                kingMove: variants.confirmed.kingMove
+            }
             if (!this.moveChainPack.length) {
                 this.moveChainPack.push(variants.confirmed.from, variants.confirmed.to)
             } else {
                 this.moveChainPack.push(variants.confirmed.to)
             }
+        }
         if (variants.done) {
-            this.game.make_move(this.moveChainPack)
+            this.game.make_move(this.moveChainPack.map(x => this.game.to_pack(x)))
             this.moveChainPack = []
         }
+
         return variants
     }
 }

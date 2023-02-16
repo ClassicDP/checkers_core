@@ -83,7 +83,6 @@ impl Game {
     #[wasm_bindgen]
     pub fn make_move(&mut self, pos_chain: &JsValue) -> Result<js_sys::Boolean, JsValue> {
         let mut pos_list: Vec<BoardPos> = Vec::new();
-        let x = js_sys::try_iter(pos_chain);
         let iterator = js_sys::try_iter(pos_chain)?.ok_or_else(|| {
             "need to pass iterable JS values!"
         })?;
