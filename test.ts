@@ -1,6 +1,7 @@
 import {GameProcess} from "./ts/gameProcess";
 import {Color} from "./pkg";
 import {Position} from "./bindings/Position";
+import {GameState} from "./bindings/GameState";
 
 
 describe("Game tests", () => {
@@ -45,4 +46,19 @@ describe("Game tests", () => {
         expect(pos.cells.filter(x=>x!==undefined).length).toEqual(1)
         console.log(pos)
     });
+
+    test("insert and delete pieces", ()=>{
+        let gameProcess = new GameProcess(8);
+        gameProcess.insertPiece(54, Color.White, true)
+        gameProcess.insertPiece(9, Color.Black, true)
+        let state = (gameProcess.game.position as Position).state
+        expect(state.black.king).toEqual(1)
+        expect(state.white.king).toEqual(1)
+        console.log(state)
+        gameProcess.removePiece(54)
+        state = (gameProcess.game.position as Position).state
+        expect(state.black.king).toEqual(1)
+        expect(state.white.king).toEqual(0)
+        console.log((gameProcess.game.position as Position).state)
+    })
 });

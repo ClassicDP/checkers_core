@@ -26,6 +26,7 @@ impl PartialEq for PositionHistoryItem {
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 #[derive(TS)]
+#[ts(export)]
 pub struct PieceCount {
     pub simple: i32,
     pub king: i32,
@@ -33,6 +34,7 @@ pub struct PieceCount {
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 #[derive(TS)]
+#[ts(export)]
 pub struct PosState {
     black: PieceCount,
     white: PieceCount,
@@ -328,12 +330,9 @@ impl Position {
 
 #[cfg(test)]
 mod tests {
-    use std::rc::Rc;
     use crate::color::Color;
     use crate::game::Game;
     use crate::piece::Piece;
-    use crate::position::Position;
-    use crate::position_environment::PositionEnvironment;
 
     #[test]
     fn positions_eq() {
@@ -343,7 +342,12 @@ mod tests {
         g2.insert_piece(Piece::new(0, Color::White, true));
         assert_eq!(g1.current_position, g2.current_position);
         g1.insert_piece(Piece::new(1, Color::White, true));
-        g2.insert_piece(Piece::new(1, Color::Black, true));
-        assert_ne!(g1.current_position, g2.current_position)
+        g2.insert_piece(Piece::new(1, Color::White, true));
+        assert_eq!(g1.current_position, g2.current_position);
+        g1.insert_piece(Piece::new(3, Color::White, true));
+        g2.insert_piece(Piece::new(3, Color::White, false));
+        assert_ne!(g1.current_position, g2.current_position);
+        g1.remove_piece(3);g2.remove_piece(3);
+        assert_eq!(g1.current_position, g2.current_position);
     }
 }

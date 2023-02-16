@@ -42,9 +42,13 @@ export class GameProcess {
         this.game.insert_piece(wasm.Piece.new(this.game.to_pack(pos), color, isKing))
     }
 
+    removePiece(pos: number) {
+        return this.game.remove_piece(this.game.to_pack(pos))
+    }
+
     get position(): Position {
         let pos = this.game.position as Position
-        let newPos: Position = {cells: []}
+        let newPos: Position = {cells: [], state: undefined}
         for (let piece of pos.cells) {
             if (piece) newPos.cells[this.game.to_board(piece.pos)] = <Piece> {
                 pos: this.game.to_board(piece.pos),

@@ -7,7 +7,7 @@ use crate::log;
 use crate::moves::BoardPos;
 use crate::moves_list::{MoveList};
 use crate::piece::Piece;
-use crate::position::{Position, PositionHistoryItem};
+use crate::position::{Position, PositionHistoryItem, PosState};
 use crate::position_environment::PositionEnvironment;
 use ts_rs::*;
 use serde::{Deserialize, Serialize};
@@ -25,7 +25,11 @@ pub enum DrawType {
 }
 
 #[derive(Default)]
-struct GameState {
+#[wasm_bindgen]
+#[derive(TS)]
+#[ts(export)]
+#[derive(Serialize)]
+pub struct GameState {
     kings_start_at: Option<usize>,
     kings_only_move_start_at: Option<usize>,
     triangle_start_at: Option<usize>,
@@ -58,11 +62,24 @@ impl Game {
         self.current_position.inset_piece(piece);
     }
 
+    #[wasm_bindgen]
+    pub fn remove_piece(&mut self, pos: BoardPos) -> bool {
+        self.current_position.remove_piece(pos)
+    }
+
     #[wasm_bindgen(getter)]
     pub fn position(&mut self) -> JsValue {
         match serde_wasm_bindgen::to_value(&self.current_position) {
             Ok(js) => js,
             Err(_err) => JsValue::UNDEFINED,
+        }
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn state(&self) -> JsValue {
+        match  serde_wasm_bindgen::to_value(&self.state){
+            Ok(js) => js,
+            Err(_err) => JsValue::UNDEFINED
         }
     }
 
