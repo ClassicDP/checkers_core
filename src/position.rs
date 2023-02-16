@@ -24,14 +24,14 @@ impl PartialEq for PositionHistoryItem {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 #[derive(TS)]
 pub struct PieceCount {
-    simple: i32,
-    king: i32,
+    pub simple: i32,
+    pub king: i32,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 #[derive(TS)]
 pub struct PosState {
     black: PieceCount,
@@ -52,6 +52,19 @@ pub struct Position {
     pub state: PosState,
     #[serde(skip_serializing)]
     environment: Rc<PositionEnvironment>,
+}
+
+impl PartialEq for Position {
+    fn eq(&self, other: &Self) -> bool {
+        for (i, x) in self.cells.iter().enumerate() {
+            if let Some(s_p) = x {
+                if let Some(o_p) = &other.cells[i] {
+                    if s_p != o_p {return false;}
+                } else { return false; }
+            } else { if other.cells[i].is_some() { return false; } }
+        }
+        true
+    }
 }
 
 
@@ -86,7 +99,7 @@ impl Position {
     }
 
     pub fn remove_piece(&mut self, pos: BoardPos) -> bool {
-        if let Some(piece) = self.cells[pos].clone(){
+        if let Some(piece) = self.cells[pos].clone() {
             self.state_change(&piece, -1);
             self.cells[pos] = None;
             return true;
@@ -200,6 +213,14 @@ impl Position {
         res
     }
 
+    pub fn get_piece_of_move_item(&self, move_item: &MoveItem) -> &Piece {
+        if let Some(x) = &self.cells[move_item.to()] {
+            x
+        } else {
+            panic!("error in get_piece_of_move_item")
+        }
+    }
+
     pub fn get_quiet_move_list(
         &mut self,
         pos: BoardPos,
@@ -271,7 +292,7 @@ impl Position {
                 for pos in take_pos_list {
                     if self.cells[pos].is_some() {
                         let piece = self.cells[pos].clone().unwrap();
-                        self.state_change(&piece,-1);
+                        self.state_change(&piece, -1);
                         strike.took_pieces.push(piece);
                     }
                     self.cells[pos] = None;
@@ -291,7 +312,7 @@ impl Position {
             let to = strike.vec[strike.vec.len() - 1].to;
             for piece in &strike.took_pieces {
                 let pos = piece.pos;
-                self.state_change(&piece,1);
+                self.state_change(&piece, 1);
                 self.cells[pos] = Some(piece.clone());
             }
             let ref mut mov = QuietMove { from, to, king_move: strike.king_move };
@@ -302,5 +323,24 @@ impl Position {
     pub fn make_move_and_get_position(&mut self, move_item: &mut MoveItem) -> PositionHistoryItem {
         self.make_move(move_item);
         PositionHistoryItem { position: self.clone(), move_item: move_item.clone() }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::rc::Rc;
+    use crate::color::Color;
+    use crate::game::Game;
+    use crate::piece::Piece;
+    use crate::position::Position;
+    use crate::position_environment::PositionEnvironment;
+
+    #[test]
+    fn positions_eq() {
+        let mut g1 = Game::new(8);
+        let mut g2 = Game::new(8);
+        g1.insert_piece(Piece::new(0, Color::White, true));
+        g1.insert_piece(Piece::new(0, Color::White, true));
+        assert_eq!(g1.current_position, g2.current_position)
     }
 }

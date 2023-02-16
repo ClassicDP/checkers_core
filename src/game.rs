@@ -1,3 +1,4 @@
+use std::borrow::{Borrow, BorrowMut};
 use std::rc::Rc;
 use js_sys::Boolean;
 use wasm_bindgen::prelude::*;
@@ -8,13 +9,36 @@ use crate::moves_list::{MoveList};
 use crate::piece::Piece;
 use crate::position::{Position, PositionHistoryItem};
 use crate::position_environment::PositionEnvironment;
+use ts_rs::*;
+use serde::{Deserialize, Serialize};
 
+
+#[wasm_bindgen]
+#[derive(TS)]
+#[ts(export)]
+pub enum DrawType {
+    draw1,
+    draw2,
+    draw3,
+    draw4,
+    draw5,
+}
+
+#[derive(Default)]
+struct GameState {
+    kings_start_at: Option<usize>,
+    kings_only_move_start_at: Option<usize>,
+    triangle_start_at: Option<usize>,
+    power_equal_start_at: Option<usize>,
+    main_road_start_at: Option<usize>,
+}
 
 #[wasm_bindgen]
 pub struct Game {
     position_history: std::vec::Vec<PositionHistoryItem>,
+    state: GameState,
     position_environment: Rc<PositionEnvironment>,
-    current_position: Position,
+    pub(crate) current_position: Position,
 }
 
 #[wasm_bindgen]
@@ -24,6 +48,7 @@ impl Game {
         let environment = Rc::new(PositionEnvironment::new(size));
         Game {
             position_history: vec![],
+            state: Default::default(),
             position_environment: environment.clone(),
             current_position: Position::new(environment.clone()),
         }
@@ -40,6 +65,7 @@ impl Game {
             Err(_err) => JsValue::UNDEFINED,
         }
     }
+
 
     #[wasm_bindgen]
     pub fn to_board(&self, pack_index: BoardPos) -> BoardPos {
@@ -78,6 +104,40 @@ impl Game {
         move_list
     }
 
+
+    pub fn draw_check(&mut self) -> Option<DrawType> {
+        let i = (self.position_history.len() - 1);
+        let ref mut pos_it = self.position_history[i];
+        if pos_it.position.state.get_count(Color::White).king > 0 &&
+            pos_it.position.state.get_count(Color::Black).king > 0 {
+            // first position where both set kings
+            if self.state.kings_start_at.is_none() {
+                self.state.kings_start_at = Some(i);
+            }
+            // 1) если в течение 15 ходов игроки делали ходы только дамками, не передвигая
+            // простых шашек и не производя взятия.
+            if pos_it.position.get_piece_of_move_item(&pos_it.move_item).is_king {
+                if self.state.kings_only_move_start_at.is_none() {
+                    self.state.kings_only_move_start_at = Some(i);
+                } else {
+                    if i - self.state.kings_only_move_start_at.unwrap() >= 15 {
+                        return Some(DrawType::draw1);
+                    }
+                }
+            }
+            self.state.kings_only_move_start_at = None;
+
+
+            // 2) если три раза повторяется одна и та же позиция
+            let mut repeats = 0;
+            let mut j = i;
+            let pos = &self.position_history[i].position;
+            while j >= 0 && self.position_history[j].position.state == pos.state {
+                if *pos == self.position_history[j].position { repeats += 1; }
+            }
+        } else { self.state.kings_start_at = None; }
+        None
+    }
 
     #[wasm_bindgen]
     pub fn make_move_for_front(&mut self, pos_chain: &JsValue) -> Result<js_sys::Boolean, JsValue> {
@@ -121,5 +181,16 @@ impl Game {
             }
         }
         Ok(Boolean::from(JsValue::FALSE))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::game::Game;
+
+    #[test]
+    fn game_test() {
+        let game = Game::new(8);
+        assert!(game.state.kings_start_at.is_none());
     }
 }

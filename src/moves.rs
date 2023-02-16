@@ -114,27 +114,35 @@ impl PieceMove for StraightStrike {
     fn is_king(&self) -> bool {
         self.king_move
     }
-
 }
 
 impl ChainPieceMove for Strike {
     fn from(&self) -> BoardPos {
         self.vec[0].from
     }
-
     fn to(&self) -> BoardPos {
         self.vec[self.vec.len() - 1].to
     }
-
     fn set_as_king(&mut self) {
         self.king_move = true;
     }
-
-    fn is_king(&self) -> bool {
+    fn is_king_move(&self) -> bool {
         self.king_move
     }
 }
 
+impl ChainPieceMove for QuietMove {
+    fn from(&self) -> BoardPos { self.from }
+    fn to(&self) -> BoardPos {
+        self.to
+    }
+    fn set_as_king(&mut self) {
+        self.king_move = true;
+    }
+    fn is_king_move(&self) -> bool {
+        self.king_move
+    }
+}
 
 
 pub trait PieceMove: Debug {
@@ -150,5 +158,5 @@ pub trait ChainPieceMove: Debug {
     fn from(&self) -> BoardPos;
     fn to(&self) -> BoardPos;
     fn set_as_king(&mut self);
-    fn is_king(&self) -> bool;
+    fn is_king_move(&self) -> bool;
 }
