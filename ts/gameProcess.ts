@@ -4,6 +4,7 @@ import {Position} from "../bindings/Position";
 import {ColorType} from "../bindings/ColorType";
 import {MoveList} from "../bindings/MoveList";
 import {MoveItem} from "../bindings/MoveItem";
+import {Piece} from "../bindings/Piece";
 
 export type BoardPos = number
 
@@ -16,7 +17,7 @@ type MoveVariants = {
     confirmed: MoveChainElement | undefined, done?: boolean
 }
 
-export class Game {
+export class GameProcess {
     game: wasm.Game
     moveColor: Color
     private strikeChainInd: number = 0
@@ -41,6 +42,19 @@ export class Game {
         this.game.insert_piece(wasm.Piece.new(this.game.to_pack(pos), color, isKing))
     }
 
+    get position(): Position {
+        let pos = this.game.position as Position
+        let newPos: Position = {cells: []}
+        for (let piece of pos.cells) {
+            if (piece) newPos.cells[this.game.to_board(piece.pos)] = <Piece> {
+                pos: this.game.to_board(piece.pos),
+                color: piece.color,
+                is_king: piece.is_king,
+                stricken: piece.stricken
+            }
+        }
+        return newPos
+    }
 
     private frontClick(pos: BoardPos): MoveVariants {
         let getMoveChainElements = (moveList: MoveList | undefined, i: number) => {
@@ -70,7 +84,7 @@ export class Game {
         }
 
 
-        let color = Game.color((this.game.position as Position).cells[this.game.to_pack(pos)]?.color)
+        let color = GameProcess.color((this.game.position as Position).cells[this.game.to_pack(pos)]?.color)
         if (!this.moveList) {
             if (!color) return {confirmed: undefined}
             this.moveList = <MoveList>this.game.get_move_list(color!)
