@@ -186,22 +186,19 @@ impl Game {
             // если участник, имея в окончании партии три дамки, две дамки и простую, дамку и две простые,
             // ""три простые против одинокой дамки"", находящейся на большой дороге,
             // своим 5-м ходом не сможет добиться выигранной позиции;
-            if self.current_position.state.get_count(Color::Black).king == 1 ||
-                self.current_position.state.get_count(Color::White).king == 1 {
+            if (self.current_position.state.get_count(Color::Black).king == 1 ||
+                self.current_position.state.get_count(Color::White).king == 1) &&
+                state.get_total() == 4 {
                 let points = self.position_environment.get_vectors(0)[0].clone();
                 let gen_road_pieces: Vec<_> =
                     points.into_iter().filter(|pos| self.current_position.cells[**pos].is_some()).collect();
-                let ref mut state = self.position_history[i].position.state;
-                if gen_road_pieces.len() == 1 {
-                    if let Some(piece) = &self.current_position.cells[*gen_road_pieces[0]] {
-                        if state.get_total_color(piece.color.inverse()) == 3 {
-                            if self.state.main_road_start_at.is_none() {
-                                self.state.main_road_start_at = Some(i);
-                            }
-                            if i - self.state.main_road_start_at.unwrap() > 5 {
-                                return Some(DrawType::draw5);
-                            }
-                        }
+                if gen_road_pieces.len() == 1 &&
+                    self.current_position.cells[*gen_road_pieces[0]].is_some() {
+                    if self.state.main_road_start_at.is_none() {
+                        self.state.main_road_start_at = Some(i);
+                    }
+                    if i - self.state.main_road_start_at.unwrap() > 5 {
+                        return Some(DrawType::draw5);
                     }
                 } else { self.state.main_road_start_at = None; }
             } else { self.state.main_road_start_at = None; }
