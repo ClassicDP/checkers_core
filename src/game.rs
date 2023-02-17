@@ -68,7 +68,7 @@ impl Game {
     }
 
     #[wasm_bindgen(getter)]
-    pub fn position(&mut self) -> JsValue {
+    pub fn position(&self) -> JsValue {
         match serde_wasm_bindgen::to_value(&self.current_position) {
             Ok(js) => js,
             Err(_err) => JsValue::UNDEFINED,
@@ -77,7 +77,7 @@ impl Game {
 
     #[wasm_bindgen(getter)]
     pub fn state(&self) -> JsValue {
-        match  serde_wasm_bindgen::to_value(&self.state){
+        match serde_wasm_bindgen::to_value(&self.state) {
             Ok(js) => js,
             Err(_err) => JsValue::UNDEFINED
         }
@@ -141,17 +141,70 @@ impl Game {
                         return Some(DrawType::draw1);
                     }
                 }
-            }
-            self.state.kings_only_move_start_at = None;
+            } else { self.state.kings_only_move_start_at = None; }
 
 
             // 2) если три раза повторяется одна и та же позиция
             let mut repeats = 0;
             let mut j = i;
             let pos = &self.position_history[i].position;
-            while j >= 0 && self.position_history[j].position.state == pos.state {
-                if *pos == self.position_history[j].position { repeats += 1; }
+            while self.position_history[j].position.state == pos.state {
+                if *pos == self.position_history[j].position {
+                    repeats += 1;
+                    if repeats == 3 { return Some(DrawType::draw2); }
+                }
+                if j == 0 { break; }
+                j -= 1;
             }
+
+            // 3) если участник, имеющий три дамки (и более) против одной дамки противника,
+            // за 15 ходов не возьмёт дамку противника
+            let state = &mut self.position_history[i].position.state;
+            if (state.get_count(Color::White).king == 1 && state.get_count(Color::Black).king >= 3) ||
+                (state.get_count(Color::Black).king == 1 && state.get_count(Color::White).king >= 3) {
+                if self.state.triangle_start_at.is_none() { self.state.triangle_start_at = Some(i); } else {
+                    if i - self.state.triangle_start_at.unwrap() >= 15 { return Some(DrawType::draw3); }
+                }
+            } else { self.state.triangle_start_at = None; }
+
+            // 4) если в позиции, в которой оба соперника имеют дамки, не изменилось соотношение сил
+            // (то есть не было взятия, и ни одна простая шашка не стала дамкой) на протяжении:
+            // в 2- и 3-фигурных окончаниях — 5 ходов,
+            // в 4- и 5-фигурных окончаниях — 30 ходов,
+            // в 6- и 7-фигурных окончаниях — 60 ходов;
+            if i > 0 {
+                let ref state = self.position_history[i].position.state;
+                let ref prev_state = self.position_history[i - 1].position.state;
+                if *state == *prev_state {
+                    if self.state.power_equal_start_at.is_none() { self.state.power_equal_start_at = Some(i); }
+                    let total = state.get_total();
+                    let n = i - self.state.power_equal_start_at.unwrap();
+                    if total < 4 && n >= 5 { return Some(DrawType::draw4); }
+                    if total < 6 && n >= 30 { return Some(DrawType::draw4); }
+                    if total < 8 && n >= 60 { return Some(DrawType::draw4); }
+                } else { self.state.power_equal_start_at = None; }
+            }
+
+            // если участник, имея в окончании партии три дамки, две дамки и простую, дамку и две простые,
+            // ""три простые против одинокой дамки"", находящейся на большой дороге,
+            // своим 5-м ходом не сможет добиться выигранной позиции;
+            let points = self.position_environment.get_vectors(0)[0].clone();
+            let gen_road_pieces: Vec<_> =
+                points.into_iter().filter(|pos| self.current_position.cells[**pos].is_some()).collect();
+            let ref mut state = self.position_history[i].position.state;
+            if gen_road_pieces.len() == 1 {
+                if let Some(piece) = &self.current_position.cells[*gen_road_pieces[0]] {
+                    if state.get_total_color(piece.color.inverse()) < 4 {
+                        if self.state.main_road_start_at.is_none() {
+                            self.state.main_road_start_at = Some(i);
+                        }
+                        if i - self.state.main_road_start_at.unwrap() == 5 {
+                            return Some(DrawType::draw5);
+                        }
+                    }
+                }
+            }
+            self.state.main_road_start_at = None;
         } else { self.state.kings_start_at = None; }
         None
     }

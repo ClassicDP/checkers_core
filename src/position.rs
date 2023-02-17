@@ -40,9 +40,17 @@ pub struct PosState {
     white: PieceCount,
 }
 
+
 impl PosState {
     pub fn get_count(&mut self, color: Color) -> &mut PieceCount {
         if color == Color::Black { &mut self.black } else { &mut self.white }
+    }
+    pub fn get_total(&self) -> i32 {
+        self.black.king + self.black.simple + self.white.king + self.white.simple
+    }
+    pub fn get_total_color(&mut self, color: Color) -> i32 {
+        let cnt = self.get_count(color);
+        cnt.king + cnt.simple
     }
 }
 
@@ -61,7 +69,7 @@ impl PartialEq for Position {
         for (i, x) in self.cells.iter().enumerate() {
             if let Some(s_p) = x {
                 if let Some(o_p) = &other.cells[i] {
-                    if s_p != o_p {return false;}
+                    if s_p != o_p { return false; }
                 } else { return false; }
             } else { if other.cells[i].is_some() { return false; } }
         }
@@ -347,7 +355,8 @@ mod tests {
         g1.insert_piece(Piece::new(3, Color::White, true));
         g2.insert_piece(Piece::new(3, Color::White, false));
         assert_ne!(g1.current_position, g2.current_position);
-        g1.remove_piece(3);g2.remove_piece(3);
+        g1.remove_piece(3);
+        g2.remove_piece(3);
         assert_eq!(g1.current_position, g2.current_position);
     }
 }

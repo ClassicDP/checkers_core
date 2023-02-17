@@ -23,3 +23,9 @@ pub enum Color {
     Black = 0,
     White = 1
 }
+
+impl Color {
+    pub fn inverse(&self) -> Color {
+        if *self == Color::White {Color::Black} else { Color::White }
+    } 
+}

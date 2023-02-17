@@ -18,7 +18,7 @@ describe("Game tests", () => {
         console.log(gameProcess.applyFrontClick(36))
         console.log(gameProcess.applyFrontClick(57))
         let pos = gameProcess.position as Position
-        expect(pos.cells.filter(x=>x!==undefined).length).toEqual(2)
+        expect(pos.cells.filter(x => x !== undefined).length).toEqual(2)
         console.log(pos)
     });
 
@@ -43,11 +43,11 @@ describe("Game tests", () => {
         console.log(gameProcess.applyFrontClick(43))
         console.log(gameProcess.applyFrontClick(57))
         let pos = gameProcess.position as Position
-        expect(pos.cells.filter(x=>x!==undefined).length).toEqual(1)
+        expect(pos.cells.filter(x => x !== undefined).length).toEqual(1)
         console.log(pos)
     });
 
-    test("insert and delete pieces", ()=>{
+    test("insert and delete pieces", () => {
         let gameProcess = new GameProcess(8);
         gameProcess.insertPiece(54, Color.White, true)
         gameProcess.insertPiece(9, Color.Black, true)
@@ -60,5 +60,6 @@ describe("Game tests", () => {
         expect(state.black.king).toEqual(1)
         expect(state.white.king).toEqual(0)
         console.log((gameProcess.game.position as Position).state)
+        console.log(gameProcess.game.state as GameState)
     })
 });
