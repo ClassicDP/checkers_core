@@ -137,7 +137,7 @@ impl Game {
                 if self.state.kings_only_move_start_at.is_none() {
                     self.state.kings_only_move_start_at = Some(i);
                 } else {
-                    if i - self.state.kings_only_move_start_at.unwrap() >= 15 {
+                    if i - self.state.kings_only_move_start_at.unwrap() > 15 {
                         return Some(DrawType::draw1);
                     }
                 }
@@ -179,9 +179,9 @@ impl Game {
                     if self.state.power_equal_start_at.is_none() { self.state.power_equal_start_at = Some(i); }
                     let total = state.get_total();
                     let n = i - self.state.power_equal_start_at.unwrap();
-                    if total < 4 && n >= 5 { return Some(DrawType::draw4); }
-                    if total < 6 && n >= 30 { return Some(DrawType::draw4); }
-                    if total < 8 && n >= 60 { return Some(DrawType::draw4); }
+                    if total < 4 && n > 5 { return Some(DrawType::draw4); }
+                    if total < 6 && n > 30 { return Some(DrawType::draw4); }
+                    if total < 8 && n > 60 { return Some(DrawType::draw4); }
                 } else { self.state.power_equal_start_at = None; }
             }
 
@@ -198,7 +198,7 @@ impl Game {
                         if self.state.main_road_start_at.is_none() {
                             self.state.main_road_start_at = Some(i);
                         }
-                        if i - self.state.main_road_start_at.unwrap() == 5 {
+                        if i - self.state.main_road_start_at.unwrap() > 5 {
                             return Some(DrawType::draw5);
                         }
                     }
