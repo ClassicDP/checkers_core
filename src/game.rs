@@ -186,8 +186,9 @@ impl Game {
             // если участник, имея в окончании партии три дамки, две дамки и простую, дамку и две простые,
             // ""три простые против одинокой дамки"", находящейся на большой дороге,
             // своим 5-м ходом не сможет добиться выигранной позиции;
-            if (self.current_position.state.get_count(Color::Black).king == 1 ||
-                self.current_position.state.get_count(Color::White).king == 1) &&
+            let ref mut state = self.position_history[i].position.state;
+            if (state.get_count(Color::Black).king == 1 ||
+                state.get_count(Color::White).king == 1) &&
                 state.get_total() == 4 {
                 let points = self.position_environment.get_vectors(0)[0].clone();
                 let gen_road_pieces: Vec<_> =
