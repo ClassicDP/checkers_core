@@ -203,8 +203,8 @@ impl Game {
                         }
                     }
                 }
-            }
-            self.state.main_road_start_at = None;
+            } else { self.state.main_road_start_at = None; }
+
         } else { self.state.kings_start_at = None; }
         None
     }
