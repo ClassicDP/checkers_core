@@ -5,6 +5,8 @@ import {GameState} from "./bindings/GameState";
 import {MoveList} from "./bindings/MoveList";
 
 
+
+// https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=id.1f5pzrhvjswx
 describe("Game tests", () => {
     test("applyFrontClick", () => {
         let gameProcess = new GameProcess(8, Color.White);
@@ -64,6 +66,7 @@ describe("Game tests", () => {
         console.log(gameProcess.game.state as GameState)
     })
 
+    // https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=id.oehnm5eas6gm
     test("move variants", ()=> {
         let gameProcess = new GameProcess(8);
         gameProcess.insertPiece(0, Color.White, true);
@@ -71,6 +74,5 @@ describe("Game tests", () => {
         let list = gameProcess.game.get_move_list_for_front(Color.White) as MoveList;
         console.log(list.list.map(x=>x.strike.vec))
         expect(list.list.length).toEqual(42)
-
     })
 });
