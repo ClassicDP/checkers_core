@@ -105,7 +105,8 @@ impl Game {
         let ps = &self.current_position;
         let pieces_pos: std::vec::Vec<_> = ps.cells.iter()
             .filter(|piece| if let Some(piece) = piece { piece.color == color } else { false })
-            .map(|piece| if let Some(piece) = piece { piece.pos } else { panic!("Position problem in get_move_list"); })
+            .map(|piece| if let Some(piece) =
+                piece { piece.pos } else { panic!("Position problem in get_move_list"); })
             .collect();
         let mut move_list = MoveList::new();
         for pos in &pieces_pos {
@@ -254,11 +255,26 @@ impl Game {
 
 #[cfg(test)]
 mod tests {
+    use crate::color::Color;
     use crate::game::Game;
+    use crate::piece::Piece;
 
     #[test]
     fn game_test() {
         let game = Game::new(8);
         assert!(game.state.kings_start_at.is_none());
+    }
+
+    #[test]
+    fn game_quite_move() {
+        let mut game = Game::new(8);
+        game.insert_piece(Piece::new(13, Color::White, true));
+        vec![2, 27, 24].iter().for_each(|pos|game.insert_piece(Piece::new(*pos, Color::White, false)));
+        let list = game.get_move_list(Color::White, true);
+        print!("\ngame_quite_move {:?} \n", {
+            let z: Vec<_> = list.list.iter().map(|x|x.mov.clone().unwrap()).collect();
+            z
+        });
+        assert_eq!(list.list.len(), 15);
     }
 }

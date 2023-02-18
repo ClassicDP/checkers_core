@@ -5,7 +5,6 @@ import {GameState} from "./bindings/GameState";
 import {MoveList} from "./bindings/MoveList";
 
 
-
 // https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=id.1f5pzrhvjswx
 describe("Game tests", () => {
     test("applyFrontClick", () => {
@@ -67,12 +66,22 @@ describe("Game tests", () => {
     })
 
     // https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=id.oehnm5eas6gm
-    test("move variants", ()=> {
+    test("move variants Strike", () => {
         let gameProcess = new GameProcess(8);
         gameProcess.insertPiece(0, Color.White, true);
-        [9,11, 13, 25, 27, 29, 41, 43, 45].forEach(i=> gameProcess.insertPiece(i, Color.Black, false))
+        [9, 11, 13, 25, 27, 29, 41, 43, 45].forEach(i => gameProcess.insertPiece(i, Color.Black, false))
         let list = gameProcess.game.get_move_list_for_front(Color.White) as MoveList;
-        console.log(list.list.map(x=>x.strike.vec))
+        console.log(list.list.map(x => x.strike.vec))
         expect(list.list.length).toEqual(42)
+    })
+
+    test("move variants Quite move", () => {
+        let gameProcess = new GameProcess(8)
+        gameProcess.insertPiece(27, Color.White, true);
+        [4, 48, 54].forEach(i => gameProcess.insertPiece(i, Color.White, false))
+        console.log(gameProcess.game.position)
+        let list = gameProcess.game.get_move_list_for_front(Color.White) as MoveList;
+        console.log(list.list.map(x => x.mov))
+        expect(list.list.length).toEqual(15)
     })
 });

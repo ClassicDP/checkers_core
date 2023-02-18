@@ -85,7 +85,7 @@ pub struct Position {
 
 impl PartialEq for Position {
     fn eq(&self, other: &Self) -> bool {
-        self.cells.iter().enumerate().all(|(i, x)|Some(&other.cells[i])==Some(&x))
+        self.cells.iter().enumerate().all(|(i, x)| Some(&other.cells[i]) == Some(&x))
     }
 }
 
@@ -220,22 +220,19 @@ impl Position {
         None
     }
 
-    fn get_vectors(&self, pos: BoardPos, ban_directions: &Vec<i8>) -> Vec<Rc<Vector<BoardPos>>> {
-        let d2_4 = match &self.cells[pos] {
-            Some(piece) => {
-                if !piece.is_king {
-                    if piece.color == Color::White {
-                        vec![0, 1]
-                    } else {
-                        vec![2, 3]
-                    }
+    fn get_vectors(&self, piece: &Piece, ban_directions: &Vec<i8>) -> Vec<Rc<Vector<BoardPos>>> {
+        let d2_4 = {
+            if !piece.is_king {
+                if piece.color == Color::White {
+                    vec![0, 1]
                 } else {
-                    vec![0, 1, 2, 3]
+                    vec![2, 3]
                 }
+            } else {
+                vec![0, 1, 2, 3]
             }
-            None => vec![0, 1, 2, 3]
         };
-        let vectors = self.environment.get_vectors(pos);
+        let vectors = self.environment.get_vectors(piece.pos);
         let mut res = Vec::new();
         for v in vectors {
             if d2_4.contains(&v.direction) && !ban_directions.contains(&v.direction) { res.push(v.clone()); }
@@ -256,22 +253,27 @@ impl Position {
         pos: BoardPos,
         move_list: &mut MoveList,
     ) -> bool {
-        let vectors: Vec<_> = self.get_vectors(pos, &vec![]);
-        for vector in vectors {
-            for point in &(vector.points)[1..] {
-                if self.cells[*point].is_some() { break; }
-                move_list.list.push(
-                    MoveItem { mov: Some(QuietMove { from: pos, to: *point, king_move: false }), strike: None })
+        if let Some(piece) = &self.cells[pos] {
+            let vectors: Vec<_> = self.get_vectors(piece, &vec![]);
+            for vector in vectors {
+                for point in {
+                    if piece.is_king {&(vector.points)[1..]} else { &(vector.points)[1..2] }
+                } {
+                    if self.cells[*point].is_some() { break; }
+                    move_list.list.push(
+                        MoveItem { mov: Some(QuietMove { from: pos, to: *point, king_move: false }), strike: None })
+                }
             }
+            return move_list.list.len() > 0
         }
-        move_list.list.len() > 0
+        false
     }
 
     pub fn evaluate(&self) -> i32 {
         let mut eval: i32 = 0;
         for cell in &self.cells {
             if let Some(ref piece) = cell {
-                let v = self.get_vectors(piece.pos, &vec![]);
+                let v = self.get_vectors(piece, &vec![]);
                 let s: i32 = if piece.color == Color::White { 1 } else { -1 };
                 v.iter().for_each(|v|
                     for point in &(v.points)[1..] {
@@ -291,37 +293,39 @@ impl Position {
         for_front: bool,
     ) -> bool {
         let mut success_call = false;
-        let vectors: Vec<_> = self.get_vectors(pos, ban_directions);
-        for v in vectors {
-            let points = &v.points;
-            let strike = self.straight_strike(points);
-            if let Some(straight_strike) = strike {
-                success_call = true;
-                let mut ban_directions = vec![v.get_ban_direction()];
-                let mut recurrent_chain = false;
-                let mut strike_move = straight_strike.clone();
-                for pos in &straight_strike {
-                    strike_move.to = pos;
-                    self.make_strike_or_move(&mut strike_move);
-                    move_list.current_chain.vec.push(strike_move.clone());
-                    if strike_move.king_move { move_list.current_chain.king_move = true; }
-                    if self.get_strike_list(pos, move_list, &ban_directions, for_front) {
-                        recurrent_chain = true;
-                    }
-                    move_list.current_chain.vec.pop();
-                    self.unmake_strike_or_move(&strike_move);
-                    if !for_front && ban_directions.len() < 2 {
-                        ban_directions.push(v.direction);
-                    }
-                }
-                if !recurrent_chain {
+        if let Some(piece) = &self.cells[pos] {
+            let vectors: Vec<_> = self.get_vectors(piece, ban_directions);
+            for v in vectors {
+                let points = &v.points;
+                let strike = self.straight_strike(points);
+                if let Some(straight_strike) = strike {
+                    success_call = true;
+                    let mut ban_directions = vec![v.get_ban_direction()];
+                    let mut recurrent_chain = false;
+                    let mut strike_move = straight_strike.clone();
                     for pos in &straight_strike {
-                        let mut strike_move = straight_strike.clone();
                         strike_move.to = pos;
-                        let mut chain = move_list.current_chain.clone();
-                        if strike_move.king_move { chain.king_move = true; }
-                        chain.vec.push(strike_move);
-                        move_list.list.push(MoveItem { strike: Some(chain), mov: None });
+                        self.make_strike_or_move(&mut strike_move);
+                        move_list.current_chain.vec.push(strike_move.clone());
+                        if strike_move.king_move { move_list.current_chain.king_move = true; }
+                        if self.get_strike_list(pos, move_list, &ban_directions, for_front) {
+                            recurrent_chain = true;
+                        }
+                        move_list.current_chain.vec.pop();
+                        self.unmake_strike_or_move(&strike_move);
+                        if !for_front && ban_directions.len() < 2 {
+                            ban_directions.push(v.direction);
+                        }
+                    }
+                    if !recurrent_chain {
+                        for pos in &straight_strike {
+                            let mut strike_move = straight_strike.clone();
+                            strike_move.to = pos;
+                            let mut chain = move_list.current_chain.clone();
+                            if strike_move.king_move { chain.king_move = true; }
+                            chain.vec.push(strike_move);
+                            move_list.list.push(MoveItem { strike: Some(chain), mov: None });
+                        }
                     }
                 }
             }

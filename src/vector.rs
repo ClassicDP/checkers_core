@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use ts_rs::TS;
 
-#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[derive(Debug, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct Vector<T> {
     pub(crate) points: Rc<Vec<T>>,
@@ -92,8 +92,7 @@ mod tests {
     #[test]
     fn vector() {
         let v = Vector::new(0, vec![0, 1, 2, 3, 4, 5]);
-        let v1 = v.clone();
-        for (i, p) in v1.into_iter().enumerate() {
+        for (i, p) in v.into_iter().enumerate() {
             print!(" {}, {} ", p, i);
             assert!(eq(p, &v.points[i]));
         }
