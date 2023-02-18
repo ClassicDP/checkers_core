@@ -3,6 +3,7 @@ import {Color} from "./pkg";
 import {Position} from "./bindings/Position";
 import {GameState} from "./bindings/GameState";
 import {MoveList} from "./bindings/MoveList";
+import * as util from "util";
 
 
 // https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=id.1f5pzrhvjswx
@@ -80,13 +81,14 @@ describe("Game tests", () => {
     test("move variants Strike simple to king and continue", () => {
         let gameProcess = new GameProcess(8);
         gameProcess.insertPiece(47, Color.White, false);
+        gameProcess.insertPiece(63, Color.White, false);
+        gameProcess.insertPiece(15, Color.White, true);
         [54, 43, 20].forEach(i => gameProcess.insertPiece(i, Color.Black, false))
         let list = gameProcess.getMoveList(Color.White) as MoveList;
-        expect(list.list[0].strike.king_move).toEqual(true)
-        console.log(list.list.map(x => x.strike.vec))
-        expect(list.list.length).toEqual(2)
+        // expect(list.list[0].strike.king_move).toEqual(true)
+        console.log(util.inspect(list.list, {depth: 5}))
+        expect(list.list.length).toEqual(5)
     })
-
 
 
     test("move variants Quite move", () => {

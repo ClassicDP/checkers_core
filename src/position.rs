@@ -217,16 +217,12 @@ impl Position {
         None
     }
 
-    fn get_vectors(&self, piece: &Piece, ban_directions: &Vec<i8>) -> Vec<Rc<Vector<BoardPos>>> {
+    fn get_vectors(&self, piece: &Piece, ban_directions: &Vec<i8>, for_strike: bool) -> Vec<Rc<Vector<BoardPos>>> {
         let d2_4 = {
-            if !piece.is_king {
-                if piece.color == Color::White {
-                    vec![0, 1]
-                } else {
-                    vec![2, 3]
-                }
+            if piece.is_king || for_strike { vec![0, 1, 2, 3] } else if piece.color == Color::White {
+                vec![0, 1]
             } else {
-                vec![0, 1, 2, 3]
+                vec![2, 3]
             }
         };
         let vectors = self.environment.get_vectors(piece.pos);
@@ -251,7 +247,7 @@ impl Position {
         move_list: &mut MoveList,
     ) -> bool {
         if let Some(piece) = &self.cells[pos] {
-            let vectors: Vec<_> = self.get_vectors(piece, &vec![]);
+            let vectors: Vec<_> = self.get_vectors(piece, &vec![], false);
             for vector in vectors {
                 for point in {
                     if piece.is_king { &(vector.points)[1..] } else { &(vector.points)[1..2] }
@@ -277,7 +273,7 @@ impl Position {
         let mut eval: i32 = 0;
         for cell in &self.cells {
             if let Some(ref piece) = cell {
-                let v = self.get_vectors(piece, &vec![]);
+                let v = self.get_vectors(piece, &vec![], false);
                 let s: i32 = if piece.color == Color::White { 1 } else { -1 };
                 v.iter().for_each(|v|
                     for point in &(v.points)[1..] {
@@ -298,7 +294,7 @@ impl Position {
     ) -> bool {
         let mut success_call = false;
         if let Some(piece) = &self.cells[pos] {
-            let vectors: Vec<_> = self.get_vectors(piece, ban_directions);
+            let vectors: Vec<_> = self.get_vectors(piece, ban_directions, true);
             for v in vectors {
                 let points = &v.points;
                 let strike = self.straight_strike(points);
@@ -316,6 +312,7 @@ impl Position {
                             recurrent_chain = true;
                         }
                         move_list.current_chain.vec.pop();
+                        if strike_move.king_move { move_list.current_chain.king_move = false; }
                         self.unmake_strike_or_move(&strike_move);
                         if !for_front && ban_directions.len() < 2 {
                             ban_directions.push(v.direction);

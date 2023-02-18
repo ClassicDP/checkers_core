@@ -277,4 +277,20 @@ mod tests {
         });
         assert_eq!(list.list.len(), 15);
     }
+    #[test]
+    fn game_strike_list() {
+        let mut game = Game::new(8);
+        game.insert_piece(Piece::new(game.to_pack(47), Color::White, false));
+        game.insert_piece(Piece::new(game.to_pack(63), Color::White, false));
+        game.insert_piece(Piece::new(game.to_pack(15), Color::White, true));
+        vec![54, 43, 20].iter()
+            .for_each(|pos|
+                game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, false)));
+        let list = game.get_move_list(Color::White, true);
+        print!("\ngame_quite_move {:?} \n", {
+            let z: Vec<_> = list.list.iter().map(|x|x.strike.clone().unwrap()).collect();
+            z
+        });
+        assert_eq!(list.list.len(), 5);
+    }
 }

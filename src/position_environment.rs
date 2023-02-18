@@ -34,6 +34,8 @@ impl Grade {
 #[ts(export)]
 pub struct PositionEnvironment {
     pub size: i8,
+    king_row_black: usize,
+    king_row_white: usize,
     vectors_map: Vec<Vec<Rc<Vector<BoardPos>>>>,
     pub(crate) board_to_pack: Vec<BoardPos>,
     pub(crate) pack_to_board: Vec<BoardPos>,
@@ -109,6 +111,8 @@ impl PositionEnvironment {
             cell_grade,
             vectors_map,
             size,
+            king_row_black: size as usize / 2,
+            king_row_white: (size2 - size as usize) / 2 - 1,
         }
     }
 
@@ -121,12 +125,11 @@ impl PositionEnvironment {
     }
 
     pub fn is_king_move_for(&self, piece: &Piece, pos: BoardPos) -> bool {
-        if piece.is_king {return false}
-        let size = (self.size / 2) as usize;
+        if piece.is_king { return false; }
         if piece.color == Color::White {
-            pos > size * (size - 1)
+            pos > self.king_row_white
         } else {
-            pos < size
+            pos < self.king_row_black
         }
     }
 
