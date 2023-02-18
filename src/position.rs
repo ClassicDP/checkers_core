@@ -258,7 +258,14 @@ impl Position {
                 } {
                     if self.cells[*point].is_some() { break; }
                     move_list.list.push(
-                        MoveItem { mov: Some(QuietMove { from: pos, to: *point, king_move: false }), strike: None })
+                        MoveItem {
+                            mov: Some(QuietMove {
+                                from: pos,
+                                to: *point,
+                                king_move: self.environment.is_king_move_for(piece, *point),
+                            }),
+                            strike: None,
+                        })
                 }
             }
             return move_list.list.len() > 0;
@@ -345,7 +352,7 @@ impl Position {
                     self.cells[pos] = None;
                 };
                 let n = strike.vec.len() - 1;
-                let ref mut mov = QuietMove { from: strike.vec[0].from, to: strike.vec[n].to, king_move: false };
+                let ref mut mov = QuietMove { from: strike.vec[0].from, to: strike.vec[n].to, king_move: strike.king_move };
                 self.make_strike_or_move(mov);
             }
         }

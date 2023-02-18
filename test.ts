@@ -77,6 +77,18 @@ describe("Game tests", () => {
         expect(list.list.length).toEqual(42)
     })
 
+    test("move variants Strike simple to king and continue", () => {
+        let gameProcess = new GameProcess(8);
+        gameProcess.insertPiece(47, Color.White, false);
+        [54, 43, 20].forEach(i => gameProcess.insertPiece(i, Color.Black, false))
+        let list = gameProcess.getMoveList(Color.White) as MoveList;
+        expect(list.list[0].strike.king_move).toEqual(true)
+        console.log(list.list.map(x => x.strike.vec))
+        expect(list.list.length).toEqual(2)
+    })
+
+
+
     test("move variants Quite move", () => {
         let gameProcess = new GameProcess(8)
         gameProcess.insertPiece(27, Color.White, true);
