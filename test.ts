@@ -1,4 +1,4 @@
-import {GameProcess} from "./ts/gameProcess";
+import {GameProcess, MoveVariants} from "./ts/gameProcess";
 import {Color} from "./pkg";
 import {Position} from "./bindings/Position";
 import {GameState} from "./bindings/GameState";
@@ -36,7 +36,9 @@ describe("Game tests", () => {
         gameProcess.insertPiece(50, Color.Black, false)
 
         console.log(gameProcess.position)
-        console.log(gameProcess.applyFrontClick(47))
+        let move: MoveVariants
+        console.log(move = gameProcess.applyFrontClick(47))
+        expect(move.list[0].kingMove).toEqual(true)
         console.log(gameProcess.applyFrontClick(61))
         console.log(gameProcess.applyFrontClick(43))
         console.log(gameProcess.applyFrontClick(22))

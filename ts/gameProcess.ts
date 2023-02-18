@@ -12,7 +12,7 @@ type MoveChainElement = {
     from: BoardPos, to: BoardPos, take?: BoardPos,
     kingMove?: boolean,
 }
-type MoveVariants = {
+export type MoveVariants = {
     list?: MoveChainElement[]
     confirmed: MoveChainElement | undefined, done?: boolean
 }
