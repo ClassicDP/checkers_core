@@ -85,7 +85,8 @@ describe("Game tests", () => {
         gameProcess.insertPiece(15, Color.White, true);
         [54, 43, 20].forEach(i => gameProcess.insertPiece(i, Color.Black, false))
         let list = gameProcess.getMoveList(Color.White) as MoveList;
-        // expect(list.list[0].strike.king_move).toEqual(true)
+        expect(list.list.filter(x=>x.strike.vec[0].from==47)[0].strike.king_move).toEqual(true)
+        expect(list.list.filter(x=>x.strike.vec[0].from==63)[0].strike.king_move).toEqual(false)
         console.log(util.inspect(list.list, {depth: 5}))
         expect(list.list.length).toEqual(5)
     })
