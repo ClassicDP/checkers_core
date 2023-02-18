@@ -35,7 +35,7 @@ describe("Game tests", () => {
         gameProcess.insertPiece(34, Color.Black, false)
         gameProcess.insertPiece(50, Color.Black, false)
 
-        console.log(gameProcess.game.position)
+        console.log(gameProcess.position)
         console.log(gameProcess.applyFrontClick(47))
         console.log(gameProcess.applyFrontClick(61))
         console.log(gameProcess.applyFrontClick(43))
@@ -53,16 +53,16 @@ describe("Game tests", () => {
         let gameProcess = new GameProcess(8);
         gameProcess.insertPiece(54, Color.White, true)
         gameProcess.insertPiece(9, Color.Black, true)
-        let state = (gameProcess.game.position as Position).state
+        let state = gameProcess.position.state
         expect(state.black.king).toEqual(1)
         expect(state.white.king).toEqual(1)
         console.log(state)
         gameProcess.removePiece(54)
-        state = (gameProcess.game.position as Position).state
+        state = gameProcess.position.state
         expect(state.black.king).toEqual(1)
         expect(state.white.king).toEqual(0)
-        console.log((gameProcess.game.position as Position).state)
-        console.log(gameProcess.game.state as GameState)
+        console.log(gameProcess.position.state)
+        console.log(gameProcess.position.state)
     })
 
     // https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=id.oehnm5eas6gm
@@ -70,7 +70,7 @@ describe("Game tests", () => {
         let gameProcess = new GameProcess(8);
         gameProcess.insertPiece(0, Color.White, true);
         [9, 11, 13, 25, 27, 29, 41, 43, 45].forEach(i => gameProcess.insertPiece(i, Color.Black, false))
-        let list = gameProcess.game.get_move_list_for_front(Color.White) as MoveList;
+        let list = gameProcess.getMoveList(Color.White) as MoveList;
         console.log(list.list.map(x => x.strike.vec))
         expect(list.list.length).toEqual(42)
     })
@@ -79,8 +79,8 @@ describe("Game tests", () => {
         let gameProcess = new GameProcess(8)
         gameProcess.insertPiece(27, Color.White, true);
         [4, 48, 54].forEach(i => gameProcess.insertPiece(i, Color.White, false))
-        console.log(gameProcess.game.position)
-        let list = gameProcess.game.get_move_list_for_front(Color.White) as MoveList;
+        console.log(gameProcess.position)
+        let list = gameProcess.getMoveList(Color.White);
         console.log(list.list.map(x => x.mov))
         expect(list.list.length).toEqual(15)
     })

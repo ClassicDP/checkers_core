@@ -18,7 +18,7 @@ type MoveVariants = {
 }
 
 export class GameProcess {
-    game: wasm.Game
+    private game: wasm.Game
     moveColor: Color
     private strikeChainInd: number = 0
     private moveList?: MoveList
@@ -50,7 +50,7 @@ export class GameProcess {
         let pos = this.game.position as Position
         let newPos: Position = {cells: [], state: undefined}
         for (let piece of pos.cells) {
-            if (piece) newPos.cells[this.game.to_board(piece.pos)] = <Piece> {
+            if (piece) newPos.cells[this.game.to_board(piece.pos)] = <Piece>{
                 pos: this.game.to_board(piece.pos),
                 color: piece.color,
                 is_king: piece.is_king,
@@ -131,6 +131,24 @@ export class GameProcess {
             if (moveItems_.length) return {list: moveItems_, confirmed: undefined}
         }
         return {confirmed: undefined}
+    }
+
+    getMoveList(color: Color) {
+        let list = this.game.get_move_list_for_front(color) as MoveList
+        list.list.map(x => {
+            if (x.mov) x.mov = {
+                from: this.game.to_board(x.mov.from),
+                to: this.game.to_board(x.mov.to),
+                king_move: x.mov.king_move
+            }
+            if (x.strike) x.strike.vec.forEach(x => x = {
+                king_move: x.king_move,
+                from: this.game.to_board(x.from),
+                to: this.game.to_board(x.to),
+                take: this.game.to_board(x.take)
+            })
+        })
+        return list as MoveList
     }
 
     applyFrontClick(pos: number): MoveVariants {
