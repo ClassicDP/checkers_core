@@ -79,15 +79,12 @@ impl PieceMove for QuietMove {
     fn from(&self) -> BoardPos {
         self.from
     }
-
     fn to(&self) -> BoardPos {
         self.to
     }
-
     fn set_as_king(&mut self) {
         self.king_move = true;
     }
-
     fn is_king(&self) -> bool {
         self.king_move
     }
@@ -101,16 +98,12 @@ impl PieceMove for StraightStrike {
     fn from(&self) -> BoardPos {
         self.from
     }
-
     fn to(&self) -> BoardPos {
         self.to
     }
-
-
     fn set_as_king(&mut self) {
         self.king_move = true;
     }
-
     fn is_king(&self) -> bool {
         self.king_move
     }

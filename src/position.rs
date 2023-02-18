@@ -145,12 +145,9 @@ impl Position {
                 piece.stricken = true;
             }
         }
-        if let Some(ref mut piece) = self.cells[mov.to()] {
-            if !piece.is_king {
-                if self.environment.is_king_row(&piece) {
-                    piece.is_king = true;
-                    mov.set_as_king();
-                }
+        if mov.is_king() {
+            if let Some(ref mut piece) = self.cells[mov.to()] {
+                piece.is_king = true;
             }
         }
     }
@@ -207,7 +204,7 @@ impl Position {
                             from: v[0],
                             to: v[i],
                             take: v[i - 1],
-                            king_move: false,
+                            king_move: self.environment.is_king_move_for(piece, v[i]),
                         };
                         return Some(strike);
                     } else {
@@ -257,14 +254,14 @@ impl Position {
             let vectors: Vec<_> = self.get_vectors(piece, &vec![]);
             for vector in vectors {
                 for point in {
-                    if piece.is_king {&(vector.points)[1..]} else { &(vector.points)[1..2] }
+                    if piece.is_king { &(vector.points)[1..] } else { &(vector.points)[1..2] }
                 } {
                     if self.cells[*point].is_some() { break; }
                     move_list.list.push(
                         MoveItem { mov: Some(QuietMove { from: pos, to: *point, king_move: false }), strike: None })
                 }
             }
-            return move_list.list.len() > 0
+            return move_list.list.len() > 0;
         }
         false
     }

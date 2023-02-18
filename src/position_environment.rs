@@ -120,14 +120,17 @@ impl PositionEnvironment {
         JsValue::from_str(&s)
     }
 
-    pub fn is_king_row(&self, piece: &Piece) -> bool {
+    pub fn is_king_move_for(&self, piece: &Piece, pos: BoardPos) -> bool {
+        if piece.is_king {return false}
         let size = (self.size / 2) as usize;
         if piece.color == Color::White {
-            piece.pos > size * (size - 1)
+            pos > size * (size - 1)
         } else {
-            piece.pos < size
+            pos < size
         }
     }
+
+
     #[wasm_bindgen]
     pub fn test() -> JsValue {
         let game = PositionEnvironment::new(8);

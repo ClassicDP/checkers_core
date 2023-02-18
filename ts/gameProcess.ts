@@ -5,6 +5,7 @@ import {ColorType} from "../bindings/ColorType";
 import {MoveList} from "../bindings/MoveList";
 import {MoveItem} from "../bindings/MoveItem";
 import {Piece} from "../bindings/Piece";
+import {StraightStrike} from "../bindings/StraightStrike";
 
 export type BoardPos = number
 
@@ -141,7 +142,7 @@ export class GameProcess {
                 to: this.game.to_board(x.mov.to),
                 king_move: x.mov.king_move
             }
-            if (x.strike) x.strike.vec.forEach(x => x = {
+            if (x.strike) x.strike.vec = x.strike.vec.map(x => <StraightStrike>{
                 king_move: x.king_move,
                 from: this.game.to_board(x.from),
                 to: this.game.to_board(x.to),
