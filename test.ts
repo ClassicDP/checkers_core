@@ -2,6 +2,7 @@ import {GameProcess} from "./ts/gameProcess";
 import {Color} from "./pkg";
 import {Position} from "./bindings/Position";
 import {GameState} from "./bindings/GameState";
+import {MoveList} from "./bindings/MoveList";
 
 
 describe("Game tests", () => {
@@ -61,5 +62,15 @@ describe("Game tests", () => {
         expect(state.white.king).toEqual(0)
         console.log((gameProcess.game.position as Position).state)
         console.log(gameProcess.game.state as GameState)
+    })
+
+    test("move variants", ()=> {
+        let gameProcess = new GameProcess(8);
+        gameProcess.insertPiece(0, Color.White, true);
+        [9,11, 13, 25, 27, 29, 41, 43, 45].forEach(i=> gameProcess.insertPiece(i, Color.Black, false))
+        let list = gameProcess.game.get_move_list_for_front(Color.White) as MoveList;
+        console.log(list.list.map(x=>x.strike.vec))
+        expect(list.list.length).toEqual(42)
+
     })
 });

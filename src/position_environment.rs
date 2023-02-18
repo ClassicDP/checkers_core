@@ -12,6 +12,23 @@ use crate::piece::Piece;
 use ts_rs::TS;
 use crate::vector::Vector;
 
+#[derive(Clone, Deserialize, Serialize, Debug, TS)]
+pub struct Grade {
+    black: i16,
+    white: i16,
+    is_king: i16,
+}
+
+impl Grade {
+    pub fn get(&mut self, piece: &Piece) -> &mut i16 {
+        if piece.is_king { return &mut self.is_king; }
+        return match piece.color {
+            Color::Black => { &mut self.black }
+            Color::White => { &mut self.white }
+        };
+    }
+}
+
 #[wasm_bindgen]
 #[derive(Clone, Deserialize, Serialize, Debug, TS)]
 #[ts(export)]
@@ -20,6 +37,7 @@ pub struct PositionEnvironment {
     vectors_map: Vec<Vec<Rc<Vector<BoardPos>>>>,
     pub(crate) board_to_pack: Vec<BoardPos>,
     pub(crate) pack_to_board: Vec<BoardPos>,
+    pub(crate) cell_grade: Vec<Grade>,
 }
 
 #[wasm_bindgen]
@@ -74,9 +92,21 @@ impl PositionEnvironment {
                 vectors_map.push(d4_v_list);
             }
         }
+        let mut cell_grade: Vec<Grade> = Vec::new();
+        for v in &vectors_map {
+            let mut b = 0;
+            let mut k: i16 = 0;
+            let mut w = 0;
+            for v_d in v {
+                if v_d.direction < 2 { w += 1; } else { b += 1; }
+                k += v_d.points.len() as i16;
+            }
+            cell_grade.push(Grade { white: w, is_king: k, black: b })
+        }
         PositionEnvironment {
             pack_to_board,
             board_to_pack,
+            cell_grade,
             vectors_map,
             size,
         }
@@ -138,7 +168,7 @@ impl PositionEnvironment {
             let mut p0 = pos.make_move_and_get_position(&mut list.list[0]);
             pos.unmake_move(p0.move_item.borrow_mut());
             let p1 = p0.clone();
-            if p0!= p1 {break;}
+            if p0 != p1 { break; }
         };
 
         let mut list = MoveList::new();
@@ -147,7 +177,6 @@ impl PositionEnvironment {
             Ok(js) => js,
             Err(_err) => JsValue::UNDEFINED,
         }
-
 
 
         // for _i  in 0..100000 {
@@ -198,7 +227,6 @@ mod tests {
         }
         return;
         let mut list = MoveList::new();
-
 
 
         pos.get_strike_list(22, &mut list, &vec![], false);

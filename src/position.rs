@@ -1,5 +1,7 @@
 use std::borrow::{Borrow, BorrowMut};
+use std::cmp::Ordering;
 use std::rc::Rc;
+
 
 use serde::{Deserialize, Serialize};
 
@@ -40,6 +42,19 @@ pub struct PosState {
     white: PieceCount,
 }
 
+impl Eq for PosState {}
+
+impl PartialOrd<Self> for PosState {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for PosState {
+    fn cmp(&self, other: &Self) -> Ordering {
+        Ord::cmp(&self.evaluate(), &other.evaluate())
+    }
+}
 
 impl PosState {
     pub fn get_count(&mut self, color: Color) -> &mut PieceCount {
@@ -51,6 +66,10 @@ impl PosState {
     pub fn get_total_color(&mut self, color: Color) -> i32 {
         let cnt = self.get_count(color);
         cnt.king + cnt.simple
+    }
+
+    pub fn evaluate(&self) -> i32 {
+        self.white.simple * 100 + self.white.king * 300 - self.black.simple * 100 - self.black.king * 300
     }
 }
 
@@ -66,14 +85,15 @@ pub struct Position {
 
 impl PartialEq for Position {
     fn eq(&self, other: &Self) -> bool {
-        for (i, x) in self.cells.iter().enumerate() {
-            if let Some(s_p) = x {
-                if let Some(o_p) = &other.cells[i] {
-                    if s_p != o_p { return false; }
-                } else { return false; }
-            } else { if other.cells[i].is_some() { return false; } }
+        self.cells.iter().enumerate().all(|(i, x)|Some(&other.cells[i])==Some(&x))
+    }
+}
+
+impl PartialOrd for Position {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self.state != other.state { PartialOrd::partial_cmp(&self.state, &other.state) } else {
+            PartialOrd::partial_cmp(&self.evaluate(), &other.evaluate())
         }
-        true
     }
 }
 
@@ -239,12 +259,28 @@ impl Position {
         let vectors: Vec<_> = self.get_vectors(pos, &vec![]);
         for vector in vectors {
             for point in &(vector.points)[1..] {
-                if !self.cells[*point].is_none() { break; }
+                if self.cells[*point].is_some() { break; }
                 move_list.list.push(
                     MoveItem { mov: Some(QuietMove { from: pos, to: *point, king_move: false }), strike: None })
             }
         }
         move_list.list.len() > 0
+    }
+
+    pub fn evaluate(&self) -> i32 {
+        let mut eval: i32 = 0;
+        for cell in &self.cells {
+            if let Some(ref piece) = cell {
+                let v = self.get_vectors(piece.pos, &vec![]);
+                let s: i32 = if piece.color == Color::White { 1 } else { -1 };
+                v.iter().for_each(|v|
+                    for point in &(v.points)[1..] {
+                        if self.cells[*point].is_some() { break; }
+                        eval += s;
+                    })
+            }
+        }
+        eval
     }
 
     pub fn get_strike_list(
@@ -354,6 +390,13 @@ mod tests {
         assert_eq!(g1.current_position, g2.current_position);
         g1.insert_piece(Piece::new(3, Color::White, true));
         g2.insert_piece(Piece::new(3, Color::White, false));
+        assert_ne!(g1.current_position, g2.current_position);
+        g1.remove_piece(3);
+        assert_ne!(g1.current_position, g2.current_position);
+        g2.remove_piece(3);
+        assert_eq!(g1.current_position, g2.current_position);
+        g1.insert_piece(Piece::new(3, Color::White, true));
+        g2.insert_piece(Piece::new(1, Color::White, true));
         assert_ne!(g1.current_position, g2.current_position);
         g1.remove_piece(3);
         g2.remove_piece(3);
