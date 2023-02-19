@@ -244,6 +244,7 @@ mod tests {
     use crate::color::Color;
     use crate::game::Game;
     use crate::piece::Piece;
+    use crate::position_environment::PositionEnvironment;
 
     #[test]
     fn game_test() {
@@ -264,7 +265,6 @@ mod tests {
         assert_eq!(list.list.len(), 15);
     }
     #[test]
-    #[wasm_bindgen]
     pub fn game_strike_list() {
         let mut game = Game::new(8);
         game.insert_piece(Piece::new(game.to_pack(47), Color::White, false));
@@ -282,5 +282,10 @@ mod tests {
             z
         });
         assert_eq!(list.list.len(), 5);
+    }
+
+    #[test]
+    fn performance () {
+        PositionEnvironment::game();
     }
 }

@@ -11,7 +11,7 @@ use ts_rs::TS;
 #[ts(export)]
 pub struct Strike {
     pub vec: Vec<StraightStrike>,
-    pub took_pieces: Vec<Piece>,
+    pub took_pieces: Vec<Option<Piece>>,
     pub king_move: bool,
 }
 

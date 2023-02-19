@@ -1,5 +1,6 @@
 use std::borrow::{Borrow, BorrowMut};
 use std::cmp::Ordering;
+use std::mem::swap;
 use std::rc::Rc;
 
 
@@ -338,20 +339,17 @@ impl Position {
         if let Some(ref mut mov) = move_item.mov {
             self.make_strike_or_move(mov);
         } else if let Some(ref mut strike) = move_item.strike {
-            let take_pos_list: Vec<BoardPos> = strike.vec.iter().map(|it| it.take).collect();
-            if self.cells[take_pos_list[0]].is_some() {
-                for pos in take_pos_list {
-                    if self.cells[pos].is_some() {
-                        let piece = self.cells[pos].clone().unwrap();
-                        self.state_change(&piece, -1);
-                        strike.took_pieces.push(piece);
-                    }
-                    self.cells[pos] = None;
-                };
-                let n = strike.vec.len() - 1;
-                let ref mut mov = QuietMove { from: strike.vec[0].from, to: strike.vec[n].to, king_move: strike.king_move };
-                self.make_strike_or_move(mov);
-            }
+            strike.took_pieces.resize(strike.vec.len(), None);
+            for (i, straight_strike) in strike.vec.iter().enumerate() {
+                swap(&mut strike.took_pieces[i], &mut self.cells[straight_strike.take]);
+                self.state_change(strike.took_pieces[i].as_ref().unwrap(), -1);
+            };
+            let ref mut mov = QuietMove {
+                from: strike.vec[0].from,
+                to: strike.vec[strike.vec.len() - 1].to,
+                king_move: strike.king_move,
+            };
+            self.make_strike_or_move(mov);
         }
     }
 
@@ -359,14 +357,15 @@ impl Position {
         if let Some(ref mut mov) = move_item.mov {
             self.unmake_strike_or_move(mov);
         } else if let Some(ref mut strike) = move_item.strike {
-            let from = strike.vec[0].from;
-            let to = strike.vec[strike.vec.len() - 1].to;
-            for piece in &strike.took_pieces {
-                let pos = piece.pos;
-                self.state_change(&piece, 1);
-                self.cells[pos] = Some(piece.clone());
-            }
-            let ref mut mov = QuietMove { from, to, king_move: strike.king_move };
+            for (i, straight_strike) in strike.vec.iter().enumerate() {
+                self.state_change(strike.took_pieces[i].as_ref().unwrap(), 1);
+                swap(&mut strike.took_pieces[i], &mut self.cells[straight_strike.take]);
+            };
+            let ref mut mov = QuietMove {
+                from: strike.vec[0].from,
+                to: strike.vec[strike.vec.len() - 1].to,
+                king_move: strike.king_move,
+            };
             self.unmake_strike_or_move(mov);
         }
     }
@@ -376,7 +375,7 @@ impl Position {
         PositionHistoryItem { position: self.clone(), move_item: move_item.clone() }
     }
 
-    pub fn get_move_list (&mut self, color: Color, for_front: bool) -> MoveList {
+    pub fn get_move_list(&mut self, color: Color, for_front: bool) -> MoveList {
         let pieces_pos: std::vec::Vec<_> = self.cells.iter()
             .filter(|piece| if let Some(piece) = piece { piece.color == color } else { false })
             .map(|piece| if let Some(piece) =

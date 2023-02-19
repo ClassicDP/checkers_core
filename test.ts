@@ -2,7 +2,6 @@ import {GameProcess, MoveVariants} from "./ts/gameProcess";
 import {Color, Game, PositionEnvironment} from "./pkg";
 import {MoveList} from "./bindings/MoveList";
 import * as util from "util";
-import * as timers from "timers";
 
 
 // https://github.com/ClassicDP/checkers_core#front-click-handler-1
