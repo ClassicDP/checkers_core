@@ -1,5 +1,5 @@
 ### Coding piece positions ###
-<img height="300" src="https://raw.githubusercontent.com/ClassicDP/checkers_core/master/img/1.png" width="300"/>
+<img height="300" src="./img/1.png" width="300"/>
 
 ### One of 42 strike variants ###
 <img height="300" src="https://raw.githubusercontent.com/ClassicDP/checkers_core/master/img/2.png" width="300"/>
