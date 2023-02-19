@@ -1,6 +1,6 @@
 [Coding piece positions](link-url)
 
-<img height="300" src="/home/dmitry/checkers_core/img/1.png" width="300"/>
+<img height="300" src="../checkers_core/img/1.png" width="300"/>
 
 [One of 42 strike variants](link-url) 
 
