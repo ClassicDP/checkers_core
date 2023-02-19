@@ -190,7 +190,7 @@ impl Position {
             let mut i: usize = 2;
             while i < search_steps_top {
                 if let Some(candidate) = self.get_piece_by_v(v, i - 1) {
-                    if self.get_piece_by_v(&v, i).is_none() && candidate.color != piece.color
+                    if self.get_piece_by_v(v, i).is_none() && candidate.color != piece.color
                         && !candidate.stricken {
                         let strike = StraightStrike {
                             v: {
@@ -208,9 +208,7 @@ impl Position {
                             king_move: self.environment.is_king_move_for(piece, v[i]),
                         };
                         return Some(strike);
-                    } else {
-                        break;
-                    }
+                    } else { break; }
                 }
                 i += 1;
             }
@@ -386,8 +384,8 @@ impl Position {
             self.get_strike_list(*pos, &mut move_list, &vec![], for_front);
         }
         if move_list.list.is_empty() {
-            for pos in &pieces_pos {
-                self.get_quiet_move_list(*pos, &mut move_list);
+            for pos in pieces_pos {
+                self.get_quiet_move_list(pos, &mut move_list);
             }
         }
         move_list
