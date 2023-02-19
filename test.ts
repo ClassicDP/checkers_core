@@ -5,6 +5,7 @@ import * as util from "util";
 
 
 // https://github.com/ClassicDP/checkers_core#front-click-handler-1
+/// ./readme.md?plain=1#L14
 describe("Game tests", () => {
     test("applyFrontClick", () => {
         let gameProcess = new GameProcess(8, Color.White);

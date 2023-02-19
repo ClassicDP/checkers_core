@@ -1,8 +1,6 @@
 
 ### Coding piece positions ###
 
-![top_render] (./img/1.png)
-
 <img height="300" src="./img/1.png" width="300"/>
 
 ### One of 42 strike variants ###
