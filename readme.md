@@ -1,8 +1,8 @@
-[Coding piece positions](link-url)
+[Coding piece positions](/readme.md)
 
 <img height="300" src="https://raw.githubusercontent.com/ClassicDP/checkers_core/master/img/1.png" width="300"/>
 
-[One of 42 strike variants](link-url) 
+[One of 42 strike variants](/readme.md) 
 
 
 <img height="300" src="https://raw.githubusercontent.com/ClassicDP/checkers_core/master/img/2.png" width="300"/>
