@@ -4,7 +4,7 @@ import {MoveList} from "./bindings/MoveList";
 import * as util from "util";
 
 
-//https://github.com/ClassicDP/checkers_core#coding-piece-positions
+// https://github.com/ClassicDP/checkers_core#front-click-handler-1
 describe("Game tests", () => {
     test("applyFrontClick", () => {
         let gameProcess = new GameProcess(8, Color.White);
@@ -67,7 +67,7 @@ describe("Game tests", () => {
         console.log(gameProcess.position.state)
     })
 
-    // https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=kix.7io5o9chgccw
+    // https://github.com/ClassicDP/checkers_core#one-of-42-strike-variants
     test("move variants Strike", () => {
         let gameProcess = new GameProcess(8);
         gameProcess.insertPiece(0, Color.White, true);
@@ -77,7 +77,7 @@ describe("Game tests", () => {
         expect(list.list.length).toEqual(42)
     })
 
-    //https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=kix.w1ua5m9tnknl
+    // https://github.com/ClassicDP/checkers_core#strike-variants
     test("move variants Strike simple to king and continue", () => {
         let gameProcess = new GameProcess(8);
         gameProcess.insertPiece(47, Color.White, false);
@@ -91,7 +91,7 @@ describe("Game tests", () => {
         expect(list.list.length).toEqual(5)
     })
 
-//https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=kix.a1zk539mlxjl
+// https://github.com/ClassicDP/checkers_core#move-variants
     test("move variants Quite move", () => {
         let gameProcess = new GameProcess(8)
         gameProcess.insertPiece(27, Color.White, true);
