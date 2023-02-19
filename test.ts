@@ -4,7 +4,7 @@ import {MoveList} from "./bindings/MoveList";
 import * as util from "util";
 
 
-// https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=id.1f5pzrhvjswx
+// https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=kix.105m93vvpsxe
 describe("Game tests", () => {
     test("applyFrontClick", () => {
         let gameProcess = new GameProcess(8, Color.White);
@@ -23,7 +23,7 @@ describe("Game tests", () => {
         console.log(pos)
     });
 
-    https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=id.4cr9tn6brp30
+    //https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=kix.qwifttory6nw
     test("king move applyFrontClick", () => {
         let gameProcess = new GameProcess(8, Color.White);
         gameProcess.insertPiece(47, Color.White, false)
@@ -67,7 +67,7 @@ describe("Game tests", () => {
         console.log(gameProcess.position.state)
     })
 
-    // https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=id.oehnm5eas6gm
+    // https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=kix.7io5o9chgccw
     test("move variants Strike", () => {
         let gameProcess = new GameProcess(8);
         gameProcess.insertPiece(0, Color.White, true);
@@ -77,7 +77,7 @@ describe("Game tests", () => {
         expect(list.list.length).toEqual(42)
     })
 
-    //https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=id.5x3noyi96yhd
+    //https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=kix.w1ua5m9tnknl
     test("move variants Strike simple to king and continue", () => {
         let gameProcess = new GameProcess(8);
         gameProcess.insertPiece(47, Color.White, false);
@@ -91,7 +91,7 @@ describe("Game tests", () => {
         expect(list.list.length).toEqual(5)
     })
 
-//https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=id.ii0gckrjghbt
+//https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=kix.a1zk539mlxjl
     test("move variants Quite move", () => {
         let gameProcess = new GameProcess(8)
         gameProcess.insertPiece(27, Color.White, true);
