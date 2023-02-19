@@ -14,3 +14,7 @@
 ### Front click handler ###
 
 <img height="300" src="https://raw.githubusercontent.com/ClassicDP/checkers_core/master/img/5.png" width="300"/>
+
+### Front click handler ###
+
+<img height="300" src="https://raw.githubusercontent.com/ClassicDP/checkers_core/master/img/6.png" width="300"/>

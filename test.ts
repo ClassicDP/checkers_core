@@ -4,7 +4,7 @@ import {MoveList} from "./bindings/MoveList";
 import * as util from "util";
 
 
-//https://github.com/ClassicDP/checkers_core/blob/master/link-url
+//https://github.com/ClassicDP/checkers_core#coding-piece-positions
 describe("Game tests", () => {
     test("applyFrontClick", () => {
         let gameProcess = new GameProcess(8, Color.White);
@@ -23,7 +23,7 @@ describe("Game tests", () => {
         console.log(pos)
     });
 
-    //https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=kix.qwifttory6nw
+    // https://github.com/ClassicDP/checkers_core#front-click-handler
     test("king move applyFrontClick", () => {
         let gameProcess = new GameProcess(8, Color.White);
         gameProcess.insertPiece(47, Color.White, false)
