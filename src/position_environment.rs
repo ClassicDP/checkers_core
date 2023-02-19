@@ -10,6 +10,7 @@ use wasm_bindgen::JsValue;
 use crate::moves_list::MoveList;
 use crate::piece::Piece;
 use ts_rs::TS;
+use crate::game::Game;
 use crate::vector::Vector;
 
 #[derive(Clone, Deserialize, Serialize, Debug, TS)]
@@ -133,6 +134,41 @@ impl PositionEnvironment {
         }
     }
 
+    #[wasm_bindgen]
+    pub fn game() {
+        let mut game = Game::new(8);
+        let ref mut pos = game.current_position;
+        pos.inset_piece(Piece::new(22, Color::White, false));
+        pos.inset_piece(Piece::new(4, Color::Black, true));
+        pos.inset_piece(Piece::new(21, Color::Black, true));
+        pos.inset_piece(Piece::new(20, Color::Black, true));
+        pos.inset_piece(Piece::new(12, Color::Black, true));
+        pos.inset_piece(Piece::new(13, Color::Black, true));
+        pos.inset_piece(Piece::new(26, Color::Black, true));
+
+        for _i in 0..100000 {
+            let mut list = pos.get_move_list(Color::Black, false);
+            let po = pos.make_move_and_get_position(&mut list.list[0]);
+            if po != po { break; }
+            pos.unmake_move(&mut list.list[0]);
+        }
+
+        let mut game = Game::new(8);
+        game.insert_piece(Piece::new(game.to_pack(47), Color::White, false));
+        game.insert_piece(Piece::new(game.to_pack(63), Color::White, false));
+        game.insert_piece(Piece::new(game.to_pack(15), Color::White, true));
+        vec![54, 43, 20].iter()
+            .for_each(|pos|
+                game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, false)));
+
+        for _i in 0..100000 {
+            let mut list = pos.get_move_list(Color::White, false);
+            let po = pos.make_move_and_get_position(&mut list.list[0]);
+            if po != po { break; }
+            pos.unmake_move(&mut list.list[0]);
+        }
+        return;
+    }
 
     #[wasm_bindgen]
     pub fn test() -> JsValue {
@@ -195,64 +231,5 @@ impl PositionEnvironment {
 impl PositionEnvironment {
     pub fn get_vectors(&self, pos: usize) -> &Vec<Rc<Vector<BoardPos>>> {
         &self.vectors_map[pos]
-    }
-}
-
-
-#[cfg(test)]
-mod tests {
-    use crate::position_environment::PositionEnvironment;
-    use crate::position::Position;
-    use crate::moves_list::MoveList;
-    use crate::color::Color;
-    use std::rc::Rc;
-    use std::time::Instant;
-    use crate::piece::Piece;
-
-
-    #[test]
-    fn game() {
-        // Game::test();
-        let game = PositionEnvironment::new(8);
-        assert_eq!(game.board_to_pack.len(), game.pack_to_board.len() * 2);
-        let mut pos = Position::new(Rc::new(game));
-        pos.inset_piece(Piece::new(22, Color::White, false));
-        pos.inset_piece(Piece::new(4, Color::Black, true));
-        pos.inset_piece(Piece::new(21, Color::Black, true));
-        pos.inset_piece(Piece::new(20, Color::Black, true));
-        pos.inset_piece(Piece::new(12, Color::Black, true));
-        pos.inset_piece(Piece::new(13, Color::Black, true));
-        pos.inset_piece(Piece::new(26, Color::Black, true));
-
-        for _i in 0..100000 {
-            let mut list = MoveList::new();
-            pos.get_strike_list(22, &mut list, &vec![], false);
-            let po = pos.make_move_and_get_position(&mut list.list[0]);
-            if po != po { break; }
-            pos.unmake_move(&mut list.list[0]);
-        }
-        return;
-        let mut list = MoveList::new();
-
-
-        pos.get_strike_list(22, &mut list, &vec![], false);
-        print!("\n\n{:?}", list);
-
-        let start = Instant::now();
-        for i in 0..100000 {
-            pos.get_strike_list(22, &mut list, &vec![], false);
-            // pos.make_move(&mut list.list[0]);
-            // pos.unmake_move(&mut list.list[0]);
-        }
-        let duration = start.elapsed();
-        println!("\n\nTime elapsed is: {:?}\n", duration);
-
-        pos.make_move(&mut list.list[0]);
-        print!("\n\n{:?}", pos);
-        pos.unmake_move(&mut list.list[0]);
-        print!("\n\n{:?}", pos);
-        let mut list = MoveList::new();
-        pos.get_quiet_move_list(21, &mut list);
-        print!("\n\n{:?}", list);
     }
 }

@@ -17,7 +17,7 @@ pub type BoardPos = usize;
 #[ts(export)]
 pub struct StraightStrike {
     #[serde(skip_serializing)]
-    pub(crate) v: Rc<Vec<BoardPos>>,
+    pub(crate) v: Vec<BoardPos>,
     pub(crate) from: BoardPos,
     pub(crate) take: BoardPos,
     pub(crate) to: BoardPos,
@@ -31,12 +31,12 @@ impl fmt::Debug for StraightStrike {
     }
 }
 
-pub struct StraightStrikeIter {
-    v: Rc<Vec<BoardPos>>,
+pub struct StraightStrikeIter<'a> {
+    v: &'a Vec<BoardPos>,
     rest: BoardPos,
 }
 
-impl Iterator for StraightStrikeIter {
+impl <'a> Iterator for StraightStrikeIter<'a> {
     type Item = BoardPos;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -49,14 +49,14 @@ impl Iterator for StraightStrikeIter {
     }
 }
 
-impl IntoIterator for &StraightStrike {
+impl <'a> IntoIterator for &'a StraightStrike {
     type Item = BoardPos;
-    type IntoIter = StraightStrikeIter;
+    type IntoIter = StraightStrikeIter<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
         StraightStrikeIter {
             rest: 0,
-            v: self.v.clone(),
+            v: &self.v,
         }
     }
 }

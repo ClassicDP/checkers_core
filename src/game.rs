@@ -102,22 +102,7 @@ impl Game {
     }
 
     fn get_move_list(&mut self, color: Color, for_front: bool) -> MoveList {
-        let ps = &self.current_position;
-        let pieces_pos: std::vec::Vec<_> = ps.cells.iter()
-            .filter(|piece| if let Some(piece) = piece { piece.color == color } else { false })
-            .map(|piece| if let Some(piece) =
-                piece { piece.pos } else { panic!("Position problem in get_move_list"); })
-            .collect();
-        let mut move_list = MoveList::new();
-        for pos in &pieces_pos {
-            self.current_position.get_strike_list(*pos, &mut move_list, &vec![], for_front);
-        }
-        if move_list.list.is_empty() {
-            for pos in &pieces_pos {
-                self.current_position.get_quiet_move_list(*pos, &mut move_list);
-            }
-        }
-        move_list
+        self.current_position.get_move_list(color, for_front)
     }
 
 
@@ -255,6 +240,7 @@ impl Game {
 
 #[cfg(test)]
 mod tests {
+    use wasm_bindgen::prelude::wasm_bindgen;
     use crate::color::Color;
     use crate::game::Game;
     use crate::piece::Piece;
@@ -278,7 +264,8 @@ mod tests {
         assert_eq!(list.list.len(), 15);
     }
     #[test]
-    fn game_strike_list() {
+    #[wasm_bindgen]
+    pub fn game_strike_list() {
         let mut game = Game::new(8);
         game.insert_piece(Piece::new(game.to_pack(47), Color::White, false));
         game.insert_piece(Piece::new(game.to_pack(63), Color::White, false));
@@ -286,6 +273,9 @@ mod tests {
         vec![54, 43, 20].iter()
             .for_each(|pos|
                 game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, false)));
+        for _t in 0..1000000 {
+            let list = game.get_move_list(Color::White, true);
+        }
         let list = game.get_move_list(Color::White, true);
         print!("\ngame_quite_move {:?} \n", {
             let z: Vec<_> = list.list.iter().map(|x|x.strike.clone().unwrap()).collect();

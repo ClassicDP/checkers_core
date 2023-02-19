@@ -199,7 +199,7 @@ impl Position {
                                     ve.push(v[i_next]);
                                     i_next += 1;
                                 }
-                                Rc::new(ve)
+                                ve
                             },
                             from: v[0],
                             to: v[i],
@@ -374,6 +374,24 @@ impl Position {
     pub fn make_move_and_get_position(&mut self, move_item: &mut MoveItem) -> PositionHistoryItem {
         self.make_move(move_item);
         PositionHistoryItem { position: self.clone(), move_item: move_item.clone() }
+    }
+
+    pub fn get_move_list (&mut self, color: Color, for_front: bool) -> MoveList {
+        let pieces_pos: std::vec::Vec<_> = self.cells.iter()
+            .filter(|piece| if let Some(piece) = piece { piece.color == color } else { false })
+            .map(|piece| if let Some(piece) =
+                piece { piece.pos } else { panic!("Position problem in get_move_list"); })
+            .collect();
+        let mut move_list = MoveList::new();
+        for pos in &pieces_pos {
+            self.get_strike_list(*pos, &mut move_list, &vec![], for_front);
+        }
+        if move_list.list.is_empty() {
+            for pos in &pieces_pos {
+                self.get_quiet_move_list(*pos, &mut move_list);
+            }
+        }
+        move_list
     }
 }
 

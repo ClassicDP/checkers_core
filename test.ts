@@ -1,7 +1,8 @@
 import {GameProcess, MoveVariants} from "./ts/gameProcess";
-import {Color} from "./pkg";
+import {Color, Game, PositionEnvironment} from "./pkg";
 import {MoveList} from "./bindings/MoveList";
 import * as util from "util";
+import * as timers from "timers";
 
 
 // https://github.com/ClassicDP/checkers_core#front-click-handler-1
@@ -71,7 +72,9 @@ describe("Game tests", () => {
     test("move variants Strike", () => {
         let gameProcess = new GameProcess(8);
         gameProcess.insertPiece(0, Color.White, true);
-        [9, 11, 13, 25, 27, 29, 41, 43, 45].forEach(i => gameProcess.insertPiece(i, Color.Black, false))
+        [9, 11, 13, 25, 27, 29, 41, 43, 45].forEach(i => gameProcess.insertPiece(i, Color.Black, false));
+        console.time('list')
+        console.timeEnd('list')
         let list = gameProcess.getMoveList(Color.White) as MoveList;
         console.log(list.list.map(x => x.strike.vec))
         expect(list.list.length).toEqual(42)
@@ -100,5 +103,11 @@ describe("Game tests", () => {
         let list = gameProcess.getMoveList(Color.White);
         console.log(list.list.map(x => x.mov))
         expect(list.list.length).toEqual(15)
+    })
+
+    test("performance", () => {
+        console.time("test")
+        PositionEnvironment.game()
+        console.timeEnd("test")
     })
 });
