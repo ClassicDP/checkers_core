@@ -1,7 +1,5 @@
 import {GameProcess, MoveVariants} from "./ts/gameProcess";
 import {Color} from "./pkg";
-import {Position} from "./bindings/Position";
-import {GameState} from "./bindings/GameState";
 import {MoveList} from "./bindings/MoveList";
 import * as util from "util";
 
@@ -20,11 +18,12 @@ describe("Game tests", () => {
         console.log(gameProcess.applyFrontClick(0))
         console.log(gameProcess.applyFrontClick(36))
         console.log(gameProcess.applyFrontClick(57))
-        let pos = gameProcess.position as Position
+        let pos = gameProcess.position
         expect(pos.cells.filter(x => x !== undefined).length).toEqual(2)
         console.log(pos)
     });
 
+    https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=id.4cr9tn6brp30
     test("king move applyFrontClick", () => {
         let gameProcess = new GameProcess(8, Color.White);
         gameProcess.insertPiece(47, Color.White, false)
@@ -47,7 +46,7 @@ describe("Game tests", () => {
         console.log(gameProcess.applyFrontClick(25))
         console.log(gameProcess.applyFrontClick(43))
         console.log(gameProcess.applyFrontClick(57))
-        let pos = gameProcess.position as Position
+        let pos = gameProcess.position
         expect(pos.cells.filter(x => x !== undefined).length).toEqual(1)
         console.log(pos)
     });
@@ -78,6 +77,7 @@ describe("Game tests", () => {
         expect(list.list.length).toEqual(42)
     })
 
+    //https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=id.5x3noyi96yhd
     test("move variants Strike simple to king and continue", () => {
         let gameProcess = new GameProcess(8);
         gameProcess.insertPiece(47, Color.White, false);
@@ -91,7 +91,7 @@ describe("Game tests", () => {
         expect(list.list.length).toEqual(5)
     })
 
-
+//https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=id.ii0gckrjghbt
     test("move variants Quite move", () => {
         let gameProcess = new GameProcess(8)
         gameProcess.insertPiece(27, Color.White, true);
