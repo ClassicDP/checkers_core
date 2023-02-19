@@ -4,7 +4,7 @@ import {MoveList} from "./bindings/MoveList";
 import * as util from "util";
 
 
-// https://docs.google.com/document/d/1xliHnMDi1OAsQqN-aNkdamqCDXfD7RJT01xuvVTa_-o/edit#bookmark=kix.105m93vvpsxe
+
 describe("Game tests", () => {
     test("applyFrontClick", () => {
         let gameProcess = new GameProcess(8, Color.White);
