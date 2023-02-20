@@ -14,6 +14,7 @@ use crate::game::Game;
 use crate::vector::Vector;
 
 #[derive(Clone, Deserialize, Serialize, Debug, TS)]
+#[ts(export)]
 pub struct Grade {
     black: i16,
     white: i16,

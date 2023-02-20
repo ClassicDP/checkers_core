@@ -1,6 +1,6 @@
-import {GameProcess, MoveVariants} from "./ts/gameProcess";
-import {Color, Game, PositionEnvironment} from "./pkg";
-import {MoveList} from "./bindings/MoveList";
+import {GameProcess, MoveVariants} from "./gameProcess";
+import {Color, PositionEnvironment} from "../pkg";
+import {MoveList} from "../bindings/MoveList";
 import * as util from "util";
 
 
@@ -38,7 +38,7 @@ describe("Game tests", () => {
         console.log(gameProcess.position)
         let move: MoveVariants
         console.log(move = gameProcess.applyFrontClick(47))
-        expect(move.list[0].kingMove).toEqual(true)
+        expect(move.list![0].kingMove).toEqual(true)
         console.log(gameProcess.applyFrontClick(61))
         console.log(gameProcess.applyFrontClick(43))
         console.log(gameProcess.applyFrontClick(22))
@@ -75,7 +75,7 @@ describe("Game tests", () => {
         console.time('list')
         console.timeEnd('list')
         let list = gameProcess.getMoveList(Color.White) as MoveList;
-        console.log(list.list.map(x => x.strike.vec))
+        console.log(list.list.map(x => x.strike!.vec))
         expect(list.list.length).toEqual(42)
     })
 
@@ -87,8 +87,8 @@ describe("Game tests", () => {
         gameProcess.insertPiece(15, Color.White, true);
         [54, 43, 20].forEach(i => gameProcess.insertPiece(i, Color.Black, false))
         let list = gameProcess.getMoveList(Color.White) as MoveList;
-        expect(list.list.filter(x=>x.strike.vec[0].from==47)[0].strike.king_move).toEqual(true)
-        expect(list.list.filter(x=>x.strike.vec[0].from==63)[0].strike.king_move).toEqual(false)
+        expect(list.list.filter(x=>x.strike!.vec[0].from==47)[0].strike!.king_move).toEqual(true)
+        expect(list.list.filter(x=>x.strike!.vec[0].from==63)[0].strike!.king_move).toEqual(false)
         console.log(util.inspect(list.list, {depth: 5}))
         expect(list.list.length).toEqual(5)
     })

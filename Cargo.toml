@@ -1,6 +1,6 @@
 [package]
-name = "checkers_core"
-version = "0.1.0"
+name = "checkers_core_ts"
+version = "0.1.1"
 edition = "2021"
 
 
