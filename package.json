@@ -5,7 +5,8 @@
   "types": "./build-js/gameProcess.d.ts",
   "files": ["build-js/**/*", "build-wasm/**/*"],
   "scripts": {
-    "test": "test.ts"
+    "test": "jest",
+    "test:cov": "jest --coverage"
   },
   "repository": {
     "type": "git",
