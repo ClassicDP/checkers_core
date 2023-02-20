@@ -1,11 +1,11 @@
-import * as wasm from "../pkg/checkers_core"
-import {Color} from "../pkg";
-import {Position} from "../bindings/Position";
-import {ColorType} from "../bindings/ColorType";
-import {MoveList} from "../bindings/MoveList";
-import {MoveItem} from "../bindings/MoveItem";
-import {Piece} from "../bindings/Piece";
-import {StraightStrike} from "../bindings/StraightStrike";
+import * as wasm from "../build-wasm/checkers_core"
+import {Color} from "../build-wasm/checkers_core";
+import {Position} from "./bindings/Position";
+import {ColorType} from "./bindings/ColorType";
+import {MoveList} from "./bindings/MoveList";
+import {MoveItem} from "./bindings/MoveItem";
+import {Piece} from "./bindings/Piece";
+import {StraightStrike} from "./bindings/StraightStrike";
 
 export type BoardPos = number
 

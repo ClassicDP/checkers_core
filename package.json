@@ -1,8 +1,9 @@
 {
-  "name": "checkers_core_ts",
+  "name": "checkers_core",
   "version": "1.0.3",
-  "main": "test.js",
-  "types": "./checkers_core/ts/gameProcess.ts",
+  "main": "./build-js/gameProcess.js",
+  "types": "./build-js/gameProcess.d.ts",
+  "files": ["build-js/**/*", "build-wasm/**/*"],
   "scripts": {
     "test": "test.ts"
   },
@@ -23,6 +24,5 @@
     "ts-jest": "^29.0.5",
     "typescript": "^4.9.5"
   },
-  "dependencies": {
-  }
+  "dependencies": {}
 }

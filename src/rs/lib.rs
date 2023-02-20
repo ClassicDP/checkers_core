@@ -12,7 +12,6 @@ mod piece;
 mod color;
 mod game;
 
-
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = Math)]

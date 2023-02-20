@@ -2,8 +2,10 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "CommonJS",
-    "outDir": "./out",
-    "sourceMap": true,
+    "outDir": "build-js",
+    "rootDir": "src",
+    "sourceMap": false,
+    "declaration": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "esModuleInterop": true,
@@ -12,15 +14,16 @@
     "strictFunctionTypes": true,
     "strictBindCallApply": true,
     "noImplicitThis": true,
-    "alwaysStrict": true
+    "alwaysStrict": true,
+    "resolveJsonModule": true
   },
   "include": [
-    ".",
-    "../node_modules/ts-jest/globals.d.ts"
+    "src"
   ],
   "exclude": [
-    "./out",
-    "./node_modules"
+    "build",
+    "./node_modules",
+    "src/**/*.test.ts"
   ],
   "typeRoots": [
     "./node_modules/@types/"

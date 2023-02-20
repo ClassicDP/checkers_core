@@ -1,8 +1,7 @@
 import {GameProcess, MoveVariants} from "./gameProcess";
-import {Color, PositionEnvironment} from "../pkg";
-import {MoveList} from "../bindings/MoveList";
+import {Color, PositionEnvironment} from "../build-wasm/checkers_core";
+import {MoveList} from "./bindings/MoveList";
 import * as util from "util";
-
 
 // https://github.com/ClassicDP/checkers_core#front-click-handler-1
 describe("Game tests", () => {
