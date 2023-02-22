@@ -1,5 +1,4 @@
 use std::mem::swap;
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rand::Rng;
 
 
@@ -62,14 +61,34 @@ impl ListP {
     }
 }
 
+use wasm_bindgen::prelude::*;
+use crate::log;
+
+#[wasm_bindgen]
+pub fn test_q () {
+    let n: usize = 10000000;
+    let mut l = ListP::new(n);
+    use std::time::Instant;
+    let t = Instant::now();
+    ListP::quick_sort(&mut l.v, &mut l.tmp);
+    log(&format!("par {:.2?} \n", t.elapsed()));
+
+    let mut l = ListP::new(n);
+    let t = Instant::now();
+    l.v.sort();
+    log(&format!("lib {:.2?}", t.elapsed()));
+}
+
 
 #[cfg(test)]
 mod tests {
     use std::time::Instant;
+    use js_sys::Math::min;
+    use wasm_bindgen::prelude::wasm_bindgen;
     use crate::MThreadTest::ListP;
 
     #[test]
-    fn min_test_parallel() {
+    pub fn min_test_parallel() {
         let n: usize = 10000000;
         let mut l = ListP::new(n);
         use std::time::Instant;
@@ -82,4 +101,5 @@ mod tests {
         l.v.sort();
         print!("lib {:.2?}", t.elapsed());
     }
+
 }

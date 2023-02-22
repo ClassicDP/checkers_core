@@ -1,6 +1,5 @@
 extern crate core;
 use wasm_bindgen::prelude::*;
-
 use tsify::{Tsify};
 mod moves;
 mod moves_list;

@@ -2,6 +2,9 @@ import {GameProcess, MoveVariants} from "./gameProcess";
 import {Color, PositionEnvironment} from "../build-wasm/checkers_core";
 import {MoveList} from "./bindings/MoveList";
 import * as util from "util";
+import {test_q} from "../pkg/checkers_core_bg.wasm";
+
+
 
 // https://github.com/ClassicDP/checkers_core#front-click-handler-1
 describe("Game tests", () => {
@@ -107,5 +110,9 @@ describe("Game tests", () => {
         console.time("test")
         PositionEnvironment.game()
         console.timeEnd("test")
+    })
+
+    test("performance parallel", () => {
+        test_q()
     })
 });
