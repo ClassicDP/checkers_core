@@ -2,6 +2,9 @@
 /* eslint-disable */
 /**
 */
+export function test_q(): void;
+/**
+*/
 export enum Color {
   Black = 0,
   White = 1,

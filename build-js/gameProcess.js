@@ -24,13 +24,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GameProcess = void 0;
-const wasm = __importStar(require("../build-wasm"));
-const build_wasm_1 = require("../build-wasm");
+const wasm = __importStar(require("../build-wasm/checkers_core"));
+const checkers_core_1 = require("../build-wasm/checkers_core");
 class GameProcess {
     static color(color) {
         if (!color)
             return undefined;
-        return color == "White" ? build_wasm_1.Color.White : build_wasm_1.Color.Black;
+        return color == "White" ? checkers_core_1.Color.White : checkers_core_1.Color.Black;
     }
     constructor(size, color) {
         this.strikeChainInd = 0;
@@ -40,7 +40,7 @@ class GameProcess {
             this.moveColor = color;
     }
     invertMoveColor() {
-        this.moveColor = this.moveColor == build_wasm_1.Color.Black ? build_wasm_1.Color.White : build_wasm_1.Color.Black;
+        this.moveColor = this.moveColor == checkers_core_1.Color.Black ? checkers_core_1.Color.White : checkers_core_1.Color.Black;
     }
     insertPiece(pos, color, isKing) {
         this.game.insert_piece(wasm.Piece.new(this.game.to_pack(pos), color, isKing));

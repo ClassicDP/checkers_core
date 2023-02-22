@@ -1,4 +1,4 @@
-import { Color } from "../build-wasm";
+import { Color } from "../build-wasm/checkers_core";
 import { Position } from "./bindings/Position";
 import { ColorType } from "./bindings/ColorType";
 import { MoveList } from "./bindings/MoveList";
