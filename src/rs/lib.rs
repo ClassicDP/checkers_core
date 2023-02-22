@@ -11,6 +11,7 @@ mod vector;
 mod piece;
 mod color;
 mod game;
+mod MThreadTest;
 
 #[wasm_bindgen]
 extern "C" {
