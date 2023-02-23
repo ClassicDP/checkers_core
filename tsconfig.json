@@ -23,7 +23,7 @@
   "exclude": [
     "build",
     "./node_modules",
-    "src/**/*.test.ts"
+    "./test"
   ],
   "typeRoots": [
     "./node_modules/@types/"

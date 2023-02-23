@@ -1,8 +1,8 @@
-import {GameProcess, MoveVariants} from "./gameProcess";
-import {Color, PositionEnvironment} from "../build-wasm/checkers_core";
-import {MoveList} from "./bindings/MoveList";
+import {GameProcess, MoveVariants} from "../src/gameProcess";
+import {Color, PositionEnvironment} from "../build-wasm";
+import {MoveList} from "../src/bindings/MoveList";
 import * as util from "util";
-import {test_q} from "../build-wasm/checkers_core";
+import {test_q} from "../build-wasm";
 
 
 

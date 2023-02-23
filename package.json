@@ -1,9 +1,9 @@
 {
   "name": "checkers_core",
-  "version": "1.0.3",
+  "version": "1.0.9",
   "main": "./build-js/gameProcess.js",
   "types": "./build-js/gameProcess.d.ts",
-  "files": ["build-js/**/*", "build-wasm/**/*"],
+  "files": ["build-js/**/*", "build-wasm/**/*", "img"],
   "scripts": {
     "test": "jest",
     "test:cov": "jest --coverage"
