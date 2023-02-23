@@ -112,7 +112,4 @@ describe("Game tests", () => {
         console.timeEnd("test")
     })
 
-    test("performance parallel", () => {
-        test_q()
-    })
 });

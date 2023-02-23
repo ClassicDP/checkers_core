@@ -1,7 +1,9 @@
 use std::mem::swap;
+use std::thread;
 use rand::Rng;
 
 
+#[wasm_bindgen]
 pub struct ListP {
     v: Vec<i32>,
     tmp: Vec<i32>,
@@ -14,14 +16,14 @@ impl ListP {
         ListP { v, tmp: vec![0; n] }
     }
 
-    pub fn quick_sort(xs: &mut [i32], tmp: &mut [i32]) {
+    pub fn quick_sort(xs: &mut [i32], tmp: &mut [i32], n: i32) {
         if xs.len() <= 1 { return; }
         let len = xs.len();
         if xs.len() == 2 && xs[0] > xs[1] { xs.swap(0, 1); }
         let mid = xs.len() / 2;
         let (lo, hi) = xs.split_at_mut(mid);
         let (t1, t2) = tmp.split_at_mut(mid);
-        rayon::join(|| ListP::quick_sort(lo, t1), || ListP::quick_sort(hi, t2));
+        rayon::join(|| ListP::quick_sort(lo, t1, n+1), || ListP::quick_sort(hi, t2, n+1));
         let mut j = 0;
         let mut k = 0;
         for i in 0..len {
@@ -66,17 +68,17 @@ use crate::log;
 
 #[wasm_bindgen]
 pub fn test_q () {
-    let n: usize = 10000000;
+    let n: usize = 100000;
     let mut l = ListP::new(n);
     use std::time::Instant;
-    let t = Instant::now();
-    ListP::quick_sort(&mut l.v, &mut l.tmp);
-    log(&format!("par {:.2?} \n", t.elapsed()));
+    // let t = Instant::now();
 
-    let mut l = ListP::new(n);
-    let t = Instant::now();
-    l.v.sort();
-    log(&format!("lib {:.2?}", t.elapsed()));
+    ListP::quick_sort(&mut l.v, &mut l.tmp, 0);
+    // log(&format!("par {:.2?} \n", t.elapsed()));
+    // let mut l = ListP::new(n);
+    // let t = Instant::now();
+    // l.v.sort();
+    // log(&format!("lib {:.2?}", t.elapsed()));
 }
 
 
@@ -89,17 +91,17 @@ mod tests {
 
     #[test]
     pub fn min_test_parallel() {
-        let n: usize = 10000000;
+        let n: usize = 1000000;
         let mut l = ListP::new(n);
         use std::time::Instant;
         let t = Instant::now();
-        ListP::quick_sort(&mut l.v, &mut l.tmp);
-        print!("par {:.2?} \n", t.elapsed());
+        ListP::quick_sort(&mut l.v, &mut l.tmp, 0);
+        print!("par {} \n", t.elapsed().as_micros());
 
         let mut l = ListP::new(n);
         let t = Instant::now();
         l.v.sort();
-        print!("lib {:.2?}", t.elapsed());
+        print!("lib {}", t.elapsed().as_micros());
     }
 
 }

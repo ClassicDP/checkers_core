@@ -81,6 +81,11 @@ export class GameState {
 }
 /**
 */
+export class ListP {
+  free(): void;
+}
+/**
+*/
 export class Piece {
   free(): void;
 /**

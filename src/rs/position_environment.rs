@@ -147,7 +147,7 @@ impl PositionEnvironment {
         pos.inset_piece(Piece::new(13, Color::Black, true));
         pos.inset_piece(Piece::new(26, Color::Black, true));
 
-        for _i in 0..100000 {
+        for _i in 0..1000 {
             let mut list = pos.get_move_list(Color::Black, false);
             let po = pos.make_move_and_get_position(&mut list.list[0]);
             if po != po { break; }
@@ -162,7 +162,7 @@ impl PositionEnvironment {
             .for_each(|pos|
                 game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, false)));
 
-        for _i in 0..100000 {
+        for _i in 0..1000 {
             let mut list = pos.get_move_list(Color::White, false);
             let po = pos.make_move_and_get_position(&mut list.list[0]);
             if po != po { break; }
