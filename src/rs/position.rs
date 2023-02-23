@@ -1,4 +1,3 @@
-use std::borrow::{Borrow, BorrowMut};
 use std::cmp::Ordering;
 use std::mem::swap;
 use std::rc::Rc;

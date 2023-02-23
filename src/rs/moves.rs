@@ -1,7 +1,5 @@
 use core::fmt;
 use std::fmt::{Debug, Formatter};
-use std::rc::Rc;
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use crate::moves_list::Strike;

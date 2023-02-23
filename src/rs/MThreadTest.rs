@@ -1,5 +1,3 @@
-use std::mem::swap;
-use std::thread;
 use rand::Rng;
 
 
