@@ -1,6 +1,10 @@
 test:
 https://github.com/ClassicDP/checkers_core/blob/master/tests/gameProcess.test.ts
 
+NPM:
+
+npm i checkers_core
+
 ### Coding piece positions ###
 
 <img height="300" src="./img/1.png" width="300"/>
