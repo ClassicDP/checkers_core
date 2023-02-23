@@ -23,7 +23,7 @@
   "exclude": [
     "build",
     "./node_modules",
-    "./test"
+    "./tests"
   ],
   "typeRoots": [
     "./node_modules/@types/"

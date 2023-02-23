@@ -1,3 +1,5 @@
+test:
+https://github.com/ClassicDP/checkers_core/blob/master/tests/gameProcess.test.ts
 
 ### Coding piece positions ###
 
