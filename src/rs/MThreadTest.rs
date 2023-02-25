@@ -89,17 +89,17 @@ mod tests {
 
     #[test]
     pub fn min_test_parallel() {
-        let n: usize = 1000000;
+        let n: usize = 10000000;
         let mut l = ListP::new(n);
         use std::time::Instant;
         let t = Instant::now();
         ListP::quick_sort(&mut l.v, &mut l.tmp, 0);
-        print!("par {} \n", t.elapsed().as_micros());
+        print!("par {:?} \n", t.elapsed());
 
         let mut l = ListP::new(n);
         let t = Instant::now();
         l.v.sort();
-        print!("lib {}", t.elapsed().as_micros());
+        print!("lib {:?}", t.elapsed());
     }
 
 }
