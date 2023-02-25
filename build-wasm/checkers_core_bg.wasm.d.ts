@@ -10,8 +10,6 @@ export function positionenvironment_is_king_move_for(a: number, b: number, c: nu
 export function positionenvironment_game(): void;
 export function positionenvironment_test(): number;
 export function __wbg_straightstrike_free(a: number): void;
-export function __wbg_listp_free(a: number): void;
-export function test_q(): void;
 export function piece_new(a: number, b: number, c: number): number;
 export function piece_new_fom_js(a: number): number;
 export function piece_it(a: number): number;
@@ -25,6 +23,8 @@ export function __wbg_get_piece_is_king(a: number): number;
 export function __wbg_set_piece_is_king(a: number, b: number): void;
 export function __wbg_get_piece_stricken(a: number): number;
 export function __wbg_set_piece_stricken(a: number, b: number): void;
+export function __wbg_listp_free(a: number): void;
+export function test_q(): void;
 export function __wbg_gamestate_free(a: number): void;
 export function __wbg_game_free(a: number): void;
 export function game_new(a: number): number;

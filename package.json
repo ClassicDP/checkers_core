@@ -5,6 +5,7 @@
   "types": "./build-js/gameProcess.d.ts",
   "files": ["build-js/**/*", "build-wasm/**/*", "img"],
   "scripts": {
+    "tsc": "tsc",
     "test": "jest",
     "test:cov": "jest --coverage"
   },
