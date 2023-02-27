@@ -22,6 +22,7 @@ export declare class GameProcess {
     private moveChainPack;
     static color(color?: ColorType): Color | undefined;
     constructor(size: number, color?: Color);
+    isQuiteMoveList(): 0 | import("./bindings/QuietMove").QuietMove | null | undefined;
     invertMoveColor(): void;
     insertPiece(pos: number, color: Color, isKing: boolean): void;
     removePiece(pos: number): boolean;

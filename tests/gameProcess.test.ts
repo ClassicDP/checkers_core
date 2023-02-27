@@ -9,11 +9,14 @@ describe("Game tests", () => {
     test("quite move", () => {
         let gameProcess = new GameProcess(8, Color.White);
         gameProcess.insertPiece(0, Color.White, true)
-        gameProcess.insertPiece(63, Color.White, true)
+        gameProcess.insertPiece(20, Color.White, false)
         gameProcess.insertPiece(22, Color.White, false)
-        gameProcess.insertPiece(43, Color.White, false)
+        console.log(gameProcess.applyFrontClick(20))
         console.log(gameProcess.applyFrontClick(22))
-        console.log(gameProcess.applyFrontClick(31))
+        let move = gameProcess.applyFrontClick(29)
+        console.log(move)
+        expect(move!.confirmed!.from).toEqual(22)
+        expect(move!.confirmed!.to).toEqual(29)
     });
     test("quite move black", () => {
         let gameProcess = new GameProcess(8, Color.White);
@@ -23,7 +26,10 @@ describe("Game tests", () => {
         gameProcess.insertPiece(22, Color.White, false)
         gameProcess.insertPiece(43, Color.White, false)
         console.log(gameProcess.applyFrontClick(63))
-        console.log(gameProcess.applyFrontClick(54))
+        let move = gameProcess.applyFrontClick(54)
+        console.log(move)
+        expect(move.confirmed!.from).toEqual(63)
+        expect(move.confirmed!.to).toEqual(54)
     });
     test("applyFrontClick", () => {
         let gameProcess = new GameProcess(8, Color.White);
@@ -43,7 +49,7 @@ describe("Game tests", () => {
     });
 
     // https://github.com/ClassicDP/checkers_core#front-click-handler
-    test("king move applyFrontClick", () => {
+    test("king strike move applyFrontClick", () => {
         let gameProcess = new GameProcess(8, Color.White);
         gameProcess.insertPiece(47, Color.White, false)
         gameProcess.insertPiece(54, Color.Black, true)

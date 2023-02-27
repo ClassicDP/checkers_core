@@ -21,7 +21,7 @@ pub fn main() {
         if po != po { break; }
         game.current_position.unmake_move(&mut list.list[0]);
     }
-    print!("strike: ход  {:.2?}\n", now.elapsed());
+    print!("strike:  {:.2?}\n", now.elapsed());
 
     let mut game = Game::new(8);
     game.insert_piece(Piece::new(game.to_pack(47), Color::White, false));
@@ -39,7 +39,7 @@ pub fn main() {
         if po != po { break; }
         game.current_position.unmake_move(&mut list.list[0]);
     }
-    print!("{:.2?}\n", now.elapsed());
+    print!("strike 2:  {:.2?}\n", now.elapsed());
 
 
     let mut game = Game::new(8);
@@ -47,8 +47,6 @@ pub fn main() {
     game.insert_piece(Piece::new(game.to_pack(18), Color::White, false));
     game.insert_piece(Piece::new(game.to_pack(20), Color::White, false));
     game.insert_piece(Piece::new(game.to_pack(22), Color::White, false));
-
-    let pi: Vec<_> = game.current_position.cells.iter().filter(|x|x.is_some()).collect();
 
     let now = Instant::now();
     for _i in 0..1000000 {

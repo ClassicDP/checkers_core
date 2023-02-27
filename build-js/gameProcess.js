@@ -39,6 +39,9 @@ class GameProcess {
         if (color)
             this.moveColor = color;
     }
+    isQuiteMoveList() {
+        return this.moveList?.list.length && this.moveList.list[0].mov;
+    }
     invertMoveColor() {
         this.moveColor = this.moveColor == checkers_core_1.Color.Black ? checkers_core_1.Color.White : checkers_core_1.Color.Black;
     }
@@ -90,10 +93,18 @@ class GameProcess {
             return [];
         };
         let color = GameProcess.color(this.game.position.cells[this.game.to_pack(pos)]?.color);
+        if (this.isQuiteMoveList()) {
+            if (!this.moveList.list.filter(x => x.mov?.to == this.game.to_pack(pos)).length) {
+                this.moveList = undefined;
+            }
+        }
         if (!this.moveList) {
             if (color == undefined)
                 return { confirmed: undefined };
             this.moveList = this.game.get_move_list_for_front(color);
+            if (this.isQuiteMoveList()) {
+                this.moveList.list = this.moveList.list.filter(x => x.mov?.from == this.game.to_pack(pos));
+            }
         }
         let moveItems = getMoveChainElements(this.moveList, this.strikeChainInd);
         if (!moveItems.length) {
