@@ -109,6 +109,12 @@ export class GameProcess {
                 this.moveList.list = this.moveList.list.filter(x =>
                     x.strike!.vec[this.strikeChainInd]?.to == this.game.to_pack(pos))
                 let confirmed = this.moveList.list[0].strike!.vec[this.strikeChainInd++]
+                confirmed = {
+                    from: this.game.to_board(confirmed.from),
+                    to: this.game.to_board(confirmed.to),
+                    take: this.game.to_board(confirmed.take),
+                    king_move: confirmed.king_move
+                }
                 let done = this.moveList.list.length == 1 &&
                     this.moveList.list[0].strike!.vec.length == this.strikeChainInd
                 if (done) {
@@ -155,12 +161,6 @@ export class GameProcess {
     applyFrontClick(pos: number): MoveVariants {
         let variants = this.frontClick(pos)
         if (variants.confirmed) {
-            variants.confirmed = <MoveChainElement>{
-                from: this.game.to_board(variants.confirmed.from),
-                to: this.game.to_board(variants.confirmed.to),
-                take: !variants.confirmed.take ? false : this.game.to_board(variants.confirmed.take),
-                kingMove: variants.confirmed.kingMove
-            }
             if (!this.moveChainPack.length) {
                 this.moveChainPack.push(variants.confirmed.from, variants.confirmed.to)
             } else {
