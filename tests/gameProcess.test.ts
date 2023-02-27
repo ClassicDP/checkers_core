@@ -3,8 +3,18 @@ import {MoveList} from "../src/bindings/MoveList";
 import * as util from "util";
 import {Color, PositionEnvironment} from "../build-wasm";
 
+
 // https://github.com/ClassicDP/checkers_core#front-click-handler-1
 describe("Game tests", () => {
+    test("quite move", () => {
+        let gameProcess = new GameProcess(8, Color.White);
+        gameProcess.insertPiece(0, Color.White, true)
+        gameProcess.insertPiece(63, Color.White, true)
+        gameProcess.insertPiece(22, Color.White, false)
+        gameProcess.insertPiece(43, Color.White, false)
+        console.log(gameProcess.applyFrontClick(22))
+        console.log(gameProcess.applyFrontClick(31))
+    });
     test("applyFrontClick", () => {
         let gameProcess = new GameProcess(8, Color.White);
         gameProcess.insertPiece(0, Color.White, true)

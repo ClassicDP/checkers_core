@@ -214,6 +214,7 @@ impl PositionEnvironment {
             if p0 != p1 { break; }
         };
 
+
         let mut list = MoveList::new();
         pos.get_strike_list(22, &mut list, &vec![], false);
         match serde_wasm_bindgen::to_value(&list) {

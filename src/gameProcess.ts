@@ -121,9 +121,9 @@ export class GameProcess {
                     confirmed
                 }
             } else {
-                let confirmed = <MoveChainElement>this.moveList.list[0].mov
+                let confirmed = <MoveChainElement>moveItems_[0]
                 this.moveList = undefined
-                return {done: true, list: moveItems_, confirmed}
+                return {done: true, list: undefined, confirmed}
             }
         }
         // if user solve to change move piece
@@ -154,7 +154,6 @@ export class GameProcess {
 
     applyFrontClick(pos: number): MoveVariants {
         let variants = this.frontClick(pos)
-
         if (variants.confirmed) {
             variants.confirmed = <MoveChainElement>{
                 from: this.game.to_board(variants.confirmed.from),

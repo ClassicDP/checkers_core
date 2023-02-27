@@ -1,5 +1,5 @@
 #!/bin/bash
-wasm-pack build --target web --out-dir build-wasm
+wasm-pack build --target nodejs --out-dir build-wasm
 rm build-wasm/.gitignore
 rm build-wasm/package.json
 rm build-wasm/README.md

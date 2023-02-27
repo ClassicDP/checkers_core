@@ -421,4 +421,5 @@ mod tests {
         g2.remove_piece(3);
         assert_eq!(g1.current_position, g2.current_position);
     }
+    
 }
