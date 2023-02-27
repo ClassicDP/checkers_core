@@ -5,18 +5,18 @@
 export function test_q(): void;
 /**
 */
-export enum Color {
-  Black = 0,
-  White = 1,
-}
-/**
-*/
 export enum DrawType {
   draw1 = 0,
   draw2 = 1,
   draw3 = 2,
   draw4 = 3,
   draw5 = 4,
+}
+/**
+*/
+export enum Color {
+  Black = 0,
+  White = 1,
 }
 export type BoardPos = number;
 

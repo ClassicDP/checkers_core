@@ -1,6 +1,6 @@
 {
   "name": "checkers_core",
-  "version": "1.0.12",
+  "version": "1.0.16",
   "main": "./build-js/gameProcess.js",
   "types": "./build-js/gameProcess.d.ts",
   "files": ["build-js/**/*", "build-wasm/**/*", "img"],

@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 
 use serde::{Deserialize, Serialize};
-
+use wasm_bindgen::prelude::*;
 use crate::position_environment::PositionEnvironment;
 use crate::vector::Vector;
 use crate::moves::{BoardPos, PieceMove, QuietMove, StraightStrike};

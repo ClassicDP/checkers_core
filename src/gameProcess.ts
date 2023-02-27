@@ -91,7 +91,7 @@ export class GameProcess {
 
         let color = GameProcess.color((this.game.position as Position).cells[this.game.to_pack(pos)]?.color)
         if (!this.moveList) {
-            if (!color) return {confirmed: undefined}
+            if (color == undefined) return {confirmed: undefined}
             this.moveList = <MoveList>this.game.get_move_list_for_front(color!)
         }
         let moveItems = getMoveChainElements(this.moveList, this.strikeChainInd)

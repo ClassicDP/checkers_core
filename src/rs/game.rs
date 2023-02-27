@@ -40,7 +40,8 @@ pub struct Game {
     position_history: std::vec::Vec<PositionHistoryItem>,
     state: GameState,
     position_environment: Rc<PositionEnvironment>,
-    pub(crate) current_position: Position,
+    #[wasm_bindgen(skip)]
+    pub current_position: Position,
 }
 
 #[wasm_bindgen]

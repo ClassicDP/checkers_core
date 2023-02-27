@@ -91,7 +91,7 @@ class GameProcess {
         };
         let color = GameProcess.color(this.game.position.cells[this.game.to_pack(pos)]?.color);
         if (!this.moveList) {
-            if (!color)
+            if (color == undefined)
                 return { confirmed: undefined };
             this.moveList = this.game.get_move_list_for_front(color);
         }
@@ -109,6 +109,12 @@ class GameProcess {
             if (isStrike) {
                 this.moveList.list = this.moveList.list.filter(x => x.strike.vec[this.strikeChainInd]?.to == this.game.to_pack(pos));
                 let confirmed = this.moveList.list[0].strike.vec[this.strikeChainInd++];
+                confirmed = {
+                    from: this.game.to_board(confirmed.from),
+                    to: this.game.to_board(confirmed.to),
+                    take: this.game.to_board(confirmed.take),
+                    king_move: confirmed.king_move
+                };
                 let done = this.moveList.list.length == 1 &&
                     this.moveList.list[0].strike.vec.length == this.strikeChainInd;
                 if (done) {
@@ -122,9 +128,9 @@ class GameProcess {
                 };
             }
             else {
-                let confirmed = this.moveList.list[0].mov;
+                let confirmed = moveItems_[0];
                 this.moveList = undefined;
-                return { done: true, list: moveItems_, confirmed };
+                return { done: true, list: undefined, confirmed };
             }
         }
         // if user solve to change move piece
@@ -157,12 +163,6 @@ class GameProcess {
     applyFrontClick(pos) {
         let variants = this.frontClick(pos);
         if (variants.confirmed) {
-            variants.confirmed = {
-                from: this.game.to_board(variants.confirmed.from),
-                to: this.game.to_board(variants.confirmed.to),
-                take: !variants.confirmed.take ? false : this.game.to_board(variants.confirmed.take),
-                kingMove: variants.confirmed.kingMove
-            };
             if (!this.moveChainPack.length) {
                 this.moveChainPack.push(variants.confirmed.from, variants.confirmed.to);
             }
@@ -179,3 +179,4 @@ class GameProcess {
     }
 }
 exports.GameProcess = GameProcess;
+//# sourceMappingURL=gameProcess.js.map

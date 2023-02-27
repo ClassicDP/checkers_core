@@ -7,9 +7,9 @@ mod position_environment;
 mod mutable_iterator;
 mod position;
 mod vector;
-mod piece;
-mod color;
-mod game;
+pub mod piece;
+pub mod color;
+pub mod game;
 mod MThreadTest;
 
 #[wasm_bindgen]

@@ -15,6 +15,16 @@ describe("Game tests", () => {
         console.log(gameProcess.applyFrontClick(22))
         console.log(gameProcess.applyFrontClick(31))
     });
+    test("quite move black", () => {
+        let gameProcess = new GameProcess(8, Color.White);
+        gameProcess.invertMoveColor();
+        gameProcess.insertPiece(0, Color.White, true)
+        gameProcess.insertPiece(63, Color.Black, true)
+        gameProcess.insertPiece(22, Color.White, false)
+        gameProcess.insertPiece(43, Color.White, false)
+        console.log(gameProcess.applyFrontClick(63))
+        console.log(gameProcess.applyFrontClick(54))
+    });
     test("applyFrontClick", () => {
         let gameProcess = new GameProcess(8, Color.White);
         gameProcess.insertPiece(0, Color.White, true)
