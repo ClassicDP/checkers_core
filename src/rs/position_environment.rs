@@ -139,13 +139,13 @@ impl PositionEnvironment {
     pub fn game() {
         let mut game = Game::new(8);
         let ref mut pos = game.current_position;
-        pos.inset_piece(Piece::new(22, Color::White, false));
-        pos.inset_piece(Piece::new(4, Color::Black, true));
-        pos.inset_piece(Piece::new(21, Color::Black, true));
-        pos.inset_piece(Piece::new(20, Color::Black, true));
-        pos.inset_piece(Piece::new(12, Color::Black, true));
-        pos.inset_piece(Piece::new(13, Color::Black, true));
-        pos.inset_piece(Piece::new(26, Color::Black, true));
+        pos.insert_piece(Piece::new(22, Color::White, false));
+        pos.insert_piece(Piece::new(4, Color::Black, true));
+        pos.insert_piece(Piece::new(21, Color::Black, true));
+        pos.insert_piece(Piece::new(20, Color::Black, true));
+        pos.insert_piece(Piece::new(12, Color::Black, true));
+        pos.insert_piece(Piece::new(13, Color::Black, true));
+        pos.insert_piece(Piece::new(26, Color::Black, true));
 
         for _i in 0..1000 {
             let mut list = pos.get_move_list(Color::Black, false);
@@ -175,13 +175,13 @@ impl PositionEnvironment {
     pub fn test() -> JsValue {
         let game = PositionEnvironment::new(8);
         let mut pos = Position::new(Rc::new(game));
-        pos.inset_piece(Piece::new(22, Color::White, false));
-        pos.inset_piece(Piece::new(4, Color::Black, true));
-        pos.inset_piece(Piece::new(21, Color::Black, true));
-        pos.inset_piece(Piece::new(20, Color::Black, true));
-        pos.inset_piece(Piece::new(12, Color::Black, true));
-        pos.inset_piece(Piece::new(13, Color::Black, true));
-        pos.inset_piece(Piece::new(26, Color::Black, true));
+        pos.insert_piece(Piece::new(22, Color::White, false));
+        pos.insert_piece(Piece::new(4, Color::Black, true));
+        pos.insert_piece(Piece::new(21, Color::Black, true));
+        pos.insert_piece(Piece::new(20, Color::Black, true));
+        pos.insert_piece(Piece::new(12, Color::Black, true));
+        pos.insert_piece(Piece::new(13, Color::Black, true));
+        pos.insert_piece(Piece::new(26, Color::Black, true));
 
 
         let mut list = MoveList::new();

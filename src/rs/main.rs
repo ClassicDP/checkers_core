@@ -6,21 +6,20 @@ include!("lib.rs");
 
 pub fn main() {
     let mut game = Game::new(8);
-    let ref mut pos = game.current_position;
-    pos.inset_piece(Piece::new(22, Color::White, false));
-    pos.inset_piece(Piece::new(4, Color::Black, true));
-    pos.inset_piece(Piece::new(21, Color::Black, true));
-    pos.inset_piece(Piece::new(20, Color::Black, true));
-    pos.inset_piece(Piece::new(12, Color::Black, true));
-    pos.inset_piece(Piece::new(13, Color::Black, true));
-    pos.inset_piece(Piece::new(26, Color::Black, true));
+    game.insert_piece(Piece::new(22, Color::White, false));
+    game.insert_piece(Piece::new(4, Color::Black, true));
+    game.insert_piece(Piece::new(21, Color::Black, true));
+    game.insert_piece(Piece::new(20, Color::Black, true));
+    game.insert_piece(Piece::new(12, Color::Black, true));
+    game.insert_piece(Piece::new(13, Color::Black, true));
+    game.insert_piece(Piece::new(26, Color::Black, true));
 
     let now = Instant::now();
     for _i in 0..1000000 {
-        let mut list = pos.get_move_list(Color::Black, false);
-        let po = pos.make_move_and_get_position(&mut list.list[0]);
+        let mut list = game.current_position.get_move_list(Color::Black, false);
+        let po = game.current_position.make_move_and_get_position(&mut list.list[0]);
         if po != po { break; }
-        pos.unmake_move(&mut list.list[0]);
+        game.current_position.unmake_move(&mut list.list[0]);
     }
     print!("strike: ход  {:.2?}\n", now.elapsed());
 
@@ -35,10 +34,28 @@ pub fn main() {
     use std::time::Instant;
     let now = Instant::now();
     for _i in 0..1000000 {
-        let mut list = pos.get_move_list(Color::White, false);
-        let po = pos.make_move_and_get_position(&mut list.list[0]);
+        let mut list = game.current_position.get_move_list(Color::White, false);
+        let po = game.current_position.make_move_and_get_position(&mut list.list[0]);
         if po != po { break; }
-        pos.unmake_move(&mut list.list[0]);
+        game.current_position.unmake_move(&mut list.list[0]);
     }
-    print!("{:.2?}", now.elapsed());
+    print!("{:.2?}\n", now.elapsed());
+
+
+    let mut game = Game::new(8);
+    game.insert_piece(Piece::new(game.to_pack(16), Color::White, false));
+    game.insert_piece(Piece::new(game.to_pack(18), Color::White, false));
+    game.insert_piece(Piece::new(game.to_pack(20), Color::White, false));
+    game.insert_piece(Piece::new(game.to_pack(22), Color::White, false));
+
+    let pi: Vec<_> = game.current_position.cells.iter().filter(|x|x.is_some()).collect();
+
+    let now = Instant::now();
+    for _i in 0..1000000 {
+        let mut list = game.current_position.get_move_list(Color::White, false);
+        let po = game.current_position.make_move_and_get_position(&mut list.list[0]);
+        if po != po { break; }
+        game.current_position.unmake_move(&mut list.list[0]);
+    }
+    print!("simple: {:.2?}\n", now.elapsed());
 }

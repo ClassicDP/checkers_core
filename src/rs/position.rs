@@ -122,7 +122,7 @@ impl Position {
         }
     }
 
-    pub fn inset_piece(&mut self, piece: Piece) {
+    pub fn insert_piece(&mut self, piece: Piece) {
         let pos = piece.pos as usize;
         self.state_change(&piece, 1);
         self.cells[pos] = Some(piece);

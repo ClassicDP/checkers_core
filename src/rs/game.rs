@@ -58,7 +58,7 @@ impl Game {
     }
     #[wasm_bindgen]
     pub fn insert_piece(&mut self, piece: Piece) {
-        self.current_position.inset_piece(piece);
+        self.current_position.insert_piece(piece);
     }
 
     #[wasm_bindgen]
