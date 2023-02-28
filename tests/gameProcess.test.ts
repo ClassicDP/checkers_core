@@ -11,12 +11,19 @@ describe("Game tests", () => {
         gameProcess.insertPiece(0, Color.White, true)
         gameProcess.insertPiece(20, Color.White, false)
         gameProcess.insertPiece(22, Color.White, false)
+        gameProcess.insertPiece(63, Color.Black, false)
         console.log(gameProcess.applyFrontClick(20))
         console.log(gameProcess.applyFrontClick(22))
         let move = gameProcess.applyFrontClick(29)
         console.log(move)
         expect(move!.confirmed!.from).toEqual(22)
         expect(move!.confirmed!.to).toEqual(29)
+        console.log(gameProcess.applyFrontClick(29))
+        console.log(gameProcess.applyFrontClick(63))
+        move = gameProcess.applyFrontClick(54)
+        console.log(move)
+        expect(move!.confirmed!.from).toEqual(63)
+        expect(move!.confirmed!.to).toEqual(54)
     });
     test("quite move black", () => {
         let gameProcess = new GameProcess(8, Color.White);
