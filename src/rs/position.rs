@@ -4,7 +4,6 @@ use std::rc::Rc;
 
 
 use serde::{Deserialize, Serialize};
-use wasm_bindgen::prelude::*;
 use crate::position_environment::PositionEnvironment;
 use crate::vector::Vector;
 use crate::moves::{BoardPos, PieceMove, QuietMove, StraightStrike};
@@ -79,6 +78,7 @@ impl PosState {
 pub struct Position {
     pub cells: Vec<Option<Piece>>,
     pub state: PosState,
+    pub next_move: Option<Color>,
     #[serde(skip_serializing)]
     environment: Rc<PositionEnvironment>,
 }
@@ -107,6 +107,7 @@ impl Position {
             },
             cells: Vec::new(),
             environment,
+            next_move: None
         };
         pos.cells = Vec::new();
         let size = pos.environment.size;
@@ -372,7 +373,8 @@ impl Position {
         PositionHistoryItem { position: self.clone(), move_item: move_item.clone() }
     }
 
-    pub fn get_move_list(&mut self, color: Color, for_front: bool) -> MoveList {
+    pub fn get_move_list(&mut self, for_front: bool) -> MoveList {
+        let color = self.next_move.unwrap_or_else(||panic!("Color of next move undefined!"));
         let pieces_pos: std::vec::Vec<_> = self.cells.iter()
             .filter(|piece| if let Some(piece) = piece { piece.color == color } else { false })
             .map(|piece| if let Some(piece) =

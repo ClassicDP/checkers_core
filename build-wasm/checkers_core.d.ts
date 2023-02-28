@@ -2,7 +2,10 @@
 /* eslint-disable */
 /**
 */
-export function test_q(): void;
+export enum Color {
+  Black = 0,
+  White = 1,
+}
 /**
 */
 export enum DrawType {
@@ -11,12 +14,6 @@ export enum DrawType {
   draw3 = 2,
   draw4 = 3,
   draw5 = 4,
-}
-/**
-*/
-export enum Color {
-  Black = 0,
-  White = 1,
 }
 export type BoardPos = number;
 
@@ -54,10 +51,9 @@ export class Game {
 */
   to_pack(board_index: number): number;
 /**
-* @param {number} color
 * @returns {any}
 */
-  get_move_list_for_front(color: number): any;
+  get_move_list_for_front(): any;
 /**
 * @returns {number | undefined}
 */
@@ -69,6 +65,9 @@ export class Game {
   make_move_for_front(pos_chain: any): boolean;
 /**
 */
+  moveColor: number;
+/**
+*/
   readonly position: any;
 /**
 */
@@ -77,11 +76,6 @@ export class Game {
 /**
 */
 export class GameState {
-  free(): void;
-}
-/**
-*/
-export class ListP {
   free(): void;
 }
 /**

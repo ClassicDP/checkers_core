@@ -10,7 +10,6 @@ mod vector;
 pub mod piece;
 pub mod color;
 pub mod game;
-mod MThreadTest;
 
 #[wasm_bindgen]
 extern "C" {

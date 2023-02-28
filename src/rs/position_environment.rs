@@ -146,9 +146,10 @@ impl PositionEnvironment {
         pos.insert_piece(Piece::new(12, Color::Black, true));
         pos.insert_piece(Piece::new(13, Color::Black, true));
         pos.insert_piece(Piece::new(26, Color::Black, true));
+        pos.next_move = Option::from(Color::Black);
 
         for _i in 0..1000 {
-            let mut list = pos.get_move_list(Color::Black, false);
+            let mut list = pos.get_move_list( false);
             let po = pos.make_move_and_get_position(&mut list.list[0]);
             if po != po { break; }
             pos.unmake_move(&mut list.list[0]);
@@ -161,9 +162,9 @@ impl PositionEnvironment {
         vec![54, 43, 20].iter()
             .for_each(|pos|
                 game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, false)));
-
+        pos.next_move = Some(Color::White);
         for _i in 0..1000 {
-            let mut list = pos.get_move_list(Color::White, false);
+            let mut list = pos.get_move_list( false);
             let po = pos.make_move_and_get_position(&mut list.list[0]);
             if po != po { break; }
             pos.unmake_move(&mut list.list[0]);

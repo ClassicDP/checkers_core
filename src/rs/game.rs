@@ -9,6 +9,7 @@ use crate::position::{Position, PositionHistoryItem, PosState};
 use crate::position_environment::PositionEnvironment;
 use ts_rs::*;
 use serde::{Serialize};
+use crate::log;
 
 
 #[wasm_bindgen]
@@ -74,6 +75,7 @@ impl Game {
         }
     }
 
+
     #[wasm_bindgen(getter)]
     pub fn state(&self) -> JsValue {
         match serde_wasm_bindgen::to_value(&self.state) {
@@ -94,18 +96,33 @@ impl Game {
     }
 
     #[wasm_bindgen]
-    pub fn get_move_list_for_front(&mut self, color: Color) -> JsValue {
-        let move_list = self.get_move_list(color, true);
+    pub fn get_move_list_for_front(&mut self) -> JsValue {
+        let move_list = self.get_move_list(true);
         match serde_wasm_bindgen::to_value(&move_list) {
             Ok(js) => js,
             Err(_err) => JsValue::UNDEFINED,
         }
     }
 
-    fn get_move_list(&mut self, color: Color, for_front: bool) -> MoveList {
-        self.current_position.get_move_list(color, for_front)
+    fn get_move_list(&mut self, for_front: bool) -> MoveList {
+        self.current_position.get_move_list( for_front)
     }
 
+    #[wasm_bindgen(getter = moveColor)]
+    pub fn get_color (&self) -> JsValue {
+        match  self.current_position.next_move {
+            Some(color) => match serde_wasm_bindgen::to_value(&color) {
+                Ok(js) => js,
+                Err(_err) => JsValue::UNDEFINED,
+            },
+            None => JsValue::UNDEFINED
+        }
+    }
+
+    #[wasm_bindgen(setter = moveColor)]
+    pub fn set_color (&mut self, color: Color) {
+        self.current_position.next_move = Some(color);
+    }
 
     pub fn draw_check(&mut self) -> Option<DrawType> {
         let i = (self.position_history.len() - 1);
@@ -212,7 +229,7 @@ impl Game {
         }
         if !pos_list.is_empty() {
             if let Some(piece) = &self.current_position.cells[pos_list[0] as usize] {
-                let move_list = self.get_move_list(piece.color, true);
+                let move_list = self.get_move_list(true);
                 for mut move_item in move_list.list {
                     let mut i = 1;
                     let mut ok = true;
@@ -258,7 +275,7 @@ mod tests {
         let mut game = Game::new(8);
         game.insert_piece(Piece::new(13, Color::White, true));
         vec![2, 27, 24].iter().for_each(|pos|game.insert_piece(Piece::new(*pos, Color::White, false)));
-        let list = game.get_move_list(Color::White, true);
+        let list = game.get_move_list(true);
         print!("\ngame_quite_move {:?} \n", {
             let z: Vec<_> = list.list.iter().map(|x|x.mov.clone().unwrap()).collect();
             z
@@ -275,9 +292,9 @@ mod tests {
             .for_each(|pos|
                 game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, false)));
         for _t in 0..1000000 {
-            let list = game.get_move_list(Color::White, true);
+            let list = game.get_move_list(true);
         }
-        let list = game.get_move_list(Color::White, true);
+        let list = game.get_move_list( true);
         print!("\ngame_quite_move {:?} \n", {
             let z: Vec<_> = list.list.iter().map(|x|x.strike.clone().unwrap()).collect();
             z

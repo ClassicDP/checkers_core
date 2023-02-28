@@ -13,10 +13,10 @@ pub fn main() {
     game.insert_piece(Piece::new(12, Color::Black, true));
     game.insert_piece(Piece::new(13, Color::Black, true));
     game.insert_piece(Piece::new(26, Color::Black, true));
-
+    game.current_position.next_move = Some(Color::Black);
     let now = Instant::now();
     for _i in 0..1000000 {
-        let mut list = game.current_position.get_move_list(Color::Black, false);
+        let mut list = game.current_position.get_move_list( false);
         let po = game.current_position.make_move_and_get_position(&mut list.list[0]);
         if po != po { break; }
         game.current_position.unmake_move(&mut list.list[0]);
@@ -30,11 +30,11 @@ pub fn main() {
     vec![54, 43, 20].iter()
         .for_each(|pos|
             game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, false)));
-
+    game.current_position.next_move = Some(Color::White);
     use std::time::Instant;
     let now = Instant::now();
     for _i in 0..1000000 {
-        let mut list = game.current_position.get_move_list(Color::White, false);
+        let mut list = game.current_position.get_move_list( false);
         let po = game.current_position.make_move_and_get_position(&mut list.list[0]);
         if po != po { break; }
         game.current_position.unmake_move(&mut list.list[0]);
@@ -47,10 +47,11 @@ pub fn main() {
     game.insert_piece(Piece::new(game.to_pack(18), Color::White, false));
     game.insert_piece(Piece::new(game.to_pack(20), Color::White, false));
     game.insert_piece(Piece::new(game.to_pack(22), Color::White, false));
+    game.current_position.next_move = Some(Color::White);
 
     let now = Instant::now();
     for _i in 0..1000000 {
-        let mut list = game.current_position.get_move_list(Color::White, false);
+        let mut list = game.current_position.get_move_list(false);
         let po = game.current_position.make_move_and_get_position(&mut list.list[0]);
         if po != po { break; }
         game.current_position.unmake_move(&mut list.list[0]);

@@ -1,11 +1,12 @@
 import * as wasm from "../build-wasm/checkers_core"
-import {Color} from "../build-wasm/checkers_core";
+import {Color} from "../build-wasm/checkers_core"
 import {Position} from "./bindings/Position";
 import {ColorType} from "./bindings/ColorType";
 import {MoveList} from "./bindings/MoveList";
 import {MoveItem} from "./bindings/MoveItem";
 import {Piece} from "./bindings/Piece";
 import {StraightStrike} from "./bindings/StraightStrike";
+
 
 export type BoardPos = number
 
@@ -20,7 +21,7 @@ export type MoveVariants = {
 
 export class GameProcess {
     private game: wasm.Game
-    moveColor: Color
+
     private strikeChainInd: number = 0
     private moveList?: MoveList
     private moveChainPack: BoardPos[] = []
@@ -32,15 +33,23 @@ export class GameProcess {
 
     constructor(size: number, color?: Color) {
         this.game = new wasm.Game(size)
-        if (color) this.moveColor = color
+        if (color !== undefined) this.moveColor = color
     }
 
     isQuiteMoveList() {
         return this.moveList?.list.length && this.moveList.list[0].mov
     }
 
+    get moveColor() {
+        return this.game.moveColor as Color
+    }
+
+    set moveColor(color: Color) {
+        this.game.moveColor = color
+    }
+
     invertMoveColor() {
-        this.moveColor = this.moveColor == Color.Black ? Color.White : Color.Black
+        this.moveColor = this.moveColor === Color.Black ? Color.White : Color.Black
     }
 
     insertPiece(pos: number, color: Color, isKing: boolean) {
@@ -93,15 +102,16 @@ export class GameProcess {
         }
 
 
-        let color = GameProcess.color((this.game.position as Position).cells[this.game.to_pack(pos)]?.color)
         if (this.isQuiteMoveList()) {
             if (!this.moveList!.list.filter(x => x.mov?.to == this.game.to_pack(pos)).length) {
                 this.moveList = undefined
             }
         }
         if (!this.moveList) {
-            if (color == undefined) return {confirmed: undefined}
-            this.moveList = <MoveList>this.game.get_move_list_for_front(color!)
+            let color = (this.game.position as Position).cells[this.game.to_pack(pos)]?.color
+            if (color == undefined ||
+                this.moveColor !== (color as unknown as Color)) return {confirmed: undefined}
+            this.moveList = <MoveList>this.game.get_move_list_for_front()
             if (this.isQuiteMoveList()) {
                 this.moveList.list = this.moveList.list.filter(x => x.mov?.from == this.game.to_pack(pos))
             }
@@ -152,8 +162,9 @@ export class GameProcess {
         return {confirmed: undefined}
     }
 
-    getMoveList(color: Color) {
-        let list = this.game.get_move_list_for_front(color) as MoveList
+    getMoveList(color?: Color) {
+        if (color !== undefined) this.game.moveColor = color
+        let list = this.game.get_move_list_for_front() as MoveList
         list.list.map(x => {
             if (x.mov) x.mov = {
                 from: this.game.to_board(x.mov.from),
@@ -180,7 +191,7 @@ export class GameProcess {
             }
         }
         if (variants.done) {
-            if (this.game.make_move_for_front(this.moveChainPack.map(x => this.game.to_pack(x)))) this.invertMoveColor()
+            this.game.make_move_for_front(this.moveChainPack.map(x => this.game.to_pack(x)))
             this.moveChainPack = []
         }
 

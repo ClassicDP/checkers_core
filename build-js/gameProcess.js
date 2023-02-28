@@ -43,7 +43,8 @@ class GameProcess {
         return this.moveList?.list.length && this.moveList.list[0].mov;
     }
     invertMoveColor() {
-        this.moveColor = this.moveColor == checkers_core_1.Color.Black ? checkers_core_1.Color.White : checkers_core_1.Color.Black;
+        this.moveColor = this.moveColor === checkers_core_1.Color.Black ?
+            checkers_core_1.Color.White : checkers_core_1.Color.Black;
     }
     insertPiece(pos, color, isKing) {
         this.game.insert_piece(wasm.Piece.new(this.game.to_pack(pos), color, isKing));
