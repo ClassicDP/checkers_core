@@ -36,15 +36,20 @@ class GameProcess {
         this.strikeChainInd = 0;
         this.moveChainPack = [];
         this.game = new wasm.Game(size);
-        if (color)
+        if (color !== undefined)
             this.moveColor = color;
     }
     isQuiteMoveList() {
         return this.moveList?.list.length && this.moveList.list[0].mov;
     }
+    get moveColor() {
+        return this.game.moveColor;
+    }
+    set moveColor(color) {
+        this.game.moveColor = color;
+    }
     invertMoveColor() {
-        this.moveColor = this.moveColor === checkers_core_1.Color.Black ?
-            checkers_core_1.Color.White : checkers_core_1.Color.Black;
+        this.moveColor = this.moveColor === checkers_core_1.Color.Black ? checkers_core_1.Color.White : checkers_core_1.Color.Black;
     }
     insertPiece(pos, color, isKing) {
         this.game.insert_piece(wasm.Piece.new(this.game.to_pack(pos), color, isKing));
@@ -54,7 +59,7 @@ class GameProcess {
     }
     get position() {
         let pos = this.game.position;
-        let newPos = { cells: [], state: pos.state };
+        let newPos = { cells: [], state: pos.state, next_move: pos.next_move };
         for (let piece of pos.cells) {
             if (piece)
                 newPos.cells[this.game.to_board(piece.pos)] = {
@@ -93,16 +98,17 @@ class GameProcess {
             }
             return [];
         };
-        let color = GameProcess.color(this.game.position.cells[this.game.to_pack(pos)]?.color);
         if (this.isQuiteMoveList()) {
             if (!this.moveList.list.filter(x => x.mov?.to == this.game.to_pack(pos)).length) {
                 this.moveList = undefined;
             }
         }
         if (!this.moveList) {
-            if (color == undefined)
+            let color = this.game.position.cells[this.game.to_pack(pos)]?.color;
+            if (color == undefined ||
+                this.moveColor !== color)
                 return { confirmed: undefined };
-            this.moveList = this.game.get_move_list_for_front(color);
+            this.moveList = this.game.get_move_list_for_front();
             if (this.isQuiteMoveList()) {
                 this.moveList.list = this.moveList.list.filter(x => x.mov?.from == this.game.to_pack(pos));
             }
@@ -154,7 +160,9 @@ class GameProcess {
         return { confirmed: undefined };
     }
     getMoveList(color) {
-        let list = this.game.get_move_list_for_front(color);
+        if (color !== undefined)
+            this.game.moveColor = color;
+        let list = this.game.get_move_list_for_front();
         list.list.map(x => {
             if (x.mov)
                 x.mov = {
@@ -183,8 +191,7 @@ class GameProcess {
             }
         }
         if (variants.done) {
-            if (this.game.make_move_for_front(this.moveChainPack.map(x => this.game.to_pack(x))))
-                this.invertMoveColor();
+            this.game.make_move_for_front(this.moveChainPack.map(x => this.game.to_pack(x)));
             this.moveChainPack = [];
         }
         return variants;

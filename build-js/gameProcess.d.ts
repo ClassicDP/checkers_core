@@ -16,19 +16,20 @@ export type MoveVariants = {
 };
 export declare class GameProcess {
     private game;
-    moveColor: Color;
     private strikeChainInd;
     private moveList?;
     private moveChainPack;
     static color(color?: ColorType): Color | undefined;
     constructor(size: number, color?: Color);
     isQuiteMoveList(): 0 | import("./bindings/QuietMove").QuietMove | null | undefined;
+    get moveColor(): Color;
+    set moveColor(color: Color);
     invertMoveColor(): void;
     insertPiece(pos: number, color: Color, isKing: boolean): void;
     removePiece(pos: number): boolean;
     get position(): Position;
     private frontClick;
-    getMoveList(color: Color): MoveList;
+    getMoveList(color?: Color): MoveList;
     applyFrontClick(pos: number): MoveVariants;
 }
 export {};

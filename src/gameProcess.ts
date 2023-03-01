@@ -62,7 +62,7 @@ export class GameProcess {
 
     get position(): Position {
         let pos = this.game.position as Position
-        let newPos: Position = {cells: [], state: pos.state}
+        let newPos: Position = {cells: [], state: pos.state, next_move: pos.next_move}
         for (let piece of pos.cells) {
             if (piece) newPos.cells[this.game.to_board(piece.pos)] = <Piece>{
                 pos: this.game.to_board(piece.pos),

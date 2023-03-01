@@ -273,6 +273,7 @@ mod tests {
     #[test]
     fn game_quite_move() {
         let mut game = Game::new(8);
+        game.current_position.next_move = Option::from(Color::White);
         game.insert_piece(Piece::new(13, Color::White, true));
         vec![2, 27, 24].iter().for_each(|pos|game.insert_piece(Piece::new(*pos, Color::White, false)));
         let list = game.get_move_list(true);
@@ -285,6 +286,7 @@ mod tests {
     #[test]
     pub fn game_strike_list() {
         let mut game = Game::new(8);
+        game.current_position.next_move = Some(Color::White);
         game.insert_piece(Piece::new(game.to_pack(47), Color::White, false));
         game.insert_piece(Piece::new(game.to_pack(63), Color::White, false));
         game.insert_piece(Piece::new(game.to_pack(15), Color::White, true));
