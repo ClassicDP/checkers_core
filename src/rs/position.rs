@@ -140,7 +140,6 @@ impl Position {
 
 
     fn make_strike_or_move(&mut self, mov: &mut dyn PieceMove) {
-        if self.next_move.is_some() {self.next_move = Some(!self.next_move.unwrap())}
         self.swap(mov.from(), mov.to());
         if let Some(take) = mov.take() {
             if let Some(ref mut piece) = self.cells[take] {
@@ -155,7 +154,6 @@ impl Position {
     }
 
     fn unmake_strike_or_move(&mut self, mov: &dyn PieceMove) {
-        if self.next_move.is_some() {self.next_move = Some(!self.next_move.unwrap())}
         self.swap(mov.from(), mov.to());
         if let Some(take) = mov.take() {
             if let Some(ref mut piece) = self.cells[take] {
@@ -351,6 +349,7 @@ impl Position {
             };
             self.make_strike_or_move(mov);
         }
+        if self.next_move.is_some() {self.next_move = Some(!self.next_move.unwrap())}
     }
 
     pub fn unmake_move(&mut self, move_item: &mut MoveItem) {
@@ -368,6 +367,7 @@ impl Position {
             };
             self.unmake_strike_or_move(mov);
         }
+        if self.next_move.is_some() {self.next_move = Some(!self.next_move.unwrap())}
     }
 
     pub fn make_move_and_get_position(&mut self, move_item: &mut MoveItem) -> PositionHistoryItem {
