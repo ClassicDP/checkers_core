@@ -15,6 +15,7 @@ use crate::log;
 #[wasm_bindgen]
 #[derive(TS)]
 #[ts(export)]
+#[derive(Serialize)]
 pub enum DrawType {
     draw1,
     draw2,
@@ -212,7 +213,7 @@ impl Game {
     }
 
     #[wasm_bindgen]
-    pub fn make_move_for_front(&mut self, pos_chain: &JsValue) -> Result<js_sys::Boolean, JsValue> {
+    pub fn make_move_for_front(&mut self, pos_chain: &JsValue) -> Result<JsValue, JsValue> {
         let mut pos_list: Vec<BoardPos> = Vec::new();
         let iterator = js_sys::try_iter(pos_chain)?.ok_or_else(|| {
             "need to pass iterable JS values!"
@@ -247,12 +248,15 @@ impl Game {
                     if ok && pos_list.len() == i {
                         self.current_position.make_move(&mut move_item);
                         self.position_history.push(PositionHistoryItem { move_item, position: self.current_position.clone() });
-                        return Ok(Boolean::from(JsValue::TRUE));
+                        let draw = self.draw_check();
+                        return if draw.is_none() { Ok(JsValue::TRUE) } else {
+                            Ok(serde_wasm_bindgen::to_value(&draw.unwrap()).unwrap())
+                        }
                     }
                 }
             }
         }
-        Ok(Boolean::from(JsValue::FALSE))
+        Ok(JsValue::FALSE)
     }
 }
 

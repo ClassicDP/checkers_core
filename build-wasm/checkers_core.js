@@ -332,7 +332,7 @@ class Game {
     }
     /**
     * @param {any} pos_chain
-    * @returns {boolean}
+    * @returns {any}
     */
     make_move_for_front(pos_chain) {
         try {

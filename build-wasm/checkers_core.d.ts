@@ -60,9 +60,9 @@ export class Game {
   draw_check(): number | undefined;
 /**
 * @param {any} pos_chain
-* @returns {boolean}
+* @returns {any}
 */
-  make_move_for_front(pos_chain: any): boolean;
+  make_move_for_front(pos_chain: any): any;
 /**
 */
   moveColor: number;
