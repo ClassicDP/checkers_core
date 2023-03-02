@@ -227,7 +227,7 @@ function handleError(f, args) {
 module.exports.Color = Object.freeze({ Black:0,"0":"Black",White:1,"1":"White", });
 /**
 */
-module.exports.DrawType = Object.freeze({ draw1:0,"0":"draw1",draw2:1,"1":"draw2",draw3:2,"2":"draw3",draw4:3,"3":"draw4",draw5:4,"4":"draw5", });
+module.exports.DrawType = Object.freeze({ Draw1:0,"0":"Draw1",Draw2:1,"1":"Draw2",Draw3:2,"2":"Draw3",Draw4:3,"3":"Draw4",Draw5:4,"4":"Draw5", });
 /**
 */
 class Game {

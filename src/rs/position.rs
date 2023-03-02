@@ -1,7 +1,6 @@
 use std::cmp::Ordering;
 use std::mem::swap;
 use std::rc::Rc;
-use js_sys::Boolean;
 
 
 use serde::{Deserialize, Serialize};
@@ -80,6 +79,7 @@ pub struct Position {
     pub cells: Vec<Option<Piece>>,
     pub state: PosState,
     pub next_move: Option<Color>,
+    pub move_list: Option<MoveList>,
     #[serde(skip_serializing)]
     environment: Rc<PositionEnvironment>,
 }
@@ -110,11 +110,19 @@ impl Position {
             cells: Vec::new(),
             environment,
             next_move: None,
+            move_list: None,
         };
         pos.cells = Vec::new();
         let size = pos.environment.size;
         pos.cells.resize((size * size / 2) as usize, None);
         pos
+    }
+
+    pub fn gem_move_list_cached(&mut self) -> &Option<MoveList> {
+        if self.move_list.is_some() { return &self.move_list; } else {
+            self.move_list = Some(self.get_move_list(false));
+            &self.move_list
+        }
     }
 
     fn state_change(&mut self, piece: &Piece, sign: i32) {

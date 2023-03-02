@@ -9,11 +9,11 @@ export enum Color {
 /**
 */
 export enum DrawType {
-  draw1 = 0,
-  draw2 = 1,
-  draw3 = 2,
-  draw4 = 3,
-  draw5 = 4,
+  Draw1 = 0,
+  Draw2 = 1,
+  Draw3 = 2,
+  Draw4 = 3,
+  Draw5 = 4,
 }
 export type BoardPos = number;
 

@@ -125,7 +125,7 @@ impl Game {
     }
 
     pub fn draw_check(&mut self) -> Option<DrawType> {
-        let i = (self.position_history.len() - 1);
+        let i = self.position_history.len() - 1;
         let ref mut pos_it = self.position_history[i];
         if pos_it.position.state.get_count(Color::White).king > 0 &&
             pos_it.position.state.get_count(Color::Black).king > 0 {
@@ -218,7 +218,7 @@ impl Game {
             "need to pass iterable JS values!"
         })?;
         for x in iterator {
-            // If the iterator's `next` method throws an error, propagate it
+            // If the iterators `next` method throws an error, propagate it
             // up to the caller.
             let x = x?;
 
@@ -296,7 +296,7 @@ mod tests {
             .for_each(|pos|
                 game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, false)));
         for _t in 0..1000000 {
-            let list = game.get_move_list(true);
+            let _list = game.get_move_list(true);
         }
         let list = game.get_move_list( true);
         print!("\ngame_quite_move {:?} \n", {
