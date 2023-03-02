@@ -127,21 +127,21 @@ impl Game {
         // let ref mut pos_it = self.position_history[i];
         let cur_position = &mut self.current_position;
         let pos_history = &mut self.position_history;
-        if cur_position.state.get_count(Color::White).king > 0 &&
-            cur_position.state.get_count(Color::Black).king > 0 {
+        if pos_history[i].position.state.get_count(Color::White).king > 0 &&
+            pos_history[i].position.state.get_count(Color::Black).king > 0 {
             // first position where both set kings
             if self.state.kings_start_at.is_none() {
                 self.state.kings_start_at = Some(i);
             }
             // 1) если в течение 15 ходов игроки делали ходы только дамками, не передвигая
             // простых шашек и не производя взятия.
-            if cur_position.get_piece_of_move_item(move_item).is_king {
+            if pos_history[i].position.get_piece_of_move_item(move_item).is_king {
                 if self.state.kings_only_move_start_at.is_none() {
                     self.state.kings_only_move_start_at = Some(i);
-                } else {
-                    if i - self.state.kings_only_move_start_at.unwrap() > 15 {
-                        return Some(DrawType::Draw1);
-                    }
+                }
+                if cur_position.get_piece_of_move_item(move_item).is_king &&
+                    1 + i - self.state.kings_only_move_start_at.unwrap() > 15 {
+                    return Some(DrawType::Draw1);
                 }
             } else { self.state.kings_only_move_start_at = None; }
 
@@ -177,13 +177,15 @@ impl Game {
             // в 4- и 5-фигурных окончаниях — 30 ходов,
             // в 6- и 7-фигурных окончаниях — 60 ходов;
             if i > 0 {
-                if cur_position.state == pos_history[i].position.state {
+                if pos_history[i - 1].position.state == pos_history[i].position.state {
                     if self.state.power_equal_start_at.is_none() { self.state.power_equal_start_at = Some(i); }
-                    let total = cur_position.state.get_total();
-                    let n = 1 + i - self.state.power_equal_start_at.unwrap();
-                    if total < 4 && n > 5 { return Some(DrawType::Draw4); }
-                    if total < 6 && n > 30 { return Some(DrawType::Draw4); }
-                    if total < 8 && n > 60 { return Some(DrawType::Draw4); }
+                    if cur_position.state == pos_history[i].position.state {
+                        let total = cur_position.state.get_total();
+                        let n = 1 + i - self.state.power_equal_start_at.unwrap();
+                        if total < 4 && n > 5 { return Some(DrawType::Draw4); }
+                        if total < 6 && n > 30 { return Some(DrawType::Draw4); }
+                        if total < 8 && n > 60 { return Some(DrawType::Draw4); }
+                    }
                 } else { self.state.power_equal_start_at = None; }
             }
 
