@@ -79,7 +79,7 @@ pub struct Position {
     pub cells: Vec<Option<Piece>>,
     pub state: PosState,
     pub next_move: Option<Color>,
-    pub move_list: Option<MoveList>,
+    pub move_list: Option<Rc<MoveList>>,
     #[serde(skip_serializing)]
     environment: Rc<PositionEnvironment>,
 }
@@ -118,10 +118,10 @@ impl Position {
         pos
     }
 
-    pub fn gem_move_list_cached(&mut self) -> &Option<MoveList> {
-        if self.move_list.is_some() { return &self.move_list; } else {
-            self.move_list = Some(self.get_move_list(false));
-            &self.move_list
+    pub fn gem_move_list_cached(&mut self) -> Rc<MoveList> {
+        if self.move_list.is_some() { return self.move_list.as_ref().unwrap().clone(); } else {
+            self.move_list = Some(Rc::new(self.get_move_list(false)));
+            self.move_list.as_ref().unwrap().clone()
         }
     }
 
