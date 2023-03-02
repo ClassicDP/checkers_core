@@ -1,3 +1,4 @@
+#![feature(let_chains)]
 extern crate core;
 use wasm_bindgen::prelude::*;
 mod moves;

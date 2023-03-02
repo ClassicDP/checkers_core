@@ -570,6 +570,12 @@ module.exports.__wbindgen_error_new = function(arg0, arg1) {
     return addHeapObject(ret);
 };
 
+module.exports.__wbindgen_boolean_get = function(arg0) {
+    const v = getObject(arg0);
+    const ret = typeof(v) === 'boolean' ? (v ? 1 : 0) : 2;
+    return ret;
+};
+
 module.exports.__wbindgen_string_get = function(arg0, arg1) {
     const obj = getObject(arg1);
     const ret = typeof(obj) === 'string' ? obj : undefined;
@@ -577,12 +583,6 @@ module.exports.__wbindgen_string_get = function(arg0, arg1) {
     var len0 = WASM_VECTOR_LEN;
     getInt32Memory0()[arg0 / 4 + 1] = len0;
     getInt32Memory0()[arg0 / 4 + 0] = ptr0;
-};
-
-module.exports.__wbindgen_boolean_get = function(arg0) {
-    const v = getObject(arg0);
-    const ret = typeof(v) === 'boolean' ? (v ? 1 : 0) : 2;
-    return ret;
 };
 
 module.exports.__wbindgen_is_string = function(arg0) {

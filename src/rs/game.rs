@@ -4,12 +4,10 @@ use crate::color::Color;
 use crate::moves::BoardPos;
 use crate::moves_list::{MoveItem, MoveList};
 use crate::piece::Piece;
-use crate::position::{Position, PositionHistoryItem};
+use crate::position::{Position, PositionHistoryItem, PosState};
 use crate::position_environment::PositionEnvironment;
 use ts_rs::*;
 use serde::{Serialize};
-
-
 
 #[wasm_bindgen]
 #[derive(TS)]
@@ -105,12 +103,12 @@ impl Game {
     }
 
     fn get_move_list(&mut self, for_front: bool) -> MoveList {
-        self.current_position.get_move_list( for_front)
+        self.current_position.get_move_list(for_front)
     }
 
     #[wasm_bindgen(getter = moveColor)]
-    pub fn get_color (&self) -> JsValue {
-        match  self.current_position.next_move {
+    pub fn get_color(&self) -> JsValue {
+        match self.current_position.next_move {
             Some(color) => match serde_wasm_bindgen::to_value(&color) {
                 Ok(js) => js,
                 Err(_err) => JsValue::UNDEFINED,
@@ -120,23 +118,24 @@ impl Game {
     }
 
     #[wasm_bindgen(setter = moveColor)]
-    pub fn set_color (&mut self, color: Color) {
+    pub fn set_color(&mut self, color: Color) {
         self.current_position.next_move = Some(color);
     }
 
     fn draw_check(&mut self, move_item: &MoveItem) -> Option<DrawType> {
         let i = self.position_history.len() - 1;
         // let ref mut pos_it = self.position_history[i];
-        let position = &mut self.current_position;
-        if position.state.get_count(Color::White).king > 0 &&
-            position.state.get_count(Color::Black).king > 0 {
+        let cur_position = &mut self.current_position;
+        let pos_history = &mut self.position_history;
+        if cur_position.state.get_count(Color::White).king > 0 &&
+            cur_position.state.get_count(Color::Black).king > 0 {
             // first position where both set kings
             if self.state.kings_start_at.is_none() {
                 self.state.kings_start_at = Some(i);
             }
             // 1) если в течение 15 ходов игроки делали ходы только дамками, не передвигая
             // простых шашек и не производя взятия.
-            if position.get_piece_of_move_item(move_item).is_king {
+            if cur_position.get_piece_of_move_item(move_item).is_king {
                 if self.state.kings_only_move_start_at.is_none() {
                     self.state.kings_only_move_start_at = Some(i);
                 } else {
@@ -150,23 +149,25 @@ impl Game {
             // 2) если три раза повторяется одна и та же позиция
             let mut repeats = 0;
             let mut j = i;
-            let pos = &self.position_history[i].position;
-            while self.position_history[j].position.state == pos.state {
-                if *pos == self.position_history[j].position {
+            while pos_history[j].position.state == cur_position.state {
+                if *cur_position == pos_history[j].position {
                     repeats += 1;
                     if repeats == 3 { return Some(DrawType::Draw2); }
                 }
-                if j == 0 { break; }
                 j -= 1;
+                if j < self.state.kings_start_at.unwrap_or(0) { break; }
             }
 
             // 3) если участник, имеющий три дамки (и более) против одной дамки противника,
             // за 15 ходов не возьмёт дамку противника
-            let state = &mut self.position_history[i].position.state;
-            if (state.get_count(Color::White).king == 1 && state.get_count(Color::Black).king >= 3) ||
-                (state.get_count(Color::Black).king == 1 && state.get_count(Color::White).king >= 3) {
+            let is_triangle = |state: &mut PosState| {
+                (state.get_count(Color::White).king == 1 && state.get_count(Color::Black).king >= 3) ||
+                    (state.get_count(Color::Black).king == 1 && state.get_count(Color::White).king >= 3)
+            };
+            if is_triangle(&mut pos_history[i].position.state) {
                 if self.state.triangle_start_at.is_none() { self.state.triangle_start_at = Some(i); } else {
-                    if i - self.state.triangle_start_at.unwrap() >= 15 { return Some(DrawType::Draw3); }
+                    if is_triangle(&mut cur_position.state) &&
+                        1 + i - self.state.triangle_start_at.unwrap() >= 15 { return Some(DrawType::Draw3); }
                 }
             } else { self.state.triangle_start_at = None; }
 
@@ -176,12 +177,10 @@ impl Game {
             // в 4- и 5-фигурных окончаниях — 30 ходов,
             // в 6- и 7-фигурных окончаниях — 60 ходов;
             if i > 0 {
-                let ref state = self.position_history[i].position.state;
-                let ref prev_state = self.position_history[i - 1].position.state;
-                if *state == *prev_state {
+                if cur_position.state == pos_history[i].position.state {
                     if self.state.power_equal_start_at.is_none() { self.state.power_equal_start_at = Some(i); }
-                    let total = state.get_total();
-                    let n = i - self.state.power_equal_start_at.unwrap();
+                    let total = cur_position.state.get_total();
+                    let n = 1 + i - self.state.power_equal_start_at.unwrap();
                     if total < 4 && n > 5 { return Some(DrawType::Draw4); }
                     if total < 6 && n > 30 { return Some(DrawType::Draw4); }
                     if total < 8 && n > 60 { return Some(DrawType::Draw4); }
@@ -191,24 +190,37 @@ impl Game {
             // если участник, имея в окончании партии три дамки, две дамки и простую, дамку и две простые,
             // ""три простые против одинокой дамки"", находящейся на большой дороге,
             // своим 5-м ходом не сможет добиться выигранной позиции;
-            let ref mut state = self.position_history[i].position.state;
-            if (state.get_count(Color::Black).king == 1 ||
-                state.get_count(Color::White).king == 1) &&
-                state.get_total() == 4 {
-                let points = self.position_environment.get_vectors(0)[0].clone();
-                let gen_road_pieces: Vec<_> =
-                    points.into_iter().filter(|pos| self.current_position.cells[**pos].is_some()).collect();
-                if gen_road_pieces.len() == 1 &&
-                    self.current_position.cells[*gen_road_pieces[0]].is_some() {
+            let is_single_on_main_road = |position: &mut Position| -> bool {
+                let ref mut state = position.state;
+                if (state.get_count(Color::Black).king == 1 ||
+                    state.get_count(Color::White).king == 1) &&
+                    state.get_total() == 4 {
+                    let color = if state.get_count(Color::Black).king == 1 {
+                        Color::Black
+                    } else { Color::White };
+                    for main_road_point in self.position_environment.get_vectors(0)[0].points.iter() {
+                        if let Some(piece) = &position.cells[*main_road_point] {
+                            return if piece.color == color { true } else {
+                                false
+                            };
+                        }
+                    }
+                }
+                false
+            };
+
+            if is_single_on_main_road(cur_position) {
+                if is_single_on_main_road(&mut pos_history[i].position) {
                     if self.state.main_road_start_at.is_none() {
                         self.state.main_road_start_at = Some(i);
                     }
-                    if i - self.state.main_road_start_at.unwrap() > 5 {
+                    if is_single_on_main_road(cur_position) && 1 + i - self.state.main_road_start_at.unwrap() > 5 {
                         return Some(DrawType::Draw5);
                     }
                 } else { self.state.main_road_start_at = None; }
-            } else { self.state.main_road_start_at = None; }
+            }
         } else { self.state.kings_start_at = None; }
+
         None
     }
 
@@ -229,7 +241,7 @@ impl Game {
             }
         }
         if !pos_list.is_empty() {
-            if  self.current_position.cells[pos_list[0] as usize].is_some() {
+            if self.current_position.cells[pos_list[0] as usize].is_some() {
                 let move_list = self.get_move_list(true);
                 for mut move_item in move_list.list {
                     let mut i = 1;
@@ -251,7 +263,7 @@ impl Game {
                         self.position_history.push(PositionHistoryItem { move_item, position: self.current_position.clone() });
                         return if draw.is_none() { Ok(JsValue::TRUE) } else {
                             Ok(serde_wasm_bindgen::to_value(&draw.unwrap()).unwrap())
-                        }
+                        };
                     }
                 }
             }
@@ -278,14 +290,15 @@ mod tests {
         let mut game = Game::new(8);
         game.current_position.next_move = Option::from(Color::White);
         game.insert_piece(Piece::new(13, Color::White, true));
-        vec![2, 27, 24].iter().for_each(|pos|game.insert_piece(Piece::new(*pos, Color::White, false)));
+        vec![2, 27, 24].iter().for_each(|pos| game.insert_piece(Piece::new(*pos, Color::White, false)));
         let list = game.get_move_list(true);
         print!("\ngame_quite_move {:?} \n", {
-            let z: Vec<_> = list.list.iter().map(|x|x.mov.clone().unwrap()).collect();
+            let z: Vec<_> = list.list.iter().map(|x| x.mov.clone().unwrap()).collect();
             z
         });
         assert_eq!(list.list.len(), 15);
     }
+
     #[test]
     pub fn game_strike_list() {
         let mut game = Game::new(8);
@@ -299,16 +312,16 @@ mod tests {
         for _t in 0..1000000 {
             let _list = game.get_move_list(true);
         }
-        let list = game.get_move_list( true);
+        let list = game.get_move_list(true);
         print!("\ngame_quite_move {:?} \n", {
-            let z: Vec<_> = list.list.iter().map(|x|x.strike.clone().unwrap()).collect();
+            let z: Vec<_> = list.list.iter().map(|x| x.strike.clone().unwrap()).collect();
             z
         });
         assert_eq!(list.list.len(), 5);
     }
 
     #[test]
-    fn performance () {
+    fn performance() {
         PositionEnvironment::game();
     }
 }
