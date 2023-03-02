@@ -20,7 +20,7 @@ fn from_js<T: DeserializeOwned>(js: JsValue) -> Option<T> {
     match val {
         Ok(val) => Some(val),
         Err(err) => {
-            crate::log(&format!("{}", err));
+            log(&format!("{}", err));
             None
         }
     }

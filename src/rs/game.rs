@@ -1,15 +1,14 @@
 use std::rc::Rc;
-use js_sys::Boolean;
 use wasm_bindgen::prelude::*;
 use crate::color::Color;
 use crate::moves::BoardPos;
 use crate::moves_list::{MoveList};
 use crate::piece::Piece;
-use crate::position::{Position, PositionHistoryItem, PosState};
+use crate::position::{Position, PositionHistoryItem};
 use crate::position_environment::PositionEnvironment;
 use ts_rs::*;
 use serde::{Serialize};
-use crate::log;
+
 
 
 #[wasm_bindgen]
@@ -17,11 +16,11 @@ use crate::log;
 #[ts(export)]
 #[derive(Serialize)]
 pub enum DrawType {
-    draw1,
-    draw2,
-    draw3,
-    draw4,
-    draw5,
+    Draw1,
+    Draw2,
+    Draw3,
+    Draw4,
+    Draw5,
 }
 
 #[derive(Default)]
@@ -39,7 +38,7 @@ pub struct GameState {
 
 #[wasm_bindgen]
 pub struct Game {
-    position_history: std::vec::Vec<PositionHistoryItem>,
+    position_history: Vec<PositionHistoryItem>,
     state: GameState,
     position_environment: Rc<PositionEnvironment>,
     #[wasm_bindgen(skip)]
@@ -141,7 +140,7 @@ impl Game {
                     self.state.kings_only_move_start_at = Some(i);
                 } else {
                     if i - self.state.kings_only_move_start_at.unwrap() > 15 {
-                        return Some(DrawType::draw1);
+                        return Some(DrawType::Draw1);
                     }
                 }
             } else { self.state.kings_only_move_start_at = None; }
@@ -154,7 +153,7 @@ impl Game {
             while self.position_history[j].position.state == pos.state {
                 if *pos == self.position_history[j].position {
                     repeats += 1;
-                    if repeats == 3 { return Some(DrawType::draw2); }
+                    if repeats == 3 { return Some(DrawType::Draw2); }
                 }
                 if j == 0 { break; }
                 j -= 1;
@@ -166,7 +165,7 @@ impl Game {
             if (state.get_count(Color::White).king == 1 && state.get_count(Color::Black).king >= 3) ||
                 (state.get_count(Color::Black).king == 1 && state.get_count(Color::White).king >= 3) {
                 if self.state.triangle_start_at.is_none() { self.state.triangle_start_at = Some(i); } else {
-                    if i - self.state.triangle_start_at.unwrap() >= 15 { return Some(DrawType::draw3); }
+                    if i - self.state.triangle_start_at.unwrap() >= 15 { return Some(DrawType::Draw3); }
                 }
             } else { self.state.triangle_start_at = None; }
 
@@ -182,9 +181,9 @@ impl Game {
                     if self.state.power_equal_start_at.is_none() { self.state.power_equal_start_at = Some(i); }
                     let total = state.get_total();
                     let n = i - self.state.power_equal_start_at.unwrap();
-                    if total < 4 && n > 5 { return Some(DrawType::draw4); }
-                    if total < 6 && n > 30 { return Some(DrawType::draw4); }
-                    if total < 8 && n > 60 { return Some(DrawType::draw4); }
+                    if total < 4 && n > 5 { return Some(DrawType::Draw4); }
+                    if total < 6 && n > 30 { return Some(DrawType::Draw4); }
+                    if total < 8 && n > 60 { return Some(DrawType::Draw4); }
                 } else { self.state.power_equal_start_at = None; }
             }
 
@@ -204,7 +203,7 @@ impl Game {
                         self.state.main_road_start_at = Some(i);
                     }
                     if i - self.state.main_road_start_at.unwrap() > 5 {
-                        return Some(DrawType::draw5);
+                        return Some(DrawType::Draw5);
                     }
                 } else { self.state.main_road_start_at = None; }
             } else { self.state.main_road_start_at = None; }
@@ -229,7 +228,7 @@ impl Game {
             }
         }
         if !pos_list.is_empty() {
-            if let Some(piece) = &self.current_position.cells[pos_list[0] as usize] {
+            if  self.current_position.cells[pos_list[0] as usize].is_some() {
                 let move_list = self.get_move_list(true);
                 for mut move_item in move_list.list {
                     let mut i = 1;
@@ -262,7 +261,6 @@ impl Game {
 
 #[cfg(test)]
 mod tests {
-    use wasm_bindgen::prelude::wasm_bindgen;
     use crate::color::Color;
     use crate::game::Game;
     use crate::piece::Piece;

@@ -38,7 +38,7 @@ impl ListP {
 
     pub fn max(&mut self, th_cnt: i8) -> i32 {
         let len = self.v.len();
-        let part_cnt = len / th_cnt as usize;
+        let _part_cnt = len / th_cnt as usize;
         let mut v: &mut [i32] = &mut self.v;
         let mut v0 = Vec::new();
         loop {

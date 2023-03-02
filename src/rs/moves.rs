@@ -22,8 +22,8 @@ pub struct StraightStrike {
     pub(crate) king_move: bool,
 }
 
-impl fmt::Debug for StraightStrike {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+impl Debug for StraightStrike {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "\nfrom: {}, to: {}, take: {}", self.from, self.to, self.take
         )
     }

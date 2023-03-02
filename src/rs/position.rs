@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use std::mem::swap;
 use std::rc::Rc;
+use js_sys::Boolean;
 
 
 use serde::{Deserialize, Serialize};
@@ -86,11 +87,12 @@ pub struct Position {
 impl PartialEq for Position {
     fn eq(&self, other: &Self) -> bool {
         self.cells.iter().enumerate().all(|(i, x)| Some(&other.cells[i]) == Some(&x))
+            && self.next_move == other.next_move
     }
 }
 
 impl PartialOrd for Position {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+    fn partial_cmp(self: &Position, other: &Self) -> Option<Ordering> {
         if self.state != other.state { PartialOrd::partial_cmp(&self.state, &other.state) } else {
             PartialOrd::partial_cmp(&self.evaluate(), &other.evaluate())
         }
@@ -107,7 +109,7 @@ impl Position {
             },
             cells: Vec::new(),
             environment,
-            next_move: None
+            next_move: None,
         };
         pos.cells = Vec::new();
         let size = pos.environment.size;
@@ -172,7 +174,7 @@ impl Position {
     }
     pub fn swap(&mut self, i: BoardPos, j: BoardPos) {
         self.cells.swap(i as usize, j as usize);
-        let set_pos = |cell: &mut std::option::Option<Piece>, pos: BoardPos| {
+        let set_pos = |cell: &mut Option<Piece>, pos: BoardPos| {
             if let Some(ref mut piece) = cell {
                 piece.pos = pos;
             }
@@ -349,7 +351,7 @@ impl Position {
             };
             self.make_strike_or_move(mov);
         }
-        if self.next_move.is_some() {self.next_move = Some(!self.next_move.unwrap())}
+        if self.next_move.is_some() { self.next_move = Some(!self.next_move.unwrap()) }
     }
 
     pub fn unmake_move(&mut self, move_item: &mut MoveItem) {
@@ -367,7 +369,7 @@ impl Position {
             };
             self.unmake_strike_or_move(mov);
         }
-        if self.next_move.is_some() {self.next_move = Some(!self.next_move.unwrap())}
+        if self.next_move.is_some() { self.next_move = Some(!self.next_move.unwrap()) }
     }
 
     pub fn make_move_and_get_position(&mut self, move_item: &mut MoveItem) -> PositionHistoryItem {
@@ -376,8 +378,8 @@ impl Position {
     }
 
     pub fn get_move_list(&mut self, for_front: bool) -> MoveList {
-        let color = self.next_move.unwrap_or_else(||panic!("Color of next move undefined!"));
-        let pieces_pos: std::vec::Vec<_> = self.cells.iter()
+        let color = self.next_move.unwrap_or_else(|| panic!("Color of next move undefined!"));
+        let pieces_pos: Vec<_> = self.cells.iter()
             .filter(|piece| if let Some(piece) = piece { piece.color == color } else { false })
             .map(|piece| if let Some(piece) =
                 piece { piece.pos } else { panic!("Position problem in get_move_list"); })
@@ -425,5 +427,4 @@ mod tests {
         g2.remove_piece(3);
         assert_eq!(g1.current_position, g2.current_position);
     }
-    
 }

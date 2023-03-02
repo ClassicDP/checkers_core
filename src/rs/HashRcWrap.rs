@@ -2,7 +2,6 @@ use std::fmt::Debug;
 use std::rc::Rc;
 use std::cell::{Ref, RefCell, RefMut};
 use serde::{Deserialize, Serialize};
-use ts_rs::TS;
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
@@ -42,7 +41,6 @@ impl<T> PartialEq<Self> for HashRcWrap<T> {
     }
 }
 
-impl<T> Eq for HashRcWrap<T> {}
 
 impl<T> Hash for HashRcWrap<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {

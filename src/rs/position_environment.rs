@@ -185,24 +185,24 @@ impl PositionEnvironment {
         pos.insert_piece(Piece::new(26, Color::Black, true));
 
 
-        let mut list = MoveList::new();
-        // pos.get_strike_list(22, &mut list, &vec![]);
-        // print!("\n\n list: {:?}", list);
+        let mut _list = MoveList::new();
+        // pos.get_strike_list(22, &mut _list, &vec![]);
+        // print!("\n\n _list: {:?}", _list);
 
         // for _i in 0..100000 {
-        //     let mut list = MoveList::new();
-        //     pos.get_strike_list(22, &mut list, &vec![]);
-        //     pos.make_move(&mut list.list[0]);
-        //     pos.unmake_move(&mut list.list[0]);
-        //     let mut p0 = pos.make_move_and_get_position(&mut list.list[0]);
+        //     let mut _list = MoveList::new();
+        //     pos.get_strike_list(22, &mut _list, &vec![]);
+        //     pos.make_move(&mut _list._list[0]);
+        //     pos.unmake_move(&mut _list._list[0]);
+        //     let mut p0 = pos.make_move_and_get_position(&mut _list._list[0]);
         //     pos.unmake_move(p0.move_item.borrow_mut());
-        //     let mut p1 = pos.make_move_and_get_position(&mut list.list[0]);
+        //     let mut p1 = pos.make_move_and_get_position(&mut _list._list[0]);
         //     if p0 != p1 { break; }
         //     pos.unmake_move(p1.move_item.borrow_mut());
         // }
-        // let mut list = MoveList::new();
-        // // pos.get_strike_list(22, &mut list, &vec![]);
-        // // let mut p0 = pos.make_move_and_get_position(&mut list.list[0]);
+        // let mut _list = MoveList::new();
+        // // pos.get_strike_list(22, &mut _list, &vec![]);
+        // // let mut p0 = pos.make_move_and_get_position(&mut _list._list[0]);
         // // pos.unmake_move(p0.move_item.borrow_mut());
         //
 
