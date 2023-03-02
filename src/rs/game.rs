@@ -2,7 +2,7 @@ use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use crate::color::Color;
 use crate::moves::BoardPos;
-use crate::moves_list::{MoveList};
+use crate::moves_list::{MoveItem, MoveList};
 use crate::piece::Piece;
 use crate::position::{Position, PositionHistoryItem};
 use crate::position_environment::PositionEnvironment;
@@ -124,18 +124,19 @@ impl Game {
         self.current_position.next_move = Some(color);
     }
 
-    pub fn draw_check(&mut self) -> Option<DrawType> {
+    fn draw_check(&mut self, move_item: &MoveItem) -> Option<DrawType> {
         let i = self.position_history.len() - 1;
-        let ref mut pos_it = self.position_history[i];
-        if pos_it.position.state.get_count(Color::White).king > 0 &&
-            pos_it.position.state.get_count(Color::Black).king > 0 {
+        // let ref mut pos_it = self.position_history[i];
+        let position = &mut self.current_position;
+        if position.state.get_count(Color::White).king > 0 &&
+            position.state.get_count(Color::Black).king > 0 {
             // first position where both set kings
             if self.state.kings_start_at.is_none() {
                 self.state.kings_start_at = Some(i);
             }
             // 1) если в течение 15 ходов игроки делали ходы только дамками, не передвигая
             // простых шашек и не производя взятия.
-            if pos_it.position.get_piece_of_move_item(&pos_it.move_item).is_king {
+            if position.get_piece_of_move_item(move_item).is_king {
                 if self.state.kings_only_move_start_at.is_none() {
                     self.state.kings_only_move_start_at = Some(i);
                 } else {
@@ -246,8 +247,8 @@ impl Game {
                     }
                     if ok && pos_list.len() == i {
                         self.current_position.make_move(&mut move_item);
+                        let draw = self.draw_check(&mut move_item);
                         self.position_history.push(PositionHistoryItem { move_item, position: self.current_position.clone() });
-                        let draw = self.draw_check();
                         return if draw.is_none() { Ok(JsValue::TRUE) } else {
                             Ok(serde_wasm_bindgen::to_value(&draw.unwrap()).unwrap())
                         }

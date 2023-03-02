@@ -79,7 +79,8 @@ pub struct Position {
     pub cells: Vec<Option<Piece>>,
     pub state: PosState,
     pub next_move: Option<Color>,
-    pub move_list: Option<Rc<MoveList>>,
+    move_list: Option<Rc<MoveList>>,
+    eval: Option<i32>,
     #[serde(skip_serializing)]
     environment: Rc<PositionEnvironment>,
 }
@@ -90,15 +91,6 @@ impl PartialEq for Position {
             && self.next_move == other.next_move
     }
 }
-
-impl PartialOrd for Position {
-    fn partial_cmp(self: &Position, other: &Self) -> Option<Ordering> {
-        if self.state != other.state { PartialOrd::partial_cmp(&self.state, &other.state) } else {
-            PartialOrd::partial_cmp(&self.evaluate(), &other.evaluate())
-        }
-    }
-}
-
 
 impl Position {
     pub fn new(environment: Rc<PositionEnvironment>) -> Position {
@@ -111,6 +103,7 @@ impl Position {
             environment,
             next_move: None,
             move_list: None,
+            eval: None
         };
         pos.cells = Vec::new();
         let size = pos.environment.size;
@@ -118,11 +111,12 @@ impl Position {
         pos
     }
 
-    pub fn gem_move_list_cached(&mut self) -> Rc<MoveList> {
-        if self.move_list.is_some() { return self.move_list.as_ref().unwrap().clone(); } else {
-            self.move_list = Some(Rc::new(self.get_move_list(false)));
-            self.move_list.as_ref().unwrap().clone()
+    pub fn get_move_list_cached(&mut self) -> Rc<MoveList> {
+        if self.move_list.is_none() {
+            let move_li = self.get_move_list(false);
+            self.move_list.get_or_insert(Rc::new(move_li));
         }
+        self.move_list.as_ref().unwrap().clone()
     }
 
     fn state_change(&mut self, piece: &Piece, sign: i32) {
@@ -137,12 +131,16 @@ impl Position {
         let pos = piece.pos as usize;
         self.state_change(&piece, 1);
         self.cells[pos] = Some(piece);
+        self.move_list = None;
+        self.eval = None;
     }
 
     pub fn remove_piece(&mut self, pos: BoardPos) -> bool {
         if let Some(piece) = self.cells[pos].clone() {
             self.state_change(&piece, -1);
             self.cells[pos] = None;
+            self.move_list = None;
+            self.eval = None;
             return true;
         }
         false
@@ -278,8 +276,15 @@ impl Position {
         false
     }
 
-    pub fn evaluate(&self) -> i32 {
-        let mut eval: i32 = 0;
+    pub fn evaluate(&mut self) -> i32 {
+        if self.eval.is_some() {return self.eval.unwrap()}
+        // white advantage if positive signature of evaluate, black - negative
+        let mut eval: i32 =
+            if self.get_move_list_cached().list.len() == 0 {
+                if self.next_move.is_some() && self.next_move.unwrap() == Color::White {
+                    i32::MIN
+                } else { i32::MAX }
+            } else { 0 };
         for cell in &self.cells {
             if let Some(ref piece) = cell {
                 let v = self.get_vectors(piece, &vec![], false);
@@ -291,6 +296,7 @@ impl Position {
                     })
             }
         }
+        self.eval = Some(eval);
         eval
     }
 
@@ -360,6 +366,8 @@ impl Position {
             self.make_strike_or_move(mov);
         }
         if self.next_move.is_some() { self.next_move = Some(!self.next_move.unwrap()) }
+        self.move_list = None;
+        self.eval = None;
     }
 
     pub fn unmake_move(&mut self, move_item: &mut MoveItem) {

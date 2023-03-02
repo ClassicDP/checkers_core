@@ -324,13 +324,6 @@ class Game {
         wasm.game_set_color(this.ptr, color);
     }
     /**
-    * @returns {number | undefined}
-    */
-    draw_check() {
-        const ret = wasm.game_draw_check(this.ptr);
-        return ret === 5 ? undefined : ret;
-    }
-    /**
     * @param {any} pos_chain
     * @returns {any}
     */
@@ -628,10 +621,6 @@ module.exports.__wbindgen_jsval_eq = function(arg0, arg1) {
     return ret;
 };
 
-module.exports.__wbg_log_7529978016e706d9 = function(arg0, arg1) {
-    console.log(getStringFromWasm0(arg0, arg1));
-};
-
 module.exports.__wbindgen_string_new = function(arg0, arg1) {
     const ret = getStringFromWasm0(arg0, arg1);
     return addHeapObject(ret);
@@ -642,6 +631,10 @@ module.exports.__wbindgen_number_get = function(arg0, arg1) {
     const ret = typeof(obj) === 'number' ? obj : undefined;
     getFloat64Memory0()[arg0 / 8 + 1] = isLikeNone(ret) ? 0 : ret;
     getInt32Memory0()[arg0 / 4 + 0] = !isLikeNone(ret);
+};
+
+module.exports.__wbg_log_7529978016e706d9 = function(arg0, arg1) {
+    console.log(getStringFromWasm0(arg0, arg1));
 };
 
 module.exports.__wbindgen_number_new = function(arg0) {

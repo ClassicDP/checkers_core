@@ -55,10 +55,6 @@ export class Game {
 */
   get_move_list_for_front(): any;
 /**
-* @returns {number | undefined}
-*/
-  draw_check(): number | undefined;
-/**
 * @param {any} pos_chain
 * @returns {any}
 */
