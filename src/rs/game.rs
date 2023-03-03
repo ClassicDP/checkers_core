@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use crate::color::Color;
@@ -8,17 +9,59 @@ use crate::position::{Position, PositionHistoryItem, PosState};
 use crate::position_environment::PositionEnvironment;
 use ts_rs::*;
 use serde::{Serialize};
+use crate::game::FinishType::{BlackWin, Draw1, Draw2, Draw3, Draw4, Draw5, WhiteWin};
 
 #[wasm_bindgen]
 #[derive(TS)]
 #[ts(export)]
-#[derive(Serialize)]
-pub enum DrawType {
+#[derive(Serialize, Debug)]
+pub enum FinishType {
     Draw1,
     Draw2,
     Draw3,
     Draw4,
     Draw5,
+    BlackWin,
+    WhiteWin,
+}
+
+
+impl PartialOrd<Self> for FinishType {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Eq for FinishType {}
+
+impl PartialEq<Self> for FinishType {
+    fn eq(&self, other: &Self) -> bool {
+        let is_draw = |x: &FinishType| {
+                match x {
+                    Draw1 | Draw2 | Draw3 | Draw4 | Draw5 => { true }
+                    _ => { false }
+                }
+            };
+        let is_win_same = |x: &FinishType, y: &FinishType| {
+            match x {
+                WhiteWin => match y { WhiteWin => true,
+                _ => false}
+                BlackWin => match y { BlackWin => true,
+                _ => false}
+                _ => false
+            }
+        };
+        is_draw(self) && is_draw(other) || is_win_same(self, other)
+    }
+}
+
+
+impl Ord for FinishType {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if *self == BlackWin && *other != BlackWin { return Ordering::Less; }
+        if *self == WhiteWin && *other != WhiteWin { return Ordering::Greater; }
+        Ordering::Equal
+    }
 }
 
 #[derive(Default)]
@@ -122,7 +165,7 @@ impl Game {
         self.current_position.next_move = Some(color);
     }
 
-    fn draw_check(&mut self, move_item: &MoveItem) -> Option<DrawType> {
+    fn draw_check(&mut self, move_item: &MoveItem) -> Option<FinishType> {
         let i = self.position_history.len() - 1;
         // let ref mut pos_it = self.position_history[i];
         let cur_position = &mut self.current_position;
@@ -141,7 +184,7 @@ impl Game {
                 }
                 if cur_position.get_piece_of_move_item(move_item).is_king &&
                     1 + i - self.state.kings_only_move_start_at.unwrap() > 15 {
-                    return Some(DrawType::Draw1);
+                    return Some(Draw1);
                 }
             } else { self.state.kings_only_move_start_at = None; }
 
@@ -152,7 +195,7 @@ impl Game {
             while pos_history[j].position.state == cur_position.state {
                 if *cur_position == pos_history[j].position {
                     repeats += 1;
-                    if repeats == 3 { return Some(DrawType::Draw2); }
+                    if repeats == 3 { return Some(Draw2); }
                 }
                 j -= 1;
                 if j < self.state.kings_start_at.unwrap_or(0) { break; }
@@ -167,7 +210,7 @@ impl Game {
             if is_triangle(&mut pos_history[i].position.state) {
                 if self.state.triangle_start_at.is_none() { self.state.triangle_start_at = Some(i); } else {
                     if is_triangle(&mut cur_position.state) &&
-                        1 + i - self.state.triangle_start_at.unwrap() >= 15 { return Some(DrawType::Draw3); }
+                        1 + i - self.state.triangle_start_at.unwrap() >= 15 { return Some(Draw3); }
                 }
             } else { self.state.triangle_start_at = None; }
 
@@ -182,9 +225,9 @@ impl Game {
                     if cur_position.state == pos_history[i].position.state {
                         let total = cur_position.state.get_total();
                         let n = 1 + i - self.state.power_equal_start_at.unwrap();
-                        if total < 4 && n > 5 { return Some(DrawType::Draw4); }
-                        if total < 6 && n > 30 { return Some(DrawType::Draw4); }
-                        if total < 8 && n > 60 { return Some(DrawType::Draw4); }
+                        if total < 4 && n > 5 { return Some(Draw4); }
+                        if total < 6 && n > 30 { return Some(Draw4); }
+                        if total < 8 && n > 60 { return Some(Draw4); }
                     }
                 } else { self.state.power_equal_start_at = None; }
             }
@@ -217,7 +260,7 @@ impl Game {
                         self.state.main_road_start_at = Some(i);
                     }
                     if is_single_on_main_road(cur_position) && 1 + i - self.state.main_road_start_at.unwrap() > 5 {
-                        return Some(DrawType::Draw5);
+                        return Some(Draw5);
                     }
                 } else { self.state.main_road_start_at = None; }
             }
@@ -277,7 +320,7 @@ impl Game {
 #[cfg(test)]
 mod tests {
     use crate::color::Color;
-    use crate::game::Game;
+    use crate::game::{FinishType, Game};
     use crate::piece::Piece;
     use crate::position_environment::PositionEnvironment;
 
@@ -320,6 +363,15 @@ mod tests {
             z
         });
         assert_eq!(list.list.len(), 5);
+    }
+
+    #[test]
+    fn finish_cmp () {
+        assert_eq!( FinishType::Draw2, FinishType::Draw1);
+        assert_eq!( FinishType::WhiteWin, FinishType::WhiteWin);
+        assert_eq!( FinishType::BlackWin, FinishType::BlackWin);
+        assert_ne!( FinishType::BlackWin, FinishType::WhiteWin);
+        assert_ne!( FinishType::Draw2, FinishType::WhiteWin);
     }
 
     #[test]
