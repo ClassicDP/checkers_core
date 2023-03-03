@@ -10,11 +10,10 @@ use wasm_bindgen::prelude::*;
 pub type BoardPos = usize;
 
 
-#[derive(Clone, Deserialize, Serialize, TS)]
+#[derive(Clone, Serialize, Deserialize, TS)]
 #[wasm_bindgen]
 #[ts(export)]
 pub struct StraightStrike {
-    #[serde(skip_serializing)]
     pub(crate) v: Vec<BoardPos>,
     pub(crate) from: BoardPos,
     pub(crate) take: BoardPos,

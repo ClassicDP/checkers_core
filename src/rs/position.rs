@@ -371,6 +371,7 @@ impl Position {
         self.eval = None;
     }
 
+
     pub fn unmake_move(&mut self, move_item: &mut MoveItem) {
         if let Some(ref mut mov) = move_item.mov {
             self.unmake_strike_or_move(mov);

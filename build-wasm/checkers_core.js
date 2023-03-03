@@ -324,6 +324,15 @@ class Game {
         wasm.game_set_color(this.ptr, color);
     }
     /**
+    * @param {MoveItem} move_item
+    * @returns {number | undefined}
+    */
+    finish_check(move_item) {
+        _assertClass(move_item, MoveItem);
+        const ret = wasm.game_finish_check(this.ptr, move_item.ptr);
+        return ret === 7 ? undefined : ret;
+    }
+    /**
     * @param {any} pos_chain
     * @returns {any}
     */
@@ -362,6 +371,23 @@ class GameState {
     }
 }
 module.exports.GameState = GameState;
+/**
+*/
+class MoveItem {
+
+    __destroy_into_raw() {
+        const ptr = this.ptr;
+        this.ptr = 0;
+
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_moveitem_free(ptr);
+    }
+}
+module.exports.MoveItem = MoveItem;
 /**
 */
 class Piece {
@@ -565,15 +591,19 @@ module.exports.__wbindgen_object_drop_ref = function(arg0) {
     takeObject(arg0);
 };
 
-module.exports.__wbindgen_error_new = function(arg0, arg1) {
-    const ret = new Error(getStringFromWasm0(arg0, arg1));
-    return addHeapObject(ret);
+module.exports.__wbg_log_7529978016e706d9 = function(arg0, arg1) {
+    console.log(getStringFromWasm0(arg0, arg1));
 };
 
 module.exports.__wbindgen_boolean_get = function(arg0) {
     const v = getObject(arg0);
     const ret = typeof(v) === 'boolean' ? (v ? 1 : 0) : 2;
     return ret;
+};
+
+module.exports.__wbindgen_error_new = function(arg0, arg1) {
+    const ret = new Error(getStringFromWasm0(arg0, arg1));
+    return addHeapObject(ret);
 };
 
 module.exports.__wbindgen_string_get = function(arg0, arg1) {
@@ -631,10 +661,6 @@ module.exports.__wbindgen_number_get = function(arg0, arg1) {
     const ret = typeof(obj) === 'number' ? obj : undefined;
     getFloat64Memory0()[arg0 / 8 + 1] = isLikeNone(ret) ? 0 : ret;
     getInt32Memory0()[arg0 / 4 + 0] = !isLikeNone(ret);
-};
-
-module.exports.__wbg_log_7529978016e706d9 = function(arg0, arg1) {
-    console.log(getStringFromWasm0(arg0, arg1));
 };
 
 module.exports.__wbindgen_number_new = function(arg0) {

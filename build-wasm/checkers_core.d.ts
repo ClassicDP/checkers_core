@@ -57,6 +57,11 @@ export class Game {
 */
   get_move_list_for_front(): any;
 /**
+* @param {MoveItem} move_item
+* @returns {number | undefined}
+*/
+  finish_check(move_item: MoveItem): number | undefined;
+/**
 * @param {any} pos_chain
 * @returns {any}
 */
@@ -74,6 +79,11 @@ export class Game {
 /**
 */
 export class GameState {
+  free(): void;
+}
+/**
+*/
+export class MoveItem {
   free(): void;
 }
 /**

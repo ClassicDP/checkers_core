@@ -18,6 +18,7 @@ pub fn main() {
     for _i in 0..1000000 {
         let mut list = game.current_position.get_move_list( false);
         let po = game.current_position.make_move_and_get_position(&mut list.list[0]);
+        game.finish_check(&list.list[0]);
         if po != po { break; }
         game.current_position.unmake_move(&mut list.list[0]);
     }

@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::moves::{BoardPos, ChainPieceMove, PieceMove, QuietMove, StraightStrike};
 use crate::piece::Piece;
 use ts_rs::TS;
+use wasm_bindgen::prelude::wasm_bindgen;
 
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -18,8 +19,11 @@ pub struct Strike {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[derive(TS)]
 #[ts(export)]
+#[wasm_bindgen]
 pub struct MoveItem {
+    #[wasm_bindgen(skip)]
     pub strike: Option<Strike>,
+    #[wasm_bindgen(skip)]
     pub mov: Option<QuietMove>,
 }
 

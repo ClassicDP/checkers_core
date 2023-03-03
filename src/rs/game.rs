@@ -170,7 +170,9 @@ impl Game {
         self.current_position.next_move = Some(color);
     }
 
-    fn finish_check(&mut self, move_item: &MoveItem) -> Option<FinishType> {
+
+    pub fn finish_check(&mut self, move_item: &MoveItem) -> Option<FinishType> {
+        if self.position_history.len() < 1 { return None; }
         let i = self.position_history.len() - 1;
         // let ref mut pos_it = self.position_history[i];
         let cur_position = &mut self.current_position;

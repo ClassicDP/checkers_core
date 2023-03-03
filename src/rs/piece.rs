@@ -62,7 +62,7 @@ impl Piece {
 
 
 
-#[derive(Clone, Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[derive(Clone, Deserialize, Serialize, Debug, Eq, PartialEq)]
 #[wasm_bindgen]
 #[derive(TS)]
 #[ts(export)]
