@@ -9,12 +9,13 @@ use crate::position::{Position, PositionHistoryItem, PosState};
 use crate::position_environment::PositionEnvironment;
 use ts_rs::*;
 use serde::{Serialize};
+use crate::color::Color::{Black, White};
 use crate::game::FinishType::{BlackWin, Draw1, Draw2, Draw3, Draw4, Draw5, WhiteWin};
 
 #[wasm_bindgen]
 #[derive(TS)]
 #[ts(export)]
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 pub enum FinishType {
     Draw1,
     Draw2,
@@ -37,17 +38,21 @@ impl Eq for FinishType {}
 impl PartialEq<Self> for FinishType {
     fn eq(&self, other: &Self) -> bool {
         let is_draw = |x: &FinishType| {
-                match x {
-                    Draw1 | Draw2 | Draw3 | Draw4 | Draw5 => { true }
-                    _ => { false }
-                }
-            };
+            match x {
+                Draw1 | Draw2 | Draw3 | Draw4 | Draw5 => { true }
+                _ => { false }
+            }
+        };
         let is_win_same = |x: &FinishType, y: &FinishType| {
             match x {
-                WhiteWin => match y { WhiteWin => true,
-                _ => false}
-                BlackWin => match y { BlackWin => true,
-                _ => false}
+                WhiteWin => match y {
+                    WhiteWin => true,
+                    _ => false
+                }
+                BlackWin => match y {
+                    BlackWin => true,
+                    _ => false
+                }
                 _ => false
             }
         };
@@ -165,13 +170,17 @@ impl Game {
         self.current_position.next_move = Some(color);
     }
 
-    fn draw_check(&mut self, move_item: &MoveItem) -> Option<FinishType> {
+    fn finish_check(&mut self, move_item: &MoveItem) -> Option<FinishType> {
         let i = self.position_history.len() - 1;
         // let ref mut pos_it = self.position_history[i];
         let cur_position = &mut self.current_position;
+        if cur_position.get_move_list_cached().list.len() == 0 {
+            return if cur_position.next_move.is_some() &&
+                cur_position.next_move.unwrap() == White { Some(BlackWin) } else { Some(WhiteWin) };
+        }
         let pos_history = &mut self.position_history;
-        if pos_history[i].position.state.get_count(Color::White).king > 0 &&
-            pos_history[i].position.state.get_count(Color::Black).king > 0 {
+        if pos_history[i].position.state.get_count(White).king > 0 &&
+            pos_history[i].position.state.get_count(Black).king > 0 {
             // first position where both set kings
             if self.state.kings_start_at.is_none() {
                 self.state.kings_start_at = Some(i);
@@ -204,8 +213,8 @@ impl Game {
             // 3) если участник, имеющий три дамки (и более) против одной дамки противника,
             // за 15 ходов не возьмёт дамку противника
             let is_triangle = |state: &mut PosState| {
-                (state.get_count(Color::White).king == 1 && state.get_count(Color::Black).king >= 3) ||
-                    (state.get_count(Color::Black).king == 1 && state.get_count(Color::White).king >= 3)
+                (state.get_count(White).king == 1 && state.get_count(Black).king >= 3) ||
+                    (state.get_count(Black).king == 1 && state.get_count(White).king >= 3)
             };
             if is_triangle(&mut pos_history[i].position.state) {
                 if self.state.triangle_start_at.is_none() { self.state.triangle_start_at = Some(i); } else {
@@ -237,12 +246,12 @@ impl Game {
             // своим 5-м ходом не сможет добиться выигранной позиции;
             let is_single_on_main_road = |position: &mut Position| -> bool {
                 let ref mut state = position.state;
-                if (state.get_count(Color::Black).king == 1 ||
-                    state.get_count(Color::White).king == 1) &&
+                if (state.get_count(Black).king == 1 ||
+                    state.get_count(White).king == 1) &&
                     state.get_total() == 4 {
-                    let color = if state.get_count(Color::Black).king == 1 {
-                        Color::Black
-                    } else { Color::White };
+                    let color = if state.get_count(Black).king == 1 {
+                        Black
+                    } else { White };
                     for main_road_point in self.position_environment.get_vectors(0)[0].points.iter() {
                         if let Some(piece) = &position.cells[*main_road_point] {
                             return if piece.color == color { true } else {
@@ -304,8 +313,9 @@ impl Game {
                     }
                     if ok && pos_list.len() == i {
                         self.current_position.make_move(&mut move_item);
-                        let draw = self.draw_check(&mut move_item);
-                        self.position_history.push(PositionHistoryItem { move_item, position: self.current_position.clone() });
+                        let draw = self.finish_check(&mut move_item);
+                        self.position_history.push(
+                            PositionHistoryItem { move_item, position: self.current_position.clone() });
                         return if draw.is_none() { Ok(JsValue::TRUE) } else {
                             Ok(serde_wasm_bindgen::to_value(&draw.unwrap()).unwrap())
                         };
@@ -320,7 +330,8 @@ impl Game {
 #[cfg(test)]
 mod tests {
     use crate::color::Color;
-    use crate::game::{FinishType, Game};
+    use crate::game::{Game};
+    use crate::game::FinishType::{BlackWin, Draw1, Draw2, Draw3, WhiteWin};
     use crate::piece::Piece;
     use crate::position_environment::PositionEnvironment;
 
@@ -366,12 +377,17 @@ mod tests {
     }
 
     #[test]
-    fn finish_cmp () {
-        assert_eq!( FinishType::Draw2, FinishType::Draw1);
-        assert_eq!( FinishType::WhiteWin, FinishType::WhiteWin);
-        assert_eq!( FinishType::BlackWin, FinishType::BlackWin);
-        assert_ne!( FinishType::BlackWin, FinishType::WhiteWin);
-        assert_ne!( FinishType::Draw2, FinishType::WhiteWin);
+    fn finish_cmp() {
+        assert_eq!(Draw2, Draw1);
+        assert_eq!(WhiteWin, WhiteWin);
+        assert_eq!(BlackWin, BlackWin);
+        assert_ne!(BlackWin, WhiteWin);
+        assert_ne!(Draw2, WhiteWin);
+        assert_eq!(WhiteWin > BlackWin, true);
+        assert_eq!(BlackWin < WhiteWin, true);
+        assert_eq!(WhiteWin < BlackWin, false);
+        assert_eq!(WhiteWin > Draw3, true);
+        assert_eq!(BlackWin < Draw1, true);
     }
 
     #[test]

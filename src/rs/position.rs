@@ -11,6 +11,7 @@ use crate::moves_list::{MoveItem, MoveList};
 use crate::color::Color;
 use crate::piece::Piece;
 use ts_rs::*;
+use crate::game::FinishType;
 
 
 #[derive(Clone)]
@@ -72,7 +73,14 @@ impl PosState {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Serialize, Debug, Clone)]
+#[derive(TS)]
+pub struct   PositionEval {
+    finished: Option<FinishType>,
+    eval: i32
+}
+
+#[derive(Serialize, Debug, Clone)]
 #[derive(TS)]
 #[ts(export)]
 pub struct Position {
@@ -80,7 +88,7 @@ pub struct Position {
     pub state: PosState,
     pub next_move: Option<Color>,
     move_list: Option<Rc<MoveList>>,
-    eval: Option<i32>,
+    eval: Option<PositionEval>,
     #[serde(skip_serializing)]
     environment: Rc<PositionEnvironment>,
 }
@@ -276,7 +284,7 @@ impl Position {
         false
     }
 
-    pub fn evaluate(&mut self) -> i32 {
+    pub fn evaluate(&mut self) -> PositionEval {
         if self.eval.is_some() {return self.eval.unwrap()}
         // white advantage if positive signature of evaluate, black - negative
         let mut eval: i32 =
@@ -296,8 +304,9 @@ impl Position {
                     })
             }
         }
-        self.eval = Some(eval);
-        eval
+
+        self.eval.eval = eval;
+
     }
 
     pub fn get_strike_list(
