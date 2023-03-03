@@ -8,12 +8,14 @@ export enum Color {
 }
 /**
 */
-export enum DrawType {
+export enum FinishType {
   Draw1 = 0,
   Draw2 = 1,
   Draw3 = 2,
   Draw4 = 3,
   Draw5 = 4,
+  BlackWin = 5,
+  WhiteWin = 6,
 }
 export type BoardPos = number;
 

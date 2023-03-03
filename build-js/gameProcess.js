@@ -59,7 +59,7 @@ class GameProcess {
     }
     get position() {
         let pos = this.game.position;
-        let newPos = { cells: [], state: pos.state, next_move: pos.next_move };
+        let newPos = { cells: [], state: pos.state, next_move: pos.next_move, eval: null, move_list: null };
         for (let piece of pos.cells) {
             if (piece)
                 newPos.cells[this.game.to_board(piece.pos)] = {
