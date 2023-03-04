@@ -281,6 +281,17 @@ class Game {
         return takeObject(ret);
     }
     /**
+    * @param {number} max_depth
+    * @param {number | undefined} best_white
+    * @param {number | undefined} best_black
+    * @param {number | undefined} depth
+    * @returns {PositionHistoryItem}
+    */
+    get_best_move(max_depth, best_white, best_black, depth) {
+        const ret = wasm.game_get_best_move(this.ptr, max_depth, !isLikeNone(best_white), isLikeNone(best_white) ? 0 : best_white, !isLikeNone(best_black), isLikeNone(best_black) ? 0 : best_black, isLikeNone(depth) ? 0xFFFFFF : depth);
+        return PositionHistoryItem.__wrap(ret);
+    }
+    /**
     * @returns {any}
     */
     get state() {
@@ -571,6 +582,30 @@ class PositionEnvironment {
 module.exports.PositionEnvironment = PositionEnvironment;
 /**
 */
+class PositionHistoryItem {
+
+    static __wrap(ptr) {
+        const obj = Object.create(PositionHistoryItem.prototype);
+        obj.ptr = ptr;
+
+        return obj;
+    }
+
+    __destroy_into_raw() {
+        const ptr = this.ptr;
+        this.ptr = 0;
+
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_positionhistoryitem_free(ptr);
+    }
+}
+module.exports.PositionHistoryItem = PositionHistoryItem;
+/**
+*/
 class StraightStrike {
 
     __destroy_into_raw() {
@@ -593,12 +628,6 @@ module.exports.__wbindgen_object_drop_ref = function(arg0) {
 
 module.exports.__wbg_log_7529978016e706d9 = function(arg0, arg1) {
     console.log(getStringFromWasm0(arg0, arg1));
-};
-
-module.exports.__wbindgen_boolean_get = function(arg0) {
-    const v = getObject(arg0);
-    const ret = typeof(v) === 'boolean' ? (v ? 1 : 0) : 2;
-    return ret;
 };
 
 module.exports.__wbindgen_error_new = function(arg0, arg1) {
@@ -648,6 +677,12 @@ module.exports.__wbindgen_bigint_from_u64 = function(arg0) {
 
 module.exports.__wbindgen_jsval_eq = function(arg0, arg1) {
     const ret = getObject(arg0) === getObject(arg1);
+    return ret;
+};
+
+module.exports.__wbindgen_boolean_get = function(arg0) {
+    const v = getObject(arg0);
+    const ret = typeof(v) === 'boolean' ? (v ? 1 : 0) : 2;
     return ret;
 };
 

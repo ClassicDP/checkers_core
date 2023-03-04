@@ -43,6 +43,14 @@ export class Game {
 */
   remove_piece(pos: number): boolean;
 /**
+* @param {number} max_depth
+* @param {number | undefined} best_white
+* @param {number | undefined} best_black
+* @param {number | undefined} depth
+* @returns {PositionHistoryItem}
+*/
+  get_best_move(max_depth: number, best_white?: number, best_black?: number, depth?: number): PositionHistoryItem;
+/**
 * @param {number} pack_index
 * @returns {number}
 */
@@ -146,6 +154,11 @@ export class PositionEnvironment {
 /**
 */
   size: number;
+}
+/**
+*/
+export class PositionHistoryItem {
+  free(): void;
 }
 /**
 */
