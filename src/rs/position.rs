@@ -17,6 +17,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 
 #[derive(Clone)]
 #[wasm_bindgen]
+#[derive(Serialize, Debug)]
 pub struct PositionHistoryItem {
     #[wasm_bindgen(skip)]
     pub position: Position,
@@ -360,7 +361,7 @@ impl Position {
         if let Some(ref mut mov) = move_item.mov {
             self.make_strike_or_move(mov);
         } else if let Some(ref mut strike) = move_item.strike {
-            strike.took_pieces.resize(strike.vec.len(), None);
+            strike.took_pieces = vec![None; strike.vec.len()];
             for (i, straight_strike) in strike.vec.iter().enumerate() {
                 swap(&mut strike.took_pieces[i], &mut self.cells[straight_strike.take]);
                 self.state_change(strike.took_pieces[i].as_ref().unwrap(), -1);

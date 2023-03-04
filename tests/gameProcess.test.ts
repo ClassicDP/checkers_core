@@ -105,9 +105,8 @@ describe("Game tests", () => {
         let gameProcess = new GameProcess(8);
         gameProcess.insertPiece(0, Color.White, true);
         [9, 11, 13, 25, 27, 29, 41, 43, 45].forEach(i => gameProcess.insertPiece(i, Color.Black, false));
-        console.time('list')
-        console.timeEnd('list')
         let list = gameProcess.getMoveList(Color.White) as MoveList;
+        console.log(util.inspect(gameProcess.getBestMove(), {depth: null, colors:true}))
         console.log(list.list.map(x => x.strike!.vec))
         expect(list.list.length).toEqual(42)
     })

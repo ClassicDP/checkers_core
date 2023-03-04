@@ -60,6 +60,10 @@ export class GameProcess {
         return this.game.remove_piece(this.game.to_pack(pos))
     }
 
+    getBestMove() {
+        return this.game.get_best_move()
+    }
+
     get position(): Position {
         let pos = this.game.position as Position
         let newPos: Position = {cells: [], state: pos.state, next_move: pos.next_move, eval: null, move_list: null}

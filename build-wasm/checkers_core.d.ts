@@ -2,12 +2,6 @@
 /* eslint-disable */
 /**
 */
-export enum Color {
-  Black = 0,
-  White = 1,
-}
-/**
-*/
 export enum FinishType {
   Draw1 = 0,
   Draw2 = 1,
@@ -17,6 +11,12 @@ export enum FinishType {
   BlackWin = 5,
   WhiteWin = 6,
 }
+/**
+*/
+export enum Color {
+  Black = 0,
+  White = 1,
+}
 export type BoardPos = number;
 
 export interface QuietMove {
@@ -25,6 +25,11 @@ export interface QuietMove {
     king_move: boolean;
 }
 
+/**
+*/
+export class BestPos {
+  free(): void;
+}
 /**
 */
 export class Game {
@@ -43,13 +48,9 @@ export class Game {
 */
   remove_piece(pos: number): boolean;
 /**
-* @param {number} max_depth
-* @param {number | undefined} best_white
-* @param {number | undefined} best_black
-* @param {number | undefined} depth
-* @returns {PositionHistoryItem}
+* @returns {any}
 */
-  get_best_move(max_depth: number, best_white?: number, best_black?: number, depth?: number): PositionHistoryItem;
+  get_best_move(): any;
 /**
 * @param {number} pack_index
 * @returns {number}
