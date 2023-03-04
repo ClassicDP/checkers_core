@@ -131,7 +131,8 @@ class GameProcess {
                     from: this.game.to_board(confirmed.from),
                     to: this.game.to_board(confirmed.to),
                     take: this.game.to_board(confirmed.take),
-                    king_move: confirmed.king_move
+                    king_move: confirmed.king_move,
+                    v: confirmed.v
                 };
                 let done = this.moveList.list.length == 1 &&
                     this.moveList.list[0].strike.vec.length == this.strikeChainInd;

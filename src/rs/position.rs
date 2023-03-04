@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::mem::swap;
 use std::rc::Rc;
@@ -11,11 +12,15 @@ use crate::moves_list::{MoveItem, MoveList};
 use crate::color::Color;
 use crate::piece::Piece;
 use ts_rs::*;
+use wasm_bindgen::prelude::wasm_bindgen;
 
 
 #[derive(Clone)]
+#[wasm_bindgen]
 pub struct PositionHistoryItem {
+    #[wasm_bindgen(skip)]
     pub position: Position,
+    #[wasm_bindgen(skip)]
     pub move_item: MoveItem,
 }
 
@@ -80,8 +85,9 @@ pub struct Position {
     pub cells: Vec<Option<Piece>>,
     pub state: PosState,
     pub next_move: Option<Color>,
-    move_list: Option<Rc<MoveList>>,
-    eval: Option<i32>,
+    move_list: Option<RefCell<MoveList>>,
+    #[serde(skip_serializing)]
+    pub eval: Option<i32>,
     #[serde(skip_serializing)]
     environment: Rc<PositionEnvironment>,
 }
@@ -104,7 +110,7 @@ impl Position {
             environment,
             next_move: None,
             move_list: None,
-            eval: None
+            eval: None,
         };
         pos.cells = Vec::new();
         let size = pos.environment.size;
@@ -112,10 +118,10 @@ impl Position {
         pos
     }
 
-    pub fn get_move_list_cached(&mut self) -> Rc<MoveList> {
+    pub fn get_move_list_cached(&mut self) -> RefCell<MoveList> {
         if self.move_list.is_none() {
             let move_li = self.get_move_list(false);
-            self.move_list.get_or_insert(Rc::new(move_li));
+            self.move_list.get_or_insert(RefCell::new(move_li));
         }
         self.move_list.as_ref().unwrap().clone()
     }
@@ -278,13 +284,13 @@ impl Position {
     }
 
     pub fn evaluate(&mut self) -> i32 {
-        if self.eval.is_some() {return self.eval.unwrap()}
+        if self.eval.is_some() { return self.eval.unwrap(); }
         // white advantage if positive signature of evaluate, black - negative
         let mut eval: i32 =
-            if self.get_move_list_cached().list.len() == 0 {
+            if self.get_move_list_cached().borrow().list.len() == 0 {
                 if self.next_move.is_some() && self.next_move.unwrap() == Color::White {
-                    i32::MIN
-                } else { i32::MAX }
+                    i32::MIN / 2
+                } else { i32::MAX / 2 }
             } else { 0 };
         for cell in &self.cells {
             if let Some(ref piece) = cell {

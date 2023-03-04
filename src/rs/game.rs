@@ -121,6 +121,61 @@ impl Game {
         }
     }
 
+    pub fn get_best_move(&mut self, mut max_depth: i16, mut best_white: Option<i32>,
+                         mut best_black: Option<i32>, mut depth: Option<i16>) -> PositionHistoryItem {
+        if best_white.is_none() { best_white = Some(i32::MIN); }
+        if best_black.is_none() { best_black = Some(i32::MAX); }
+        if depth.is_none() { depth = Some(0); }
+        let ref mut move_list = self.current_position.get_move_list_cached();
+        let mut pos_list: Vec<_> = {
+            move_list.borrow_mut().list.iter_mut().map(|x| {
+                let mut pos = self.current_position.make_move_and_get_position(x);
+                self.current_position.unmake_move(x);
+                pos.position.evaluate();
+                pos
+            }).collect()
+        };
+        pos_list.sort_by_key(|x|
+            x.position.eval.unwrap() * if x.position.next_move.unwrap() == White { -1 } else { 1 });
+        let move_color = self.current_position.next_move.unwrap();
+        struct BestPos {
+            pos: Option<PositionHistoryItem>,
+            deep_eval: i32,
+        }
+        let mut best_pos = BestPos { pos: None, deep_eval: if move_color == White { i32::MIN } else { i32::MAX } };
+        if depth.unwrap() < max_depth {
+            for mut pos_it in pos_list {
+                if self.finish_check(&pos_it.move_item).is_some() {
+                    return pos_it;
+                }
+                self.current_position.make_move(&mut pos_it.move_item);
+                self.position_history.push(pos_it);
+                let best_eval =
+                    self.get_best_move(max_depth, best_white, best_black, Some(depth.unwrap() + 1)).position.evaluate();
+                let mut pos_it = self.position_history.pop().unwrap();
+                self.current_position.unmake_move(&mut pos_it.move_item);
+                if move_color == White {
+                    if best_white.unwrap() < best_eval { best_white = Some(best_eval); }
+                    if best_black.unwrap() < best_eval {
+                        return pos_it;
+                    }
+                    if best_pos.deep_eval < best_eval {
+                        best_pos = BestPos{pos: Option::from(pos_it), deep_eval: best_eval};
+                    }
+                } else {
+                    if best_black.unwrap() > best_eval { best_black = Some(best_eval); }
+                    if best_white.unwrap() > best_eval {
+                        return pos_it;
+                    }
+                    if best_pos.deep_eval > best_eval {
+                        best_pos = BestPos{pos: Option::from(pos_it), deep_eval: best_eval};
+                    }
+                }
+            }
+        }
+        best_pos.pos.unwrap()
+    }
+
 
     #[wasm_bindgen(getter)]
     pub fn state(&self) -> JsValue {
@@ -176,7 +231,7 @@ impl Game {
         let i = self.position_history.len() - 1;
         // let ref mut pos_it = self.position_history[i];
         let cur_position = &mut self.current_position;
-        if cur_position.get_move_list_cached().list.len() == 0 {
+        if cur_position.get_move_list_cached().borrow().list.len() == 0 {
             return if cur_position.next_move.is_some() &&
                 cur_position.next_move.unwrap() == White { Some(BlackWin) } else { Some(WhiteWin) };
         }
