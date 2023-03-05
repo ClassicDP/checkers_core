@@ -68,11 +68,18 @@ impl Ord for FinishType {
         Ordering::Equal
     }
 }
+
 #[wasm_bindgen]
 #[derive(Serialize, Debug)]
 pub struct BestPos {
     pos: Option<PositionHistoryItem>,
     deep_eval: i32,
+}
+
+impl BestPos {
+    pub fn get_move_item(&self) -> MoveItem {
+        self.pos.as_ref().unwrap().move_item.clone()
+    }
 }
 
 #[derive(Default)]
@@ -127,9 +134,8 @@ impl Game {
         }
     }
 
-    fn best_move(&mut self, mut max_depth: i16, best_white: &mut i32,
-                 best_black: &mut i32, depth: i16) -> BestPos {
-
+    fn best_move(&mut self, mut max_depth: i16, mut best_white: i32,
+                 mut best_black: i32, depth: i16) -> BestPos {
         let ref mut move_list = self.current_position.get_move_list_cached();
         let mut pos_list: Vec<_> = {
             move_list.borrow_mut().list.iter_mut().map(|x| {
@@ -148,8 +154,12 @@ impl Game {
         if depth < max_depth {
             for mut pos_it in pos_list {
                 self.current_position.make_move(&mut pos_it.move_item);
-                if self.finish_check(&pos_it.move_item).is_some() {
-                    return BestPos{ deep_eval: pos_it.position.evaluate(), pos: Option::from(pos_it)};
+                let finish = self.finish_check(&pos_it.move_item);
+                if finish.is_some() {
+                    print!("{:?} {}\n", finish, depth);
+                    // pos_it.position.print_pos();
+                    self.current_position.unmake_move(&mut pos_it.move_item);
+                    return BestPos { deep_eval: pos_it.position.evaluate(), pos: Option::from(pos_it) };
                 }
                 self.position_history.push(pos_it);
                 let deep_eval =
@@ -157,15 +167,19 @@ impl Game {
                 let mut pos_it = self.position_history.pop().unwrap();
                 self.current_position.unmake_move(&mut pos_it.move_item);
                 if move_color == White {
-                    if *best_black < deep_eval {
-                        return BestPos{pos: Option::from(pos_it), deep_eval}
+                    if best_white < deep_eval { best_white = deep_eval }
+                    if best_black < deep_eval {
+                        print!("cut at white move depth: {} {} {} {}\n", depth, best_black, best_white, deep_eval);
+                        return BestPos { pos: Option::from(pos_it), deep_eval };
                     }
                     if best_pos.deep_eval < deep_eval {
                         best_pos = BestPos { pos: Option::from(pos_it), deep_eval };
                     }
                 } else {
-                    if *best_white > deep_eval {
-                        return BestPos{pos: Option::from(pos_it), deep_eval};
+                    if best_black > best_pos.deep_eval { best_black = best_pos.deep_eval }
+                    if best_white > deep_eval {
+                        print!("cut at black move depth: {} {} {} {}\n", depth, best_black, best_white, deep_eval);
+                        return BestPos { pos: Option::from(pos_it), deep_eval };
                     }
                     if best_pos.deep_eval > deep_eval {
                         best_pos = BestPos { pos: Option::from(pos_it), deep_eval };
@@ -174,13 +188,8 @@ impl Game {
             }
         } else {
             for mut pos in pos_list {
-                best_pos = BestPos{ deep_eval: pos.position.evaluate(), pos: Some(pos)}
+                best_pos = BestPos { deep_eval: pos.position.evaluate(), pos: Some(pos) }
             }
-        }
-        if move_color==White {
-            if *best_white < best_pos.deep_eval {*best_white = best_pos.deep_eval}
-        } else {
-            if *best_black > best_pos.deep_eval {*best_black = best_pos.deep_eval}
         }
         best_pos
     }
@@ -188,7 +197,7 @@ impl Game {
     #[wasm_bindgen]
     pub fn get_best_move(&mut self) -> JsValue {
         match serde_wasm_bindgen::to_value(
-            &self.best_move(6, &mut i32::MIN, &mut i32::MAX, 0)) {
+            &self.best_move(6, i32::MIN, i32::MAX, 0)) {
             Ok(js) => js,
             Err(_err) => JsValue::UNDEFINED
         }
@@ -196,10 +205,8 @@ impl Game {
 
     #[wasm_bindgen]
     pub fn get_best_move_rust(&mut self) -> BestPos {
-        self.best_move(6, &mut i32::MIN, &mut i32::MAX, 0)
+        self.best_move(6, i32::MIN, i32::MAX, 0)
     }
-
-
 
 
     #[wasm_bindgen(getter)]
@@ -264,16 +271,17 @@ impl Game {
         if pos_history[i].position.state.get_count(White).king > 0 &&
             pos_history[i].position.state.get_count(Black).king > 0 {
             // first position where both set kings
-            if self.state.kings_start_at.is_none() {
+            if self.state.kings_start_at.is_none() || self.state.kings_start_at.unwrap() > i {
                 self.state.kings_start_at = Some(i);
             }
             // 1) если в течение 15 ходов игроки делали ходы только дамками, не передвигая
             // простых шашек и не производя взятия.
-            if pos_history[i].position.get_piece_of_move_item(move_item).is_king {
-                if self.state.kings_only_move_start_at.is_none() {
+            if pos_history[i].position.get_piece_in_pos(pos_history[i].move_item.to()).is_king {
+                if self.state.kings_only_move_start_at.is_none() ||
+                    self.state.kings_only_move_start_at.unwrap() > i {
                     self.state.kings_only_move_start_at = Some(i);
                 }
-                if cur_position.get_piece_of_move_item(move_item).is_king &&
+                if cur_position.get_piece_in_pos(move_item.to()).is_king &&
                     1 + i - self.state.kings_only_move_start_at.unwrap() > 15 {
                     return Some(Draw1);
                 }
@@ -288,8 +296,8 @@ impl Game {
                     repeats += 1;
                     if repeats == 3 { return Some(Draw2); }
                 }
+                if j == 0 || j < self.state.kings_start_at.unwrap_or(0) { break; }
                 j -= 1;
-                if j < self.state.kings_start_at.unwrap_or(0) { break; }
             }
 
             // 3) если участник, имеющий три дамки (и более) против одной дамки противника,
@@ -299,7 +307,8 @@ impl Game {
                     (state.get_count(Black).king == 1 && state.get_count(White).king >= 3)
             };
             if is_triangle(&mut pos_history[i].position.state) {
-                if self.state.triangle_start_at.is_none() { self.state.triangle_start_at = Some(i); } else {
+                if self.state.triangle_start_at.is_none()
+                    || self.state.triangle_start_at.unwrap() > i { self.state.triangle_start_at = Some(i); } else {
                     if is_triangle(&mut cur_position.state) &&
                         1 + i - self.state.triangle_start_at.unwrap() >= 15 { return Some(Draw3); }
                 }
@@ -312,7 +321,8 @@ impl Game {
             // в 6- и 7-фигурных окончаниях — 60 ходов;
             if i > 0 {
                 if pos_history[i - 1].position.state == pos_history[i].position.state {
-                    if self.state.power_equal_start_at.is_none() { self.state.power_equal_start_at = Some(i); }
+                    if self.state.power_equal_start_at.is_none()
+                        || self.state.power_equal_start_at.unwrap() > i { self.state.power_equal_start_at = Some(i); }
                     if cur_position.state == pos_history[i].position.state {
                         let total = cur_position.state.get_total();
                         let n = 1 + i - self.state.power_equal_start_at.unwrap();
@@ -347,7 +357,8 @@ impl Game {
 
             if is_single_on_main_road(cur_position) {
                 if is_single_on_main_road(&mut pos_history[i].position) {
-                    if self.state.main_road_start_at.is_none() {
+                    if self.state.main_road_start_at.is_none() ||
+                        self.state.main_road_start_at.unwrap() > i {
                         self.state.main_road_start_at = Some(i);
                     }
                     if is_single_on_main_road(cur_position) && 1 + i - self.state.main_road_start_at.unwrap() > 5 {
@@ -467,11 +478,13 @@ mod tests {
             .for_each(|pos|
                 game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, false)));
 
-        let best = game.get_best_move_rust();
+        let best = &game.get_best_move_rust();
+        assert_eq!(best.pos.as_ref().unwrap().move_item.strike.as_ref().unwrap().took_pieces.len(), 9);
         print!("\n best: {:?} \n", {
             best
         });
     }
+
 
     #[test]
     fn finish_cmp() {

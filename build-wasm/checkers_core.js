@@ -232,6 +232,13 @@ module.exports.Color = Object.freeze({ Black:0,"0":"Black",White:1,"1":"White", 
 */
 class BestPos {
 
+    static __wrap(ptr) {
+        const obj = Object.create(BestPos.prototype);
+        obj.ptr = ptr;
+
+        return obj;
+    }
+
     __destroy_into_raw() {
         const ptr = this.ptr;
         this.ptr = 0;
@@ -303,6 +310,13 @@ class Game {
     get_best_move() {
         const ret = wasm.game_get_best_move(this.ptr);
         return takeObject(ret);
+    }
+    /**
+    * @returns {BestPos}
+    */
+    get_best_move_rust() {
+        const ret = wasm.game_get_best_move_rust(this.ptr);
+        return BestPos.__wrap(ret);
     }
     /**
     * @returns {any}

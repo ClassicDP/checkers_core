@@ -3,8 +3,43 @@ use crate::game::Game;
 use crate::piece::Piece;
 include!("lib.rs");
 
+pub fn best_move_triangle() {
+    let mut game = Game::new(8);
+    game.current_position.next_move = Some(Color::Black);
+    game.insert_piece(Piece::new(game.to_pack(31), Color::White, true));
+    vec![43, 27, 0].iter()
+        .for_each(|pos|
+            game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, true)));
+
+    game.current_position.print_pos();
+    let best = game.get_best_move_rust();
+    game.current_position.print_pos();
+    game.current_position.make_move_by_pos_item(&best);
+    game.current_position.print_pos();
+    let best = game.get_best_move_rust();
+    game.current_position.print_pos();
+    game.current_position.make_move_by_pos_item(&best);
+    game.current_position.print_pos();
+    let best = game.get_best_move_rust();
+    game.current_position.make_move_by_pos_item(&best);
+    let best = game.get_best_move_rust();
+    game.current_position.make_move_by_pos_item(&best);
+    let best = game.get_best_move_rust();
+    game.current_position.make_move_by_pos_item(&best);
+    let best = game.get_best_move_rust();
+    game.current_position.make_move_by_pos_item(&best);
+    let best = game.get_best_move_rust();
+    game.current_position.make_move_by_pos_item(&best);
+    let best = game.get_best_move_rust();
+    game.current_position.make_move_by_pos_item(&best);
+    let best = game.get_best_move_rust();
+    game.current_position.make_move_by_pos_item(&best);
+    let best = game.get_best_move_rust();
+    game.current_position.make_move_by_pos_item(&best);
+}
 
 pub fn main() {
+    best_move_triangle();
     let mut game = Game::new(8);
     game.insert_piece(Piece::new(22, Color::White, false));
     game.insert_piece(Piece::new(4, Color::Black, true));

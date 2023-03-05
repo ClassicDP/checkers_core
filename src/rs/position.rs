@@ -1,5 +1,7 @@
 use std::cell::RefCell;
 use std::cmp::Ordering;
+use std::io;
+use std::io::Write;
 use std::mem::swap;
 use std::rc::Rc;
 
@@ -13,6 +15,7 @@ use crate::color::Color;
 use crate::piece::Piece;
 use ts_rs::*;
 use wasm_bindgen::prelude::wasm_bindgen;
+use crate::game::BestPos;
 
 
 #[derive(Clone)]
@@ -117,6 +120,17 @@ impl Position {
         let size = pos.environment.size;
         pos.cells.resize((size * size / 2) as usize, None);
         pos
+    }
+
+    pub fn print_pos(&self) {
+        let pieces: Vec<_> = self.cells.iter().filter(|x|x.is_some()).collect();
+        let pieces: Vec<_> = pieces.iter().map(|x|{
+            let y = x.as_ref().unwrap();
+            let z = Piece{pos:self.environment.pack_to_board[y.pos], color: y.color, is_king: y.is_king, stricken: y.stricken};
+            z
+        }).collect();
+        print!("{:?}\n", pieces);
+        io::stdout().flush().unwrap();
     }
 
     pub fn get_move_list_cached(&mut self) -> RefCell<MoveList> {
@@ -248,8 +262,8 @@ impl Position {
         res
     }
 
-    pub fn get_piece_of_move_item(&self, move_item: &MoveItem) -> &Piece {
-        if let Some(x) = &self.cells[move_item.to()] {
+    pub fn get_piece_in_pos(&self, pos: BoardPos) -> &Piece {
+        if let Some(x) = &self.cells[pos] {
             x
         } else {
             panic!("error in get_piece_of_move_item")
@@ -376,6 +390,10 @@ impl Position {
         if self.next_move.is_some() { self.next_move = Some(!self.next_move.unwrap()) }
         self.move_list = None;
         self.eval = None;
+    }
+
+    pub fn make_move_by_pos_item(&mut self, pos: &BestPos) {
+        self.make_move(&mut pos.get_move_item());
     }
 
 

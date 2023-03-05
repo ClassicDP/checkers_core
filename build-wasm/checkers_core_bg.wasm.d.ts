@@ -10,6 +10,7 @@ export function game_insert_piece(a: number, b: number): void;
 export function game_remove_piece(a: number, b: number): number;
 export function game_position(a: number): number;
 export function game_get_best_move(a: number): number;
+export function game_get_best_move_rust(a: number): number;
 export function game_state(a: number): number;
 export function game_to_board(a: number, b: number): number;
 export function game_to_pack(a: number, b: number): number;

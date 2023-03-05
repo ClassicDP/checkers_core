@@ -52,6 +52,10 @@ export class Game {
 */
   get_best_move(): any;
 /**
+* @returns {BestPos}
+*/
+  get_best_move_rust(): BestPos;
+/**
 * @param {number} pack_index
 * @returns {number}
 */
