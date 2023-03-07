@@ -21,6 +21,8 @@ use crate::game::BestPos;
 #[derive(Clone)]
 #[wasm_bindgen]
 #[derive(Serialize, Debug)]
+#[derive(TS)]
+#[ts(export)]
 pub struct PositionHistoryItem {
     #[wasm_bindgen(skip)]
     pub position: Position,
@@ -42,14 +44,25 @@ pub struct PieceCount {
     pub king: i32,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[derive(TS)]
 #[ts(export)]
 pub struct PosState {
     black: PieceCount,
     white: PieceCount,
+    pub(crate) kings_start_at: Option<usize>,
+    pub(crate) kings_only_move_start_at: Option<usize>,
+    pub(crate) triangle_start_at: Option<usize>,
+    pub(crate) power_equal_start_at: Option<usize>,
+    pub(crate) main_road_start_at: Option<usize>,
+    pub(crate) repeats: Option<usize>,
 }
 
+impl PartialEq for PosState {
+    fn eq(&self, other: &Self) -> bool {
+        self.black == other.black && self.white == other.white
+    }
+}
 impl Eq for PosState {}
 
 impl PartialOrd<Self> for PosState {
@@ -109,6 +122,12 @@ impl Position {
             state: PosState {
                 black: { PieceCount { king: 0, simple: 0 } },
                 white: { PieceCount { king: 0, simple: 0 } },
+                kings_start_at: None,
+                kings_only_move_start_at: None,
+                triangle_start_at: None,
+                power_equal_start_at: None,
+                main_road_start_at: None,
+                repeats: None,
             },
             cells: Vec::new(),
             environment,
@@ -392,9 +411,6 @@ impl Position {
         self.eval = None;
     }
 
-    pub fn make_move_by_pos_item(&mut self, pos: &BestPos) {
-        self.make_move(&mut pos.get_move_item());
-    }
 
 
     pub fn unmake_move(&mut self, move_item: &mut MoveItem) {

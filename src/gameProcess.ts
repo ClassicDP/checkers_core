@@ -6,6 +6,9 @@ import {MoveList} from "./bindings/MoveList";
 import {MoveItem} from "./bindings/MoveItem";
 import {Piece} from "./bindings/Piece";
 import {StraightStrike} from "./bindings/StraightStrike";
+import {Strike} from "./bindings/Strike";
+import {BestPos} from "./bindings/BestPos";
+
 
 
 export type BoardPos = number
@@ -60,13 +63,44 @@ export class GameProcess {
         return this.game.remove_piece(this.game.to_pack(pos))
     }
 
+    get_best_move() {
+        return this.game.get_best_move_rust()
+    }
+    make_best_move (pos: any) {
+        this.game.make_best_move(pos)
+    }
     getBestMove() {
-        return this.game.get_best_move()
+        let best = this.game.get_best_move() as BestPos
+        if (best.pos?.move_item.mov) {
+            let x = best.pos.move_item.mov;
+            x = {
+                from: this.game.to_board(x.from),
+                to: this.game.to_board(x.to),
+                king_move: x.king_move
+            }
+        }
+        if (best.pos?.move_item.strike) {
+            let x = best.pos.move_item.strike;
+            x = <Strike>{
+                vec: x.vec.map(it => <StraightStrike> {
+                    king_move: it.king_move,
+                    from: this.game.to_board(it.from),
+                    to:this.game.to_board(it.to),
+                    take: this.game.to_board(it.take),
+                    v: it.v
+                }),
+                king_move: x.king_move,
+                took_pieces: x.took_pieces.map(it=>
+                    it ? <Piece> {pos: this.game.to_board(it.pos), color: it.color, is_king: it.is_king} : null
+                )
+            }
+        }
+        return best
     }
 
     get position(): Position {
         let pos = this.game.position as Position
-        let newPos: Position = {cells: [], state: pos.state, next_move: pos.next_move, eval: null, move_list: null}
+        let newPos: Position = {cells: [], state: pos.state, next_move: pos.next_move, move_list: null}
         for (let piece of pos.cells) {
             if (piece) newPos.cells[this.game.to_board(piece.pos)] = <Piece>{
                 pos: this.game.to_board(piece.pos),

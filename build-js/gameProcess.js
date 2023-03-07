@@ -57,6 +57,32 @@ class GameProcess {
     removePiece(pos) {
         return this.game.remove_piece(this.game.to_pack(pos));
     }
+    getBestMove() {
+        let best = this.game.get_best_move();
+        if (best.pos?.move_item.mov) {
+            let x = best.pos.move_item.mov;
+            x = {
+                from: this.game.to_board(x.from),
+                to: this.game.to_board(x.to),
+                king_move: x.king_move
+            };
+        }
+        if (best.pos?.move_item.strike) {
+            let x = best.pos.move_item.strike;
+            x = {
+                vec: x.vec.map(it => ({
+                    king_move: it.king_move,
+                    from: this.game.to_board(it.from),
+                    to: this.game.to_board(it.to),
+                    take: this.game.to_board(it.take),
+                    v: it.v
+                })),
+                king_move: x.king_move,
+                took_pieces: x.took_pieces.map(it => it ? { pos: this.game.to_board(it.pos), color: it.color, is_king: it.is_king } : null)
+            };
+        }
+        return best;
+    }
     get position() {
         let pos = this.game.position;
         let newPos = { cells: [], state: pos.state, next_move: pos.next_move, eval: null, move_list: null };

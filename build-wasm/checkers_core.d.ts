@@ -48,9 +48,21 @@ export class Game {
 */
   remove_piece(pos: number): boolean;
 /**
+* @param {number} max_depth
+* @param {number} best_white
+* @param {number} best_black
+* @param {number} depth
+* @returns {BestPos}
+*/
+  best_move(max_depth: number, best_white: number, best_black: number, depth: number): BestPos;
+/**
 * @returns {any}
 */
   get_best_move(): any;
+/**
+* @param {BestPos} pos
+*/
+  make_best_move(pos: BestPos): void;
 /**
 * @returns {BestPos}
 */
@@ -70,10 +82,9 @@ export class Game {
 */
   get_move_list_for_front(): any;
 /**
-* @param {MoveItem} move_item
 * @returns {number | undefined}
 */
-  finish_check(move_item: MoveItem): number | undefined;
+  finish_check(): number | undefined;
 /**
 * @param {any} pos_chain
 * @returns {any}

@@ -1,8 +1,7 @@
 import {GameProcess, MoveVariants} from "../src/gameProcess";
 import {MoveList} from "../src/bindings/MoveList";
 import * as util from "util";
-import { PositionEnvironment} from "../build-wasm/checkers_core";
-import {Color} from "../build-wasm/checkers_core"
+import {Color, PositionEnvironment} from "../build-wasm/checkers_core";
 
 
 // https://github.com/ClassicDP/checkers_core#front-click-handler-1
@@ -106,7 +105,7 @@ describe("Game tests", () => {
         gameProcess.insertPiece(0, Color.White, true);
         [9, 11, 13, 25, 27, 29, 41, 43, 45].forEach(i => gameProcess.insertPiece(i, Color.Black, false));
         let list = gameProcess.getMoveList(Color.White) as MoveList;
-        console.log(util.inspect(gameProcess.getBestMove(), {depth: null, colors:true}))
+        console.log(util.inspect(gameProcess.getBestMove(), {depth: null, colors: true}))
         console.log(list.list.map(x => x.strike!.vec))
         expect(list.list.length).toEqual(42)
     })
@@ -119,8 +118,8 @@ describe("Game tests", () => {
         gameProcess.insertPiece(15, Color.White, true);
         [54, 43, 20].forEach(i => gameProcess.insertPiece(i, Color.Black, false))
         let list = gameProcess.getMoveList(Color.White) as MoveList;
-        expect(list.list.filter(x=>x.strike!.vec[0].from==47)[0].strike!.king_move).toEqual(true)
-        expect(list.list.filter(x=>x.strike!.vec[0].from==63)[0].strike!.king_move).toEqual(false)
+        expect(list.list.filter(x => x.strike!.vec[0].from == 47)[0].strike!.king_move).toEqual(true)
+        expect(list.list.filter(x => x.strike!.vec[0].from == 63)[0].strike!.king_move).toEqual(false)
         console.log(util.inspect(list.list, {depth: 5}))
         expect(list.list.length).toEqual(5)
     })
@@ -134,6 +133,24 @@ describe("Game tests", () => {
         let list = gameProcess.getMoveList(Color.White);
         console.log(list.list.map(x => x.mov))
         expect(list.list.length).toEqual(15)
+    })
+
+    test("triangle", () => {
+        let gameProcess = new GameProcess(8);
+        [29].forEach(i => gameProcess.insertPiece(i, Color.White, true));
+        [0, 18, 9].forEach(i => gameProcess.insertPiece(i, Color.Black, true));
+        gameProcess.moveColor = Color.Black;
+        let move;
+        do {
+            move = gameProcess.getBestMove();
+            console.log(move)
+            let x = gameProcess.get_best_move();
+            if (move.pos) {
+                gameProcess.make_best_move(x)
+            } else break
+        } while (1)
+        console.log()
+
     })
 
     test("performance", () => {

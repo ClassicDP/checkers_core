@@ -1,6 +1,6 @@
 extern crate core;
 use wasm_bindgen::prelude::*;
-mod moves;
+pub mod moves;
 mod moves_list;
 mod position_environment;
 mod mutable_iterator;

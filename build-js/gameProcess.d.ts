@@ -27,6 +27,7 @@ export declare class GameProcess {
     invertMoveColor(): void;
     insertPiece(pos: number, color: Color, isKing: boolean): void;
     removePiece(pos: number): boolean;
+    getBestMove(): BestPos;
     get position(): Position;
     private frontClick;
     getMoveList(color?: Color): MoveList;

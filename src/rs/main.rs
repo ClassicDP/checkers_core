@@ -1,41 +1,55 @@
 use crate::color::Color;
 use crate::game::Game;
+use crate::moves::StraightStrike;
 use crate::piece::Piece;
 include!("lib.rs");
+
+#[derive(Debug)]
+struct MoveAsStrike {
+    from: usize,
+    to: usize,
+    take: usize,
+}
+#[derive(Debug)]
+struct MoveAsQuite {
+    from: usize,
+    to: usize,
+}
 
 pub fn best_move_triangle() {
     let mut game = Game::new(8);
     game.current_position.next_move = Some(Color::Black);
-    game.insert_piece(Piece::new(game.to_pack(31), Color::White, true));
-    vec![43, 27, 0].iter()
+    vec![29].iter()
+        .for_each(|pos|
+            game.insert_piece(Piece::new(game.to_pack(*pos), Color::White, true)));
+    vec![0, 18, 9].iter()
         .for_each(|pos|
             game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, true)));
 
-    game.current_position.print_pos();
-    let best = game.get_best_move_rust();
-    game.current_position.print_pos();
-    game.current_position.make_move_by_pos_item(&best);
-    game.current_position.print_pos();
-    let best = game.get_best_move_rust();
-    game.current_position.print_pos();
-    game.current_position.make_move_by_pos_item(&best);
-    game.current_position.print_pos();
-    let best = game.get_best_move_rust();
-    game.current_position.make_move_by_pos_item(&best);
-    let best = game.get_best_move_rust();
-    game.current_position.make_move_by_pos_item(&best);
-    let best = game.get_best_move_rust();
-    game.current_position.make_move_by_pos_item(&best);
-    let best = game.get_best_move_rust();
-    game.current_position.make_move_by_pos_item(&best);
-    let best = game.get_best_move_rust();
-    game.current_position.make_move_by_pos_item(&best);
-    let best = game.get_best_move_rust();
-    game.current_position.make_move_by_pos_item(&best);
-    let best = game.get_best_move_rust();
-    game.current_position.make_move_by_pos_item(&best);
-    let best = game.get_best_move_rust();
-    game.current_position.make_move_by_pos_item(&best);
+    use crate::moves::PieceMove;
+    while game.finish_check().is_none() {
+        print!("state {}\n", game.state_());
+        print!("history {:?}\n", game.position_history.len());
+        let best = game.get_best_move_rust();
+        print!("{}", {
+            if best.get_move_item().strike.is_some() {
+                format!("move: {:?}\n", best.get_move_item().strike.unwrap().vec.iter().map(
+                    |x|
+                        MoveAsStrike {
+                            from: game.to_board(x.from()),
+                            to: game.to_board(x.to()),
+                            take: game.to_board(x.take().unwrap()),
+                        }).collect::<Vec<_>>())
+            } else {
+                format!("move: {:?}\n", [best.get_move_item().mov.unwrap()].iter().map(|x|
+                MoveAsQuite{
+                    from: game.to_board(x.from()),
+                    to: game.to_board(x.to)
+                }).collect::<Vec<_>>())
+            }
+        });
+        game.make_move_by_pos_item(&best);
+    }
 }
 
 pub fn main() {
@@ -63,7 +77,7 @@ pub fn main() {
         pos_list.sort_by_key(|x|
             x.position.eval.unwrap() * if x.position.next_move.unwrap() == Color::White { -1 } else { 1 });
         let po = game.current_position.make_move_and_get_position(&mut list.list[0]);
-        game.finish_check(&list.list[0]);
+        game.finish_check();
         if po != po { break; }
         game.current_position.unmake_move(&mut list.list[0]);
     }

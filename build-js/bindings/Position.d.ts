@@ -7,5 +7,4 @@ export interface Position {
     state: PosState;
     next_move: ColorType | null;
     move_list: MoveList | null;
-    eval: number | null;
 }
