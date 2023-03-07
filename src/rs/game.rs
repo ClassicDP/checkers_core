@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use std::cmp::{min, Ordering};
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use crate::color::Color;
@@ -12,6 +12,7 @@ use serde::{Serialize};
 use crate::color::Color::{Black, White};
 use crate::game::FinishType::{BlackWin, Draw1, Draw2, Draw3, Draw4, Draw5, WhiteWin};
 use crate::log;
+use rand::prelude::*;
 
 #[wasm_bindgen]
 #[derive(TS)]
@@ -146,9 +147,20 @@ impl Game {
         };
         if pos_list.len() == 0 { panic!("Best move: it`s standoff position") }
         let move_color = self.current_position.next_move.unwrap();
-        if pos_list.len() < 3 { max_depth += 1; }
-        // pos_list.sort_by_key(|x|
-        //     x.position.eval.unwrap() * if move_color == White { -1 } else { 1 });
+        if pos_list.len() < 3 { max_depth += 1; } else {
+            let mut rng = rand::thread_rng();
+            let y: f64 = rng.gen();
+            if depth > 3 && (depth % 2 == 0) && y < 10.0 / (depth as f64) {
+                let x0: i32 = rng.gen();
+                let x1: i32 = rng.gen();
+                pos_list.sort_by(|a, b| Ord::cmp(&x0,&x1));
+                pos_list = pos_list[0..min(pos_list.len(),4)].to_owned();
+                max_depth += 1;
+            }
+        }
+        pos_list.sort_by_key(|x|
+            x.position.eval.unwrap() * if move_color == White { -1 } else { 1 });
+
         let mut best_pos = BestPos { pos: None, deep_eval: if move_color == White { i32::MIN } else { i32::MAX } };
         if depth < max_depth {
             for mut pos_it in pos_list {
@@ -165,8 +177,12 @@ impl Game {
                     self.best_move(max_depth, best_white, best_black, depth + 1).deep_eval;
                 let mut pos_it = self.position_history.pop().unwrap();
                 self.current_position.unmake_move(&mut pos_it.move_item);
+                let white = self.current_position.state.white.clone();
+                let black = self.current_position.state.black.clone();
                 self.current_position.state = pos_it.position.state.clone();
-                    if move_color == White {
+                self.current_position.state.white = white;
+                self.current_position.state.black = black;
+                if move_color == White {
                     if best_white < deep_eval { best_white = deep_eval }
                     if best_black < deep_eval {
                         // print!("cut at white move depth: {} {} {} {}\n", depth, best_black, best_white, deep_eval);
@@ -218,10 +234,8 @@ impl Game {
 
     #[wasm_bindgen]
     pub fn get_best_move_rust(&mut self) -> BestPos {
-        self.best_move(7, i32::MIN, i32::MAX, 0)
+        self.best_move(5, i32::MIN, i32::MAX, 0)
     }
-
-
 
 
     pub fn state_(&self) -> String {
@@ -292,7 +306,7 @@ impl Game {
                     cur_position.state.kings_only_move_start_at.unwrap() > i {
                     cur_position.state.kings_only_move_start_at = Some(i - 1);
                 }
-                if 1 + i - cur_position.state.kings_only_move_start_at.unwrap() > 15 {
+                if i - cur_position.state.kings_only_move_start_at.unwrap() >= 15 {
                     return Some(Draw1);
                 }
             } else {
@@ -324,7 +338,7 @@ impl Game {
             if is_triangle(&mut cur_position.state) {
                 if cur_position.state.triangle_start_at.is_none()
                     || cur_position.state.triangle_start_at.unwrap() > i { cur_position.state.triangle_start_at = Some(i); } else {
-                    if 1 + i - cur_position.state.triangle_start_at.unwrap() >= 15 { return Some(Draw3); }
+                    if i - cur_position.state.triangle_start_at.unwrap() >= 15 { return Some(Draw3); }
                 }
             } else { cur_position.state.triangle_start_at = None; }
 
@@ -336,12 +350,14 @@ impl Game {
             if i > 0 && pos_history[i - 1].position.state == cur_position.state {
                 if cur_position.state.power_equal_start_at.is_none()
                     || cur_position.state.power_equal_start_at.unwrap() > i - 1 {
-                    cur_position.state.power_equal_start_at = Some(i - 1); }
+                    cur_position.state.power_equal_start_at = Some(i - 1);
+                }
                 let total = cur_position.state.get_total();
-                let n = 1 + i - cur_position.state.power_equal_start_at.unwrap();
-                if total < 4 && n > 5 { return Some(Draw4); }
-                if total < 6 && n > 30 { return Some(Draw4); }
-                if total < 8 && n > 60 { return Some(Draw4); }
+                // if cur_position.state.power_equal_start_at.is_none() {panic!("!");}
+                let n = i - cur_position.state.power_equal_start_at.unwrap();
+                if total < 4 && n >= 5 { return Some(Draw4); }
+                if total < 6 && n >= 30 { return Some(Draw4); }
+                if total < 8 && n >= 60 { return Some(Draw4); }
             } else { cur_position.state.power_equal_start_at = None; }
 
             // если участник, имея в окончании партии три дамки, две дамки и простую, дамку и две простые,
@@ -370,7 +386,7 @@ impl Game {
                     cur_position.state.main_road_start_at.unwrap() > i {
                     cur_position.state.main_road_start_at = Some(i);
                 }
-                if 1 + i - cur_position.state.main_road_start_at.unwrap() > 5 {
+                if i - cur_position.state.main_road_start_at.unwrap() >= 10 {
                     return Some(Draw5);
                 }
             } else { cur_position.state.main_road_start_at = None; }

@@ -40,16 +40,16 @@ impl PartialEq for PositionHistoryItem {
 #[derive(TS)]
 #[ts(export)]
 pub struct PieceCount {
-    pub simple: i32,
-    pub king: i32,
+    pub simple: u32,
+    pub king: u32,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[derive(TS)]
 #[ts(export)]
 pub struct PosState {
-    black: PieceCount,
-    white: PieceCount,
+    pub(crate) black: PieceCount,
+    pub(crate) white: PieceCount,
     pub(crate) kings_start_at: Option<usize>,
     pub(crate) kings_only_move_start_at: Option<usize>,
     pub(crate) triangle_start_at: Option<usize>,
@@ -63,6 +63,7 @@ impl PartialEq for PosState {
         self.black == other.black && self.white == other.white
     }
 }
+
 impl Eq for PosState {}
 
 impl PartialOrd<Self> for PosState {
@@ -82,15 +83,15 @@ impl PosState {
         if color == Color::Black { &mut self.black } else { &mut self.white }
     }
     pub fn get_total(&self) -> i32 {
-        self.black.king + self.black.simple + self.white.king + self.white.simple
+        (self.black.king + self.black.simple + self.white.king + self.white.simple) as i32
     }
     pub fn get_total_color(&mut self, color: Color) -> i32 {
         let cnt = self.get_count(color);
-        cnt.king + cnt.simple
+        (cnt.king + cnt.simple) as i32
     }
 
     pub fn evaluate(&self) -> i32 {
-        self.white.simple * 100 + self.white.king * 300 - self.black.simple * 100 - self.black.king * 300
+        (self.white.simple * 1000 + self.white.king * 3000 - self.black.simple * 1000 - self.black.king * 3000) as i32
     }
 }
 
@@ -142,10 +143,10 @@ impl Position {
     }
 
     pub fn print_pos(&self) {
-        let pieces: Vec<_> = self.cells.iter().filter(|x|x.is_some()).collect();
-        let pieces: Vec<_> = pieces.iter().map(|x|{
+        let pieces: Vec<_> = self.cells.iter().filter(|x| x.is_some()).collect();
+        let pieces: Vec<_> = pieces.iter().map(|x| {
             let y = x.as_ref().unwrap();
-            let z = Piece{pos:self.environment.pack_to_board[y.pos], color: y.color, is_king: y.is_king, stricken: y.stricken};
+            let z = Piece { pos: self.environment.pack_to_board[y.pos], color: y.color, is_king: y.is_king, stricken: y.stricken };
             z
         }).collect();
         print!("{:?}\n", pieces);
@@ -162,9 +163,9 @@ impl Position {
 
     fn state_change(&mut self, piece: &Piece, sign: i32) {
         if piece.is_king {
-            self.state.get_count(piece.color).king += sign;
+            self.state.get_count(piece.color).king = (self.state.get_count(piece.color).king as i32 + sign) as u32;
         } else {
-            self.state.get_count(piece.color).simple += sign
+            self.state.get_count(piece.color).simple = (self.state.get_count(piece.color).simple as i32 + sign) as u32;
         }
     }
 
@@ -410,7 +411,6 @@ impl Position {
         self.move_list = None;
         self.eval = None;
     }
-
 
 
     pub fn unmake_move(&mut self, move_item: &mut MoveItem) {
