@@ -48,6 +48,10 @@ export class Game {
 */
   remove_piece(pos: number): boolean;
 /**
+* @param {BestPos} pos
+*/
+  make_move_by_pos_item(pos: BestPos): void;
+/**
 * @param {number} max_depth
 * @param {number} best_white
 * @param {number} best_black
@@ -67,6 +71,10 @@ export class Game {
 * @returns {BestPos}
 */
   get_best_move_rust(): BestPos;
+/**
+* @returns {string}
+*/
+  state_(): string;
 /**
 * @param {number} pack_index
 * @returns {number}
@@ -96,14 +104,6 @@ export class Game {
 /**
 */
   readonly position: any;
-/**
-*/
-  readonly state: any;
-}
-/**
-*/
-export class GameState {
-  free(): void;
 }
 /**
 */

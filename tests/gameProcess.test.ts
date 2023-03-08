@@ -142,12 +142,10 @@ describe("Game tests", () => {
         gameProcess.moveColor = Color.Black;
         let move;
         do {
-            move = gameProcess.getBestMove();
-            console.log(move)
+            // move = gameProcess.getBestMove();
+            // console.log(move)
             let x = gameProcess.get_best_move();
-            if (move.pos) {
-                gameProcess.make_best_move(x)
-            } else break
+            gameProcess.make_best_move(x)
         } while (1)
         console.log()
 
