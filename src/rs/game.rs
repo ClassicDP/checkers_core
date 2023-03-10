@@ -132,6 +132,12 @@ impl Game {
             PositionHistoryItem { position: self.current_position.clone(), move_item: pos.get_move_item() })
     }
 
+    pub fn make_move_by_move_item(&mut self, move_item: &mut MoveItem) {
+        self.current_position.make_move(move_item);
+        self.position_history.push(
+            PositionHistoryItem { position: self.current_position.clone(), move_item: move_item.clone() })
+    }
+
     #[wasm_bindgen]
     pub fn best_move(&mut self, mut max_depth: i16, mut best_white: i32,
                      mut best_black: i32, depth: i16) -> BestPos {
@@ -147,17 +153,18 @@ impl Game {
         };
         if pos_list.len() == 0 { panic!("Best move: it`s standoff position") }
         let move_color = self.current_position.next_move.unwrap();
-        if pos_list.len() < 3 { max_depth += 1; } else {
-            let mut rng = rand::thread_rng();
-            let y: f64 = rng.gen();
-            if depth > 3 && (depth % 2 == 0) && y < 10.0 / (depth as f64) {
-                let x0: i32 = rng.gen();
-                let x1: i32 = rng.gen();
-                pos_list.sort_by(|a, b| Ord::cmp(&x0,&x1));
-                pos_list = pos_list[0..min(pos_list.len(),4)].to_owned();
-                max_depth += 1;
-            }
-        }
+        if pos_list.len() < 3 { max_depth += 1; }
+        // if pos_list.len() < 3 { max_depth += 1; } else {
+        //     let mut rng = rand::thread_rng();
+        //     let y: f64 = rng.gen();
+        //     if depth > 3 && (depth % 2 == 0) && y < 10.0 / (depth as f64) {
+        //         let x0: i32 = rng.gen();
+        //         let x1: i32 = rng.gen();
+        //         pos_list.sort_by(|a, b| Ord::cmp(&x0,&x1));
+        //         pos_list = pos_list[0..min(pos_list.len(),4)].to_owned();
+        //         max_depth += 1;
+        //     }
+        // }
         pos_list.sort_by_key(|x|
             x.position.eval.unwrap() * if move_color == White { -1 } else { 1 });
 
@@ -183,20 +190,20 @@ impl Game {
                 self.current_position.state.white = white;
                 self.current_position.state.black = black;
                 if move_color == White {
-                    if best_white < deep_eval { best_white = deep_eval }
                     if best_black < deep_eval {
                         // print!("cut at white move depth: {} {} {} {}\n", depth, best_black, best_white, deep_eval);
                         return BestPos { pos: Option::from(pos_it), deep_eval };
                     }
+                    if best_white < deep_eval { best_white = deep_eval }
                     if best_pos.deep_eval < deep_eval {
                         best_pos = BestPos { pos: Option::from(pos_it), deep_eval };
                     }
                 } else {
-                    if best_black > best_pos.deep_eval { best_black = best_pos.deep_eval }
                     if best_white > deep_eval {
                         // print!("cut at black move depth: {} {} {} {}\n", depth, best_black, best_white, deep_eval);
                         return BestPos { pos: Option::from(pos_it), deep_eval };
                     }
+                    if best_black > deep_eval { best_black = deep_eval }
                     if best_pos.deep_eval > deep_eval {
                         best_pos = BestPos { pos: Option::from(pos_it), deep_eval };
                     }

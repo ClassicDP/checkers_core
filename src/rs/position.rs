@@ -91,7 +91,8 @@ impl PosState {
     }
 
     pub fn evaluate(&self) -> i32 {
-        (self.white.simple * 1000 + self.white.king * 3000 - self.black.simple * 1000 - self.black.king * 3000) as i32
+        self.white.simple as i32 * 1000 + self.white.king as i32 * 3000
+            - self.black.simple as i32 * 1000 - self.black.king as i32 * 3000
     }
 }
 
@@ -169,6 +170,11 @@ impl Position {
         }
     }
 
+    fn state_change_by_king_color(&mut self, color: Color, sign: i32) {
+        self.state.get_count(color).king = (self.state.get_count(color).king as i32 + sign) as u32;
+        self.state.get_count(color).simple = (self.state.get_count(color).simple as i32 - sign) as u32;
+    }
+
     pub fn insert_piece(&mut self, piece: Piece) {
         let pos = piece.pos as usize;
         self.state_change(&piece, 1);
@@ -197,9 +203,12 @@ impl Position {
             }
         }
         if mov.is_king() {
-            if let Some(ref mut piece) = self.cells[mov.to()] {
+            let color = {
+                let piece = self.cells[mov.to()].as_mut().unwrap();
                 piece.is_king = true;
-            }
+                piece.color
+            };
+            self.state_change_by_king_color(color, 1);
         }
     }
 
@@ -211,9 +220,12 @@ impl Position {
             }
         }
         if mov.is_king() {
-            if let Some(ref mut piece) = self.cells[mov.from()] {
+            let color = {
+                let piece = self.cells[mov.from()].as_mut().unwrap();
                 piece.is_king = false;
-            }
+                piece.color
+            };
+            self.state_change_by_king_color(color, -1);
         }
     }
 
@@ -338,6 +350,7 @@ impl Position {
                     })
             }
         }
+        eval += self.state.evaluate();
         self.eval = Some(eval);
         eval
     }

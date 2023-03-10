@@ -1,3 +1,4 @@
+use rand::{Rng, thread_rng};
 use crate::color::Color;
 use crate::game::Game;
 use crate::moves::StraightStrike;
@@ -10,10 +11,45 @@ struct MoveAsStrike {
     to: usize,
     take: usize,
 }
+
 #[derive(Debug)]
 struct MoveAsQuite {
     from: usize,
     to: usize,
+}
+
+pub fn random_game_test() {
+    let v_w: Vec<_> = vec![0; 12].iter().enumerate()
+        .map(|(i, x)| if i / 4 % 2 == 0 { 2 * i } else { 2 * i + 1 }).collect();
+    let v_b: Vec<_> = vec![0; 12].iter().enumerate()
+        .map(|(i, x)| 63 - if i / 4 % 2 == 0 { 2 * i } else { 2 * i + 1 }).collect();
+    let mut game_count = 0;
+    loop {
+        let mut game = Game::new(8);
+        game.current_position.next_move = Some(Color::White);
+        v_w.iter()
+            .for_each(|pos|
+                game.insert_piece(Piece::new(game.to_pack(*pos), Color::White, false)));
+        v_b.iter()
+            .for_each(|pos|
+                game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, false)));
+        while game.finish_check().is_none() {
+            // print!("state {}\n", game.state_());
+            // print!("history {:?}\n", game.position_history.len());
+            if game.position_history.len() % 2 == 0 {
+                let moves_list = game.current_position.get_move_list_cached();
+                let i = thread_rng().gen_range(0..moves_list.borrow().list.len());
+                let ref mut random_move = moves_list.borrow_mut().list[i];
+                game.make_move_by_move_item(random_move);
+            } else {
+                let ref mut best_pos = game.get_best_move_rust();
+                game.make_move_by_pos_item(best_pos);
+            }
+        }
+        print!("end: {} {} {:?}\n", game_count, game.position_history.len(), game.finish_check());
+        print!("state {}\n", game.state_());
+        game_count += 1;
+    }
 }
 
 pub fn best_move_triangle() {
@@ -42,10 +78,10 @@ pub fn best_move_triangle() {
                         }).collect::<Vec<_>>())
             } else {
                 format!("move: {:?}\n", [best.get_move_item().mov.unwrap()].iter().map(|x|
-                MoveAsQuite{
-                    from: game.to_board(x.from()),
-                    to: game.to_board(x.to)
-                }).collect::<Vec<_>>())
+                    MoveAsQuite {
+                        from: game.to_board(x.from()),
+                        to: game.to_board(x.to),
+                    }).collect::<Vec<_>>())
             }
         });
         game.make_move_by_pos_item(&best);
@@ -53,7 +89,8 @@ pub fn best_move_triangle() {
 }
 
 pub fn main() {
-    best_move_triangle();
+    // best_move_triangle();
+    random_game_test();
     let mut game = Game::new(8);
     game.insert_piece(Piece::new(22, Color::White, false));
     game.insert_piece(Piece::new(4, Color::Black, true));
