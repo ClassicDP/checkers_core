@@ -52,6 +52,10 @@ export class Game {
 */
   make_move_by_pos_item(pos: BestPos): void;
 /**
+* @param {MoveItem} move_item
+*/
+  make_move_by_move_item(move_item: MoveItem): void;
+/**
 * @param {number} max_depth
 * @param {number} best_white
 * @param {number} best_black
@@ -67,6 +71,19 @@ export class Game {
 * @param {BestPos} pos
 */
   make_best_move(pos: BestPos): void;
+/**
+* @returns {any}
+*/
+  find_and_make_best_move_ts_n(): any;
+/**
+* @returns {any}
+*/
+  get_board_list_ts_n(): any;
+/**
+* @param {number} i
+* @returns {any}
+*/
+  move_by_index_ts_n(i: number): any;
 /**
 * @returns {BestPos}
 */

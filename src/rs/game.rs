@@ -14,6 +14,7 @@ use crate::game::FinishType::{BlackWin, Draw1, Draw2, Draw3, Draw4, Draw5, White
 use crate::log;
 use rand::prelude::*;
 
+
 #[wasm_bindgen]
 #[derive(TS)]
 #[ts(export)]
@@ -239,9 +240,77 @@ impl Game {
         self.make_move_by_pos_item(pos);
     }
 
+    // for neural
+    fn get_board_list(&mut self) -> Vec<Vec<i32>> {
+        let move_list = self.current_position.get_move_list_cached();
+        let mut pos_list: Vec<PositionHistoryItem> = vec![];
+        for ref mut mov in move_list.borrow_mut().list.clone() {
+            pos_list.push(self.current_position.make_move_and_get_position(mov));
+            self.current_position.unmake_move(mov);
+        }
+        let mut board_list: Vec<Vec<i32>> = vec![];
+        for pos in pos_list {
+            let mut board = vec![0; (self.position_environment.size * self.position_environment.size) as usize];
+            for cell in pos.position.cells {
+                if let Some(piece) = cell {
+                    board[self.to_board(piece.pos)] =
+                        (if piece.is_king { 3 } else { 1 }) * if piece.color == Color::White { 1 } else { -1 }
+                }
+            }
+            board_list.push(board);
+        }
+        board_list
+    }
+    #[wasm_bindgen]
+    pub fn find_and_make_best_move_ts_n(&mut self) -> JsValue {
+        let finish = self.finish_check();
+        if finish.is_some() {
+            return match serde_wasm_bindgen::to_value(&finish.unwrap()) {
+                Ok(js) => js,
+                Err(_err) => JsValue::UNDEFINED
+            };
+        }
+        let best_pos = self.best_move(3, i32::MIN, i32::MAX, 0);
+        self.make_move_by_pos_item(&best_pos);
+        self.finish_check();
+        if finish.is_some() {
+            return match serde_wasm_bindgen::to_value(&finish.unwrap()) {
+                Ok(js) => js,
+                Err(_err) => JsValue::UNDEFINED
+            };
+        }
+
+        return match serde_wasm_bindgen::to_value(&self.get_board_list()) {
+            Ok(js) => js,
+            Err(_err) => JsValue::UNDEFINED
+        };
+    }
+    #[wasm_bindgen]
+    pub fn get_board_list_ts_n(&mut self) -> JsValue {
+        return match serde_wasm_bindgen::to_value(&self.get_board_list()) {
+            Ok(js) => js,
+            Err(_err) => JsValue::UNDEFINED
+        };
+    }
+
+    #[wasm_bindgen]
+    pub fn move_by_index_ts_n(&mut self, i: i32) -> JsValue {
+        let ref mut move_list = self.current_position.get_move_list_cached();
+        if i >= 0 && i < move_list.borrow_mut().list.len() as i32 {
+            self.make_move_by_move_item(&mut move_list.borrow_mut().list[i as usize]);
+            return match serde_wasm_bindgen::to_value(&self.finish_check().unwrap()) {
+                Ok(js) => js,
+                Err(_err) => JsValue::UNDEFINED
+            };
+
+        } else {
+            JsValue::FALSE
+        }
+    }
+
     #[wasm_bindgen]
     pub fn get_best_move_rust(&mut self) -> BestPos {
-        self.best_move(5, i32::MIN, i32::MAX, 0)
+        self.best_move(3, i32::MIN, i32::MAX, 0)
     }
 
 
