@@ -11,8 +11,9 @@ do {
     let list: [] | string
     do {
         list = gameProcess.game.find_and_make_best_move_ts_n()
-        gameProcess.game.move_by_index_ts_n(Math.random() * list.length >> 0)
-        if (!(list instanceof Array)) console.log(list)
+        // gameProcess.game.move_by_index_ts_n(Math.random() * list.length >> 0)
+        // if (!(list instanceof Array)) console.log(list)
+        console.log(list)
     } while (list instanceof Array)
 
 } while (1)

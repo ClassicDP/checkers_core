@@ -36,7 +36,7 @@ pub fn random_game_test() {
         while game.finish_check().is_none() {
             // print!("state {}\n", game.state_());
             // print!("history {:?}\n", game.position_history.len());
-            if game.position_history.len() % 2 == 0 {
+            if game.position_history.len() % 2 == 10 {
                 let moves_list = game.current_position.get_move_list_cached();
                 let i = thread_rng().gen_range(0..moves_list.borrow().list.len());
                 game.move_by_index_ts_n(i as i32);

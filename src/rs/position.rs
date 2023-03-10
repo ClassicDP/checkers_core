@@ -4,6 +4,7 @@ use std::io;
 use std::io::Write;
 use std::mem::swap;
 use std::rc::Rc;
+use rand::{Rng, thread_rng};
 
 
 use serde::{Deserialize, Serialize};
@@ -16,6 +17,7 @@ use crate::piece::Piece;
 use ts_rs::*;
 use wasm_bindgen::prelude::wasm_bindgen;
 use crate::game::BestPos;
+use crate::random;
 
 
 #[derive(Clone)]
@@ -350,7 +352,7 @@ impl Position {
                     })
             }
         }
-        eval += self.state.evaluate();
+        eval += self.state.evaluate() + thread_rng().gen_range(-2..2);
         self.eval = Some(eval);
         eval
     }
