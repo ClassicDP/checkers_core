@@ -272,7 +272,7 @@ impl Game {
         }
         let best_pos = self.best_move(3, i32::MIN, i32::MAX, 0);
         self.make_move_by_pos_item(&best_pos);
-        self.finish_check();
+        let finish = self.finish_check();
         if finish.is_some() {
             return match serde_wasm_bindgen::to_value(&finish.unwrap()) {
                 Ok(js) => js,
@@ -296,13 +296,19 @@ impl Game {
     #[wasm_bindgen]
     pub fn move_by_index_ts_n(&mut self, i: i32) -> JsValue {
         let ref mut move_list = self.current_position.get_move_list_cached();
-        if i >= 0 && i < move_list.borrow_mut().list.len() as i32 {
+        let len = move_list.borrow().list.len() as i32;
+        if i >= 0 && i < len {
             self.make_move_by_move_item(&mut move_list.borrow_mut().list[i as usize]);
-            return match serde_wasm_bindgen::to_value(&self.finish_check().unwrap()) {
-                Ok(js) => js,
-                Err(_err) => JsValue::UNDEFINED
+            let finish = self.finish_check();
+            if finish.is_some() {
+                return match serde_wasm_bindgen::to_value(&finish.unwrap()) {
+                    Ok(js) => js,
+                    Err(_err) => JsValue::UNDEFINED
+                };
+            }
+            return {
+                JsValue::TRUE
             };
-
         } else {
             JsValue::FALSE
         }

@@ -23,7 +23,7 @@ export type MoveVariants = {
 }
 
 export class GameProcess {
-    private game: wasm.Game
+    public game: wasm.Game
 
     private strikeChainInd: number = 0
     private moveList?: MoveList
@@ -50,6 +50,8 @@ export class GameProcess {
     set moveColor(color: Color) {
         this.game.moveColor = color
     }
+
+
 
     invertMoveColor() {
         this.moveColor = this.moveColor === Color.Black ? Color.White : Color.Black

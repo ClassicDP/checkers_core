@@ -39,8 +39,9 @@ pub fn random_game_test() {
             if game.position_history.len() % 2 == 0 {
                 let moves_list = game.current_position.get_move_list_cached();
                 let i = thread_rng().gen_range(0..moves_list.borrow().list.len());
-                let ref mut random_move = moves_list.borrow_mut().list[i];
-                game.make_move_by_move_item(random_move);
+                game.move_by_index_ts_n(i as i32);
+                // let ref mut random_move = moves_list.borrow_mut().list[i];
+                // game.make_move_by_move_item(random_move);
             } else {
                 let ref mut best_pos = game.get_best_move_rust();
                 game.make_move_by_pos_item(best_pos);

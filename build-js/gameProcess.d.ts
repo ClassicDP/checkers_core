@@ -15,7 +15,7 @@ export type MoveVariants = {
     done?: boolean;
 };
 export declare class GameProcess {
-    private game;
+
     private strikeChainInd;
     private moveList?;
     private moveChainPack;
