@@ -17,26 +17,10 @@ use crate::piece::Piece;
 use ts_rs::*;
 use wasm_bindgen::prelude::wasm_bindgen;
 use crate::game::BestPos;
+use crate::PositionHistory::PositionAndMove;
 use crate::random;
 
 
-#[derive(Clone)]
-#[wasm_bindgen]
-#[derive(Serialize, Debug)]
-#[derive(TS)]
-#[ts(export)]
-pub struct PositionHistoryItem {
-    #[wasm_bindgen(skip)]
-    pub position: Position,
-    #[wasm_bindgen(skip)]
-    pub move_item: MoveItem,
-}
-
-impl PartialEq for PositionHistoryItem {
-    fn eq(&self, other: &Self) -> bool {
-        self.position.cells.iter().enumerate().all(|it| other.position.cells[it.0] == *it.1)
-    }
-}
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 #[derive(TS)]
@@ -110,7 +94,9 @@ pub struct Position {
     #[serde(skip_serializing)]
     pub eval: Option<i32>,
     #[serde(skip_serializing)]
-    environment: Rc<PositionEnvironment>,
+    pub environment: Rc<PositionEnvironment>,
+    #[serde(skip_serializing)]
+    pub took_pieces: Vec<Option<Piece>>
 }
 
 impl PartialEq for Position {
@@ -138,6 +124,7 @@ impl Position {
             next_move: None,
             move_list: None,
             eval: None,
+            took_pieces: vec![]
         };
         pos.cells = Vec::new();
         let size = pos.environment.size;
@@ -197,7 +184,7 @@ impl Position {
     }
 
 
-    fn make_strike_or_move(&mut self, mov: &mut dyn PieceMove) {
+    fn make_strike_or_move(&mut self, mov: &dyn PieceMove) {
         self.swap(mov.from(), mov.to());
         if let Some(take) = mov.take() {
             if let Some(ref mut piece) = self.cells[take] {
@@ -406,15 +393,16 @@ impl Position {
         success_call
     }
 
-    pub fn make_move(&mut self, move_item: &mut MoveItem) {
-        if let Some(ref mut mov) = move_item.mov {
+    pub fn make_move(&mut self, move_item: &MoveItem) {
+        if let Some(ref mov) = move_item.mov {
             self.make_strike_or_move(mov);
-        } else if let Some(ref mut strike) = move_item.strike {
-            strike.took_pieces = vec![None; strike.vec.len()];
+        } else if let Some(ref strike) = move_item.strike {
+            self.took_pieces = vec![None; strike.vec.len()];
             for (i, straight_strike) in strike.vec.iter().enumerate() {
-                swap(&mut strike.took_pieces[i], &mut self.cells[straight_strike.take]);
-                self.state_change(strike.took_pieces[i].as_ref().unwrap(), -1);
+                swap(&mut self.took_pieces[i], &mut self.cells[straight_strike.take]);
+                self.state_change(self.took_pieces[i].clone().as_ref().unwrap(), -1);
             };
+
             let ref mut mov = QuietMove {
                 from: strike.vec[0].from,
                 to: strike.vec[strike.vec.len() - 1].to,
@@ -428,13 +416,13 @@ impl Position {
     }
 
 
-    pub fn unmake_move(&mut self, move_item: &mut MoveItem) {
-        if let Some(ref mut mov) = move_item.mov {
+    pub fn unmake_move(&mut self, move_item: &MoveItem) {
+        if let Some(ref  mov) = move_item.mov {
             self.unmake_strike_or_move(mov);
-        } else if let Some(ref mut strike) = move_item.strike {
+        } else if let Some(ref  strike) = move_item.strike {
             for (i, straight_strike) in strike.vec.iter().enumerate() {
-                self.state_change(strike.took_pieces[i].as_ref().unwrap(), 1);
-                swap(&mut strike.took_pieces[i], &mut self.cells[straight_strike.take]);
+                self.state_change(self.took_pieces[i].clone().as_ref().unwrap(), 1);
+                swap(&mut self.took_pieces[i], &mut self.cells[straight_strike.take]);
             };
             let ref mut mov = QuietMove {
                 from: strike.vec[0].from,
@@ -446,9 +434,9 @@ impl Position {
         if self.next_move.is_some() { self.next_move = Some(!self.next_move.unwrap()) }
     }
 
-    pub fn make_move_and_get_position(&mut self, move_item: &mut MoveItem) -> PositionHistoryItem {
+    pub fn make_move_and_get_position(&mut self, move_item: &MoveItem) -> PositionAndMove {
         self.make_move(move_item);
-        PositionHistoryItem { position: self.clone(), move_item: move_item.clone() }
+        PositionAndMove::from(self.clone(), move_item.clone())
     }
 
     pub fn get_move_list(&mut self, for_front: bool) -> MoveList {

@@ -1,7 +1,9 @@
+import * as wasm from "../build-wasm/checkers_core";
 import { Color } from "../build-wasm/checkers_core";
 import { Position } from "./bindings/Position";
 import { ColorType } from "./bindings/ColorType";
 import { MoveList } from "./bindings/MoveList";
+import { BestPos } from "./bindings/BestPos";
 export type BoardPos = number;
 type MoveChainElement = {
     from: BoardPos;
@@ -15,7 +17,7 @@ export type MoveVariants = {
     done?: boolean;
 };
 export declare class GameProcess {
-
+    game: wasm.Game;
     private strikeChainInd;
     private moveList?;
     private moveChainPack;
@@ -27,6 +29,8 @@ export declare class GameProcess {
     invertMoveColor(): void;
     insertPiece(pos: number, color: Color, isKing: boolean): void;
     removePiece(pos: number): boolean;
+    get_best_move(): wasm.BestPos;
+    make_best_move(pos: any): void;
     getBestMove(): BestPos;
     get position(): Position;
     private frontClick;

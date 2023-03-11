@@ -111,10 +111,6 @@ export class Game {
 */
   get_move_list_for_front(): any;
 /**
-* @returns {number | undefined}
-*/
-  finish_check(): number | undefined;
-/**
 * @param {any} pos_chain
 * @returns {any}
 */
@@ -165,6 +161,11 @@ export class Piece {
 }
 /**
 */
+export class PositionAndMove {
+  free(): void;
+}
+/**
+*/
 export class PositionEnvironment {
   free(): void;
 /**
@@ -191,11 +192,6 @@ export class PositionEnvironment {
 /**
 */
   size: number;
-}
-/**
-*/
-export class PositionHistoryItem {
-  free(): void;
 }
 /**
 */

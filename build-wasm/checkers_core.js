@@ -533,15 +533,6 @@ class Game {
         wasm.game_set_color(this.ptr, color);
     }
     /**
-    * @returns {number | undefined}
-    */
-    finish_check() {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        const ret = wasm.game_finish_check(this.ptr);
-        return ret === 7 ? undefined : ret;
-    }
-    /**
     * @param {any} pos_chain
     * @returns {any}
     */
@@ -727,6 +718,27 @@ class Piece {
 module.exports.Piece = Piece;
 /**
 */
+class PositionAndMove {
+
+    constructor() {
+        throw new Error('cannot invoke `new` directly');
+    }
+
+    __destroy_into_raw() {
+        const ptr = this.ptr;
+        this.ptr = 0;
+
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_positionandmove_free(ptr);
+    }
+}
+module.exports.PositionAndMove = PositionAndMove;
+/**
+*/
 class PositionEnvironment {
 
     static __wrap(ptr) {
@@ -812,27 +824,6 @@ class PositionEnvironment {
     }
 }
 module.exports.PositionEnvironment = PositionEnvironment;
-/**
-*/
-class PositionHistoryItem {
-
-    constructor() {
-        throw new Error('cannot invoke `new` directly');
-    }
-
-    __destroy_into_raw() {
-        const ptr = this.ptr;
-        this.ptr = 0;
-
-        return ptr;
-    }
-
-    free() {
-        const ptr = this.__destroy_into_raw();
-        wasm.__wbg_positionhistoryitem_free(ptr);
-    }
-}
-module.exports.PositionHistoryItem = PositionHistoryItem;
 /**
 */
 class StraightStrike {

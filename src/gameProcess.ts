@@ -10,7 +10,6 @@ import {Strike} from "./bindings/Strike";
 import {BestPos} from "./bindings/BestPos";
 
 
-
 export type BoardPos = number
 
 type MoveChainElement = {
@@ -52,7 +51,6 @@ export class GameProcess {
     }
 
 
-
     invertMoveColor() {
         this.moveColor = this.moveColor === Color.Black ? Color.White : Color.Black
     }
@@ -68,33 +66,33 @@ export class GameProcess {
     get_best_move() {
         return this.game.get_best_move_rust()
     }
-    make_best_move (pos: any) {
+
+    make_best_move(pos: any) {
         this.game.make_best_move(pos)
     }
+
     getBestMove() {
         let best = this.game.get_best_move() as BestPos
-        if (best.pos?.move_item.mov) {
-            let x = best.pos.move_item.mov;
-            x = {
-                from: this.game.to_board(x.from),
-                to: this.game.to_board(x.to),
-                king_move: x.king_move
-            }
+        if (best.pos?.mov) {
+            let x = best.pos.mov;
+            if (x.mov)
+                x.mov = {
+                    from: this.game.to_board(x.mov.from),
+                    to: this.game.to_board(x.mov.to),
+                    king_move: x.mov.king_move
+                }
         }
-        if (best.pos?.move_item.strike) {
-            let x = best.pos.move_item.strike;
+        if (best.pos?.mov?.strike) {
+            let x = best.pos.mov.strike;
             x = <Strike>{
-                vec: x.vec.map(it => <StraightStrike> {
+                vec: x.vec.map(it => <StraightStrike>{
                     king_move: it.king_move,
                     from: this.game.to_board(it.from),
-                    to:this.game.to_board(it.to),
+                    to: this.game.to_board(it.to),
                     take: this.game.to_board(it.take),
                     v: it.v
                 }),
-                king_move: x.king_move,
-                took_pieces: x.took_pieces.map(it=>
-                    it ? <Piece> {pos: this.game.to_board(it.pos), color: it.color, is_king: it.is_king} : null
-                )
+                king_move: x.king_move
             }
         }
         return best

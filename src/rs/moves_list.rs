@@ -12,7 +12,6 @@ use wasm_bindgen::prelude::wasm_bindgen;
 #[ts(export)]
 pub struct Strike {
     pub vec: Vec<StraightStrike>,
-    pub took_pieces: Vec<Option<Piece>>,
     pub king_move: bool,
 }
 
@@ -105,7 +104,7 @@ impl MoveList {
     pub fn new() -> MoveList {
         MoveList {
             list: Vec::new(),
-            current_chain: Strike { vec: Vec::new(), took_pieces: Vec::new(), king_move: false },
+            current_chain: Strike { vec: Vec::new(), king_move: false },
         }
     }
 }

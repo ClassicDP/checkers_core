@@ -2,7 +2,6 @@
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
 export function __wbg_straightstrike_free(a: number): void;
-export function __wbg_positionhistoryitem_free(a: number): void;
 export function __wbg_positionenvironment_free(a: number): void;
 export function __wbg_get_positionenvironment_size(a: number): number;
 export function __wbg_set_positionenvironment_size(a: number, b: number): void;
@@ -34,8 +33,8 @@ export function game_to_pack(a: number, b: number): number;
 export function game_get_move_list_for_front(a: number): number;
 export function game_get_color(a: number): number;
 export function game_set_color(a: number, b: number): void;
-export function game_finish_check(a: number): number;
 export function game_make_move_for_front(a: number, b: number, c: number): void;
+export function __wbg_positionandmove_free(a: number): void;
 export function piece_new(a: number, b: number, c: number): number;
 export function piece_new_fom_js(a: number): number;
 export function piece_it(a: number): number;

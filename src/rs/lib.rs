@@ -9,6 +9,8 @@ mod vector;
 pub mod piece;
 pub mod color;
 pub mod game;
+mod mcts;
+mod PositionHistory;
 
 #[wasm_bindgen]
 extern "C" {

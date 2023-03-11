@@ -33,7 +33,7 @@ pub fn random_game_test() {
         v_b.iter()
             .for_each(|pos|
                 game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, false)));
-        while game.finish_check().is_none() {
+        while game.position_history.finish_check().is_none() {
             // print!("state {}\n", game.state_());
             // print!("history {:?}\n", game.position_history.len());
             if game.position_history.len() % 2 == 10 {
@@ -47,7 +47,7 @@ pub fn random_game_test() {
                 game.make_move_by_pos_item(best_pos);
             }
         }
-        print!("end: {} {} {:?}\n", game_count, game.position_history.len(), game.finish_check());
+        print!("end: {} {} {:?}\n", game_count, game.position_history.len(), game.position_history.finish_check());
         print!("state {}\n", game.state_());
         game_count += 1;
     }
@@ -55,16 +55,17 @@ pub fn random_game_test() {
 
 pub fn best_move_triangle() {
     let mut game = Game::new(8);
+    game.set_depth(6);
     game.current_position.next_move = Some(Color::Black);
-    vec![29].iter()
+    vec![31].iter()
         .for_each(|pos|
             game.insert_piece(Piece::new(game.to_pack(*pos), Color::White, true)));
-    vec![0, 18, 9].iter()
+    vec![43, 18, 20].iter()
         .for_each(|pos|
             game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, true)));
 
     use crate::moves::PieceMove;
-    while game.finish_check().is_none() {
+    while game.position_history.finish_check().is_none() {
         print!("state {}\n", game.state_());
         print!("history {:?}\n", game.position_history.len());
         let best = game.get_best_move_rust();
@@ -87,11 +88,12 @@ pub fn best_move_triangle() {
         });
         game.make_move_by_pos_item(&best);
     }
+    print!("{:?}", game.position_history.finish_check());
 }
 
 pub fn main() {
-    // best_move_triangle();
-    random_game_test();
+    best_move_triangle();
+    // random_game_test();
     let mut game = Game::new(8);
     game.insert_piece(Piece::new(22, Color::White, false));
     game.insert_piece(Piece::new(4, Color::Black, true));
@@ -108,15 +110,15 @@ pub fn main() {
             list.list.iter_mut().map(|x| {
                 let mut pos = game.current_position.make_move_and_get_position(x);
                 game.current_position.unmake_move(x);
-                pos.position.evaluate();
+                pos.pos.borrow_mut().evaluate();
                 pos
             }).collect()
         };
         pos_list.sort_by_key(|x|
-            x.position.eval.unwrap() * if x.position.next_move.unwrap() == Color::White { -1 } else { 1 });
+            x.pos.borrow().eval.unwrap() * if x.pos.borrow().next_move.unwrap() == Color::White { -1 } else { 1 });
         let po = game.current_position.make_move_and_get_position(&mut list.list[0]);
-        game.finish_check();
-        if po != po { break; }
+        game.position_history.finish_check();
+        if po.pos != po.pos { break; }
         game.current_position.unmake_move(&mut list.list[0]);
     }
     print!("strike:  {:.2?}\n", now.elapsed());
@@ -134,7 +136,7 @@ pub fn main() {
     for _i in 0..1000000 {
         let mut list = game.current_position.get_move_list(false);
         let po = game.current_position.make_move_and_get_position(&mut list.list[0]);
-        if po != po { break; }
+        if po.pos != po.pos { break; }
         game.current_position.unmake_move(&mut list.list[0]);
     }
     print!("strike 2:  {:.2?}\n", now.elapsed());
@@ -151,7 +153,7 @@ pub fn main() {
     for _i in 0..1000000 {
         let mut list = game.current_position.get_move_list(false);
         let po = game.current_position.make_move_and_get_position(&mut list.list[0]);
-        if po != po { break; }
+        if po.pos != po.pos { break; }
         game.current_position.unmake_move(&mut list.list[0]);
     }
     print!("simple: {:.2?}\n", now.elapsed());

@@ -1,89 +1,34 @@
 use std::cmp::{min, Ordering};
+use std::io;
+use std::io::Write;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use crate::color::Color;
 use crate::moves::BoardPos;
 use crate::moves_list::{MoveItem, MoveList};
 use crate::piece::Piece;
-use crate::position::{Position, PositionHistoryItem, PosState};
+use crate::position::{Position, PosState};
 use crate::position_environment::PositionEnvironment;
 use ts_rs::*;
-use serde::{Serialize};
+use serde::Serialize;
 use crate::color::Color::{Black, White};
-use crate::game::FinishType::{BlackWin, Draw1, Draw2, Draw3, Draw4, Draw5, WhiteWin};
+use crate::PositionHistory::FinishType::{BlackWin, Draw1, Draw2, Draw3, Draw4, Draw5, WhiteWin};
 use crate::log;
 use rand::prelude::*;
-
-
-#[wasm_bindgen]
-#[derive(TS)]
-#[ts(export)]
-#[derive(Serialize, Debug, Clone)]
-pub enum FinishType {
-    Draw1,
-    Draw2,
-    Draw3,
-    Draw4,
-    Draw5,
-    BlackWin,
-    WhiteWin,
-}
-
-
-impl PartialOrd<Self> for FinishType {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Eq for FinishType {}
-
-impl PartialEq<Self> for FinishType {
-    fn eq(&self, other: &Self) -> bool {
-        let is_draw = |x: &FinishType| {
-            match x {
-                Draw1 | Draw2 | Draw3 | Draw4 | Draw5 => { true }
-                _ => { false }
-            }
-        };
-        let is_win_same = |x: &FinishType, y: &FinishType| {
-            match x {
-                WhiteWin => match y {
-                    WhiteWin => true,
-                    _ => false
-                }
-                BlackWin => match y {
-                    BlackWin => true,
-                    _ => false
-                }
-                _ => false
-            }
-        };
-        is_draw(self) && is_draw(other) || is_win_same(self, other)
-    }
-}
-
-
-impl Ord for FinishType {
-    fn cmp(&self, other: &Self) -> Ordering {
-        if *self == BlackWin && *other != BlackWin { return Ordering::Less; }
-        if *self == WhiteWin && *other != WhiteWin { return Ordering::Greater; }
-        Ordering::Equal
-    }
-}
+use crate::PositionHistory::{FinishType, PositionAndMove, PositionHistory};
 
 #[wasm_bindgen]
 #[derive(Serialize, Debug)]
 #[derive(TS)]
 #[ts(export)]
 pub struct BestPos {
-    pos: Option<PositionHistoryItem>,
+    pos: Option<Rc<PositionAndMove>>,
     deep_eval: i32,
 }
 
 impl BestPos {
     pub fn get_move_item(&self) -> MoveItem {
-        self.pos.as_ref().unwrap().move_item.clone()
+        self.pos.clone().unwrap().mov.borrow_mut().clone().unwrap()
     }
 }
 
@@ -91,7 +36,7 @@ impl BestPos {
 #[wasm_bindgen]
 pub struct Game {
     #[wasm_bindgen(skip)]
-    pub position_history: Vec<PositionHistoryItem>,
+    pub position_history: PositionHistory,
     position_environment: Rc<PositionEnvironment>,
     #[wasm_bindgen(skip)]
     pub current_position: Position,
@@ -104,7 +49,7 @@ impl Game {
     pub fn new(size: i8) -> Self {
         let environment = Rc::new(PositionEnvironment::new(size));
         Game {
-            position_history: vec![],
+            position_history: PositionHistory::new(),
             position_environment: environment.clone(),
             current_position: Position::new(environment.clone()),
             max_depth: 3,
@@ -138,14 +83,13 @@ impl Game {
 
     pub fn make_move_by_pos_item(&mut self, pos: &BestPos) {
         self.current_position.make_move(&mut pos.get_move_item());
-        self.position_history.push(
-            PositionHistoryItem { position: self.current_position.clone(), move_item: pos.get_move_item() })
+        self.position_history.push( PositionAndMove::from(self.current_position.clone(), pos.get_move_item()));
     }
 
     pub fn make_move_by_move_item(&mut self, move_item: &mut MoveItem) {
         self.current_position.make_move(move_item);
-        self.position_history.push(
-            PositionHistoryItem { position: self.current_position.clone(), move_item: move_item.clone() })
+        self.position_history.push( PositionAndMove::from(self.current_position.clone(), move_item.clone()));
+
     }
 
     #[wasm_bindgen]
@@ -155,8 +99,8 @@ impl Game {
         let ref mut move_list = self.current_position.get_move_list_cached();
         let mut pos_list: Vec<_> = {
             move_list.borrow_mut().list.iter_mut().map(|x| {
-                let mut pos = self.current_position.make_move_and_get_position(x);
-                pos.position.evaluate();
+                let pos = self.current_position.make_move_and_get_position(x);
+                pos.pos.borrow_mut().evaluate();
                 self.current_position.unmake_move(x);
                 pos
             }).collect()
@@ -176,33 +120,36 @@ impl Game {
         //     }
         // }
         pos_list.sort_by_key(|x|
-            x.position.eval.unwrap() * if move_color == White { -1 } else { 1 });
+            x.pos.borrow().eval.unwrap() * if move_color == White { -1 } else { 1 });
 
         let mut best_pos = BestPos { pos: None, deep_eval: if move_color == White { i32::MIN } else { i32::MAX } };
         if depth < max_depth {
-            for mut pos_it in pos_list {
-                self.current_position.make_move(&mut pos_it.move_item);
-                let finish = self.finish_check();
+            for pos_it in pos_list {
+                self.current_position.make_move(&pos_it.mov.borrow().clone().unwrap());
+                self.position_history.push(pos_it);
+                let finish = self.position_history.finish_check();
                 if finish.is_some() {
                     // print!("{:?} {}\n", finish, depth);
                     // pos_it.position.print_pos();
-                    self.current_position.unmake_move(&mut pos_it.move_item);
-                    return BestPos { deep_eval: pos_it.position.evaluate(), pos: Option::from(pos_it) };
+                    let pos_it = self.position_history.pop().unwrap();
+                    self.current_position.unmake_move(&pos_it.mov.borrow().clone().unwrap());
+                    let eval = pos_it.pos.borrow_mut().evaluate() ;
+                    return BestPos { deep_eval: eval, pos: Option::from(pos_it) };
                 }
-                self.position_history.push(pos_it);
                 let deep_eval =
                     self.best_move(max_depth, best_white, best_black, depth + 1).deep_eval;
                 let mut pos_it = self.position_history.pop().unwrap();
-                self.current_position.unmake_move(&mut pos_it.move_item);
+                self.current_position.took_pieces = pos_it.pos.clone().borrow().took_pieces.clone();
+                self.current_position.unmake_move(&pos_it.mov.borrow().clone().unwrap());
                 let white = self.current_position.state.white.clone();
                 let black = self.current_position.state.black.clone();
-                self.current_position.state = pos_it.position.state.clone();
+                self.current_position.state = pos_it.pos.borrow().state.clone();
                 self.current_position.state.white = white;
                 self.current_position.state.black = black;
                 if move_color == White {
                     if best_black < deep_eval {
                         // print!("cut at white move depth: {} {} {} {}\n", depth, best_black, best_white, deep_eval);
-                        return BestPos { pos: Option::from(pos_it), deep_eval };
+                        return BestPos { pos: Some(pos_it.clone()), deep_eval };
                     }
                     if best_white < deep_eval { best_white = deep_eval }
                     if best_pos.deep_eval < deep_eval {
@@ -221,7 +168,8 @@ impl Game {
             }
         } else {
             for mut pos in pos_list {
-                best_pos = BestPos { deep_eval: pos.position.evaluate(), pos: Some(pos) }
+                let eval = pos.pos.borrow_mut().evaluate();
+                best_pos = BestPos { deep_eval: eval, pos: Some(Rc::new(pos)) }
             }
         }
         best_pos
@@ -229,7 +177,7 @@ impl Game {
 
     #[wasm_bindgen]
     pub fn get_best_move(&mut self) -> JsValue {
-        let finish = self.finish_check();
+        let finish = self.position_history.finish_check();
         if finish.is_some() {
             return match serde_wasm_bindgen::to_value(&finish.unwrap()) {
                 Ok(js) => js,
@@ -245,14 +193,14 @@ impl Game {
 
     #[wasm_bindgen]
     pub fn make_best_move(&mut self, pos: &BestPos) {
-        log(&format!("{:?}", pos));
+        // log(&format!("{:?}", pos));
         self.make_move_by_pos_item(pos);
     }
 
     // for neural
     fn get_board_list(&mut self) -> Vec<Vec<i32>> {
         let move_list = self.current_position.get_move_list_cached();
-        let mut pos_list: Vec<PositionHistoryItem> = vec![];
+        let mut pos_list: Vec<PositionAndMove> = vec![];
         for ref mut mov in move_list.borrow_mut().list.clone() {
             pos_list.push(self.current_position.make_move_and_get_position(mov));
             self.current_position.unmake_move(mov);
@@ -260,7 +208,7 @@ impl Game {
         let mut board_list: Vec<Vec<i32>> = vec![];
         for pos in pos_list {
             let mut board = vec![0; (self.position_environment.size * self.position_environment.size / 2) as usize];
-            for cell in pos.position.cells {
+            for cell in &pos.pos.borrow().cells {
                 if let Some(piece) = cell {
                     board[piece.pos] =
                         (if piece.is_king { 3 } else { 1 }) * if piece.color == Color::White { 1 } else { -1 }
@@ -272,7 +220,7 @@ impl Game {
     }
     #[wasm_bindgen]
     pub fn find_and_make_best_move_ts_n(&mut self) -> JsValue {
-        let finish = self.finish_check();
+        let finish = self.position_history.finish_check();
         if finish.is_some() {
             return match serde_wasm_bindgen::to_value(&finish.unwrap()) {
                 Ok(js) => js,
@@ -281,7 +229,7 @@ impl Game {
         }
         let best_pos = self.best_move(self.max_depth, i32::MIN, i32::MAX, 0);
         self.make_move_by_pos_item(&best_pos);
-        let finish = self.finish_check();
+        let finish = self.position_history.finish_check();
         if finish.is_some() {
             return match serde_wasm_bindgen::to_value(&finish.unwrap()) {
                 Ok(js) => js,
@@ -308,7 +256,7 @@ impl Game {
         let len = move_list.borrow().list.len() as i32;
         if i >= 0 && i < len {
             self.make_move_by_move_item(&mut move_list.borrow_mut().list[i as usize]);
-            let finish = self.finish_check();
+            let finish = self.position_history.finish_check();
             if finish.is_some() {
                 return match serde_wasm_bindgen::to_value(&finish.unwrap()) {
                     Ok(js) => js,
@@ -374,116 +322,116 @@ impl Game {
     }
 
 
-    pub fn finish_check(&mut self) -> Option<FinishType> {
-        let cur_position = &mut self.current_position;
-        if cur_position.get_move_list_cached().borrow().list.len() == 0 {
-            return if cur_position.next_move.is_some() &&
-                cur_position.next_move.unwrap() == White { Some(BlackWin) } else { Some(WhiteWin) };
-        }
-        let i = self.position_history.len();
-        // let ref mut pos_it = self.position_history[i];
-        let pos_history = &mut self.position_history;
-        if cur_position.state.get_count(White).king > 0 &&
-            cur_position.state.get_count(Black).king > 0 {
-            // first position where both set kings
-            if cur_position.state.kings_start_at.is_none() || cur_position.state.kings_start_at.unwrap() > i {
-                cur_position.state.kings_start_at = Some(i);
-            }
-            // 1) если в течение 15 ходов игроки делали ходы только дамками, не передвигая
-            // простых шашек и не производя взятия.
-            if i > 0 &&
-                pos_history[i - 1].position.cells[pos_history[i - 1].move_item.to()].as_ref().unwrap().is_king {
-                if cur_position.state.kings_only_move_start_at.is_none() ||
-                    cur_position.state.kings_only_move_start_at.unwrap() > i {
-                    cur_position.state.kings_only_move_start_at = Some(i - 1);
-                }
-                if i - cur_position.state.kings_only_move_start_at.unwrap() >= 15 {
-                    return Some(Draw1);
-                }
-            } else {
-                cur_position.state.kings_only_move_start_at = None;
-            }
-
-
-            // 2) если три раза повторяется одна и та же позиция
-            let mut repeats = 0;
-            let mut j: i32 = i as i32 - 1;
-            while j >= 0 && pos_history[j as usize].position.state == cur_position.state {
-                if *cur_position == pos_history[j as usize].position {
-                    repeats += 1;
-                    if repeats > 1 {
-                        return Some(Draw2);
-                    }
-                }
-                if j < cur_position.state.kings_start_at.unwrap_or(0) as i32 { break; }
-                j -= 1;
-            }
-            cur_position.state.repeats = Some(repeats);
-
-            // 3) если участник, имеющий три дамки (и более) против одной дамки противника,
-            // за 15 ходов не возьмёт дамку противника
-            let is_triangle = |state: &mut PosState| {
-                (state.get_count(White).king == 1 && state.get_count(Black).king >= 3) ||
-                    (state.get_count(Black).king == 1 && state.get_count(White).king >= 3)
-            };
-            if is_triangle(&mut cur_position.state) {
-                if cur_position.state.triangle_start_at.is_none()
-                    || cur_position.state.triangle_start_at.unwrap() > i { cur_position.state.triangle_start_at = Some(i); } else {
-                    if i - cur_position.state.triangle_start_at.unwrap() >= 15 { return Some(Draw3); }
-                }
-            } else { cur_position.state.triangle_start_at = None; }
-
-            // 4) если в позиции, в которой оба соперника имеют дамки, не изменилось соотношение сил
-            // (то есть не было взятия, и ни одна простая шашка не стала дамкой) на протяжении:
-            // в 2- и 3-фигурных окончаниях — 5 ходов,
-            // в 4- и 5-фигурных окончаниях — 30 ходов,
-            // в 6- и 7-фигурных окончаниях — 60 ходов;
-            if i > 0 && pos_history[i - 1].position.state == cur_position.state {
-                if cur_position.state.power_equal_start_at.is_none()
-                    || cur_position.state.power_equal_start_at.unwrap() > i - 1 {
-                    cur_position.state.power_equal_start_at = Some(i - 1);
-                }
-                let total = cur_position.state.get_total();
-                // if cur_position.state.power_equal_start_at.is_none() {panic!("!");}
-                let n = i - cur_position.state.power_equal_start_at.unwrap();
-                if total < 4 && n >= 5 { return Some(Draw4); }
-                if total < 6 && n >= 30 { return Some(Draw4); }
-                if total < 8 && n >= 60 { return Some(Draw4); }
-            } else { cur_position.state.power_equal_start_at = None; }
-
-            // если участник, имея в окончании партии три дамки, две дамки и простую, дамку и две простые,
-            // ""три простые против одинокой дамки"", находящейся на большой дороге,
-            // своим 5-м ходом не сможет добиться выигранной позиции;
-            let is_single_on_main_road = |position: &mut Position| -> bool {
-                let ref mut state = position.state;
-                if (state.get_count(Black).king == 1 ||
-                    state.get_count(White).king == 1) &&
-                    state.get_total() == 4 {
-                    let color = if state.get_count(Black).king == 1 {
-                        Black
-                    } else { White };
-                    for main_road_point in self.position_environment.get_vectors(0)[0].points.iter() {
-                        if let Some(piece) = &position.cells[*main_road_point] {
-                            return if piece.color == color { true } else {
-                                false
-                            };
-                        }
-                    }
-                }
-                false
-            };
-            if is_single_on_main_road(cur_position) {
-                if cur_position.state.main_road_start_at.is_none() ||
-                    cur_position.state.main_road_start_at.unwrap() > i {
-                    cur_position.state.main_road_start_at = Some(i);
-                }
-                if i - cur_position.state.main_road_start_at.unwrap() >= 10 {
-                    return Some(Draw5);
-                }
-            } else { cur_position.state.main_road_start_at = None; }
-        } else { cur_position.state.kings_start_at = None; }
-        None
-    }
+    // pub fn finish_check(&mut self) -> Option<FinishType> {
+    //     let cur_position = &mut self.current_position;
+    //     if cur_position.get_move_list_cached().borrow().list.len() == 0 {
+    //         return if cur_position.next_move.is_some() &&
+    //             cur_position.next_move.unwrap() == White { Some(BlackWin) } else { Some(WhiteWin) };
+    //     }
+    //     let i = self.position_history.len();
+    //     // let ref mut pos_it = self.position_history[i];
+    //     let pos_history = &mut self.position_history;
+    //     if cur_position.state.get_count(White).king > 0 &&
+    //         cur_position.state.get_count(Black).king > 0 {
+    //         // first position where both set kings
+    //         if cur_position.state.kings_start_at.is_none() || cur_position.state.kings_start_at.unwrap() > i {
+    //             cur_position.state.kings_start_at = Some(i);
+    //         }
+    //         // 1) если в течение 15 ходов игроки делали ходы только дамками, не передвигая
+    //         // простых шашек и не производя взятия.
+    //         if i > 0 &&
+    //             pos_history[i - 1].pos.borrow().cells[pos_history[i - 1].mov.borrow().as_ref().unwrap().to()].as_ref().unwrap().is_king {
+    //             if cur_position.state.kings_only_move_start_at.is_none() ||
+    //                 cur_position.state.kings_only_move_start_at.unwrap() > i {
+    //                 cur_position.state.kings_only_move_start_at = Some(i - 1);
+    //             }
+    //             if i - cur_position.state.kings_only_move_start_at.unwrap() >= 15 {
+    //                 return Some(Draw1);
+    //             }
+    //         } else {
+    //             cur_position.state.kings_only_move_start_at = None;
+    //         }
+    //
+    //
+    //         // 2) если три раза повторяется одна и та же позиция
+    //         let mut repeats = 0;
+    //         let mut j: i32 = i as i32 - 1;
+    //         while j >= 0 && pos_history[j as usize].pos.borrow_mut().state == cur_position.state {
+    //             if *cur_position == *pos_history[j as usize].pos.borrow() {
+    //                 repeats += 1;
+    //                 if repeats > 1 {
+    //                     return Some(Draw2);
+    //                 }
+    //             }
+    //             if j < cur_position.state.kings_start_at.unwrap_or(0) as i32 { break; }
+    //             j -= 1;
+    //         }
+    //         cur_position.state.repeats = Some(repeats);
+    //
+    //         // 3) если участник, имеющий три дамки (и более) против одной дамки противника,
+    //         // за 15 ходов не возьмёт дамку противника
+    //         let is_triangle = |state: &mut PosState| {
+    //             (state.get_count(White).king == 1 && state.get_count(Black).king >= 3) ||
+    //                 (state.get_count(Black).king == 1 && state.get_count(White).king >= 3)
+    //         };
+    //         if is_triangle(&mut cur_position.state) {
+    //             if cur_position.state.triangle_start_at.is_none()
+    //                 || cur_position.state.triangle_start_at.unwrap() > i { cur_position.state.triangle_start_at = Some(i); } else {
+    //                 if i - cur_position.state.triangle_start_at.unwrap() >= 15 { return Some(Draw3); }
+    //             }
+    //         } else { cur_position.state.triangle_start_at = None; }
+    //
+    //         // 4) если в позиции, в которой оба соперника имеют дамки, не изменилось соотношение сил
+    //         // (то есть не было взятия, и ни одна простая шашка не стала дамкой) на протяжении:
+    //         // в 2- и 3-фигурных окончаниях — 5 ходов,
+    //         // в 4- и 5-фигурных окончаниях — 30 ходов,
+    //         // в 6- и 7-фигурных окончаниях — 60 ходов;
+    //         if i > 1 && pos_history[i - 1].pos.borrow().state == pos_history[i - 2].pos.borrow().state {
+    //             if cur_position.state.power_equal_start_at.is_none()
+    //                 || cur_position.state.power_equal_start_at.unwrap() > i - 1 {
+    //                 cur_position.state.power_equal_start_at = Some(i - 2);
+    //             }
+    //             let total = cur_position.state.get_total();
+    //             // if cur_position.state.power_equal_start_at.is_none() {panic!("!");}
+    //             let n = i - cur_position.state.power_equal_start_at.unwrap();
+    //             if total < 4 && n >= 5 { return Some(Draw4); }
+    //             if total < 6 && n >= 30 { return Some(Draw4); }
+    //             if total < 8 && n >= 60 { return Some(Draw4); }
+    //         } else { cur_position.state.power_equal_start_at = None; }
+    //
+    //         // если участник, имея в окончании партии три дамки, две дамки и простую, дамку и две простые,
+    //         // ""три простые против одинокой дамки"", находящейся на большой дороге,
+    //         // своим 5-м ходом не сможет добиться выигранной позиции;
+    //         let is_single_on_main_road = |position: &mut Position| -> bool {
+    //             let ref mut state = position.state;
+    //             if (state.get_count(Black).king == 1 ||
+    //                 state.get_count(White).king == 1) &&
+    //                 state.get_total() == 4 {
+    //                 let color = if state.get_count(Black).king == 1 {
+    //                     Black
+    //                 } else { White };
+    //                 for main_road_point in self.position_environment.get_vectors(0)[0].points.iter() {
+    //                     if let Some(piece) = &position.cells[*main_road_point] {
+    //                         return if piece.color == color { true } else {
+    //                             false
+    //                         };
+    //                     }
+    //                 }
+    //             }
+    //             false
+    //         };
+    //         if is_single_on_main_road(cur_position) {
+    //             if cur_position.state.main_road_start_at.is_none() ||
+    //                 cur_position.state.main_road_start_at.unwrap() > i {
+    //                 cur_position.state.main_road_start_at = Some(i);
+    //             }
+    //             if i - cur_position.state.main_road_start_at.unwrap() >= 10 {
+    //                 return Some(Draw5);
+    //             }
+    //         } else { cur_position.state.main_road_start_at = None; }
+    //     } else { cur_position.state.kings_start_at = None; }
+    //     None
+    // }
 
     #[wasm_bindgen]
     pub fn make_move_for_front(&mut self, pos_chain: &JsValue) -> Result<JsValue, JsValue> {
@@ -520,9 +468,9 @@ impl Game {
                     }
                     if ok && pos_list.len() == i {
                         self.current_position.make_move(&mut move_item);
-                        let draw = self.finish_check();
+                        let draw = self.position_history.finish_check();
                         self.position_history.push(
-                            PositionHistoryItem { move_item, position: self.current_position.clone() });
+                            PositionAndMove::from(self.current_position.clone(), move_item));
                         return if draw.is_none() { Ok(JsValue::TRUE) } else {
                             Ok(serde_wasm_bindgen::to_value(&draw.unwrap()).unwrap())
                         };
@@ -537,8 +485,8 @@ impl Game {
 #[cfg(test)]
 mod tests {
     use crate::color::Color;
-    use crate::game::{Game};
-    use crate::game::FinishType::{BlackWin, Draw1, Draw2, Draw3, WhiteWin};
+    use crate::game::Game;
+    use crate::PositionHistory::FinishType::{BlackWin, Draw1, Draw2, Draw3, WhiteWin};
     use crate::piece::Piece;
     use crate::position_environment::PositionEnvironment;
 
@@ -593,7 +541,7 @@ mod tests {
                 game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, false)));
 
         let best = &game.get_best_move_rust();
-        assert_eq!(best.pos.as_ref().unwrap().move_item.strike.as_ref().unwrap().took_pieces.len(), 9);
+        assert_eq!(best.pos.as_ref().unwrap().pos.borrow().took_pieces.len(), 9);
         print!("\n best: {:?} \n", {
             best
         });

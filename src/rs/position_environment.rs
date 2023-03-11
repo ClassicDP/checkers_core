@@ -151,7 +151,7 @@ impl PositionEnvironment {
         for _i in 0..1000 {
             let mut list = pos.get_move_list( false);
             let po = pos.make_move_and_get_position(&mut list.list[0]);
-            if po != po { break; }
+            if po.pos != po.pos { break; }
             pos.unmake_move(&mut list.list[0]);
         }
 
@@ -166,7 +166,7 @@ impl PositionEnvironment {
         for _i in 0..1000 {
             let mut list = pos.get_move_list( false);
             let po = pos.make_move_and_get_position(&mut list.list[0]);
-            if po != po { break; }
+            if po.pos != po.pos { break; }
             pos.unmake_move(&mut list.list[0]);
         }
         return;
@@ -210,9 +210,9 @@ impl PositionEnvironment {
             let mut list = MoveList::new();
             pos.get_strike_list(22, &mut list, &vec![], false);
             let mut p0 = pos.make_move_and_get_position(&mut list.list[0]);
-            pos.unmake_move(p0.move_item.borrow_mut());
+            pos.unmake_move(&p0.mov.borrow().clone().unwrap());
             let p1 = p0.clone();
-            if p0 != p1 { break; }
+            if p0.pos != p1.pos { break; }
         };
 
 

@@ -57,6 +57,12 @@ class GameProcess {
     removePiece(pos) {
         return this.game.remove_piece(this.game.to_pack(pos));
     }
+    get_best_move() {
+        return this.game.get_best_move_rust();
+    }
+    make_best_move(pos) {
+        this.game.make_best_move(pos);
+    }
     getBestMove() {
         let best = this.game.get_best_move();
         if (best.pos?.move_item.mov) {
@@ -85,7 +91,7 @@ class GameProcess {
     }
     get position() {
         let pos = this.game.position;
-        let newPos = { cells: [], state: pos.state, next_move: pos.next_move, eval: null, move_list: null };
+        let newPos = { cells: [], state: pos.state, next_move: pos.next_move, move_list: null };
         for (let piece of pos.cells) {
             if (piece)
                 newPos.cells[this.game.to_board(piece.pos)] = {
