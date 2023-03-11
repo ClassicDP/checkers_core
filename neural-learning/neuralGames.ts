@@ -1,9 +1,16 @@
 import {Color} from "../build-wasm";
 import {GameProcess} from "../src/gameProcess";
 
-let listOrFinish: Array<number>[] | 'BlackWin' | 'WhiteWin' | `Draw${number}`
+type ListOrFinish = Array<number>[] | 'BlackWin' | 'WhiteWin' | `Draw${number}`
+let listOrFinish: ListOrFinish
+
 
 do {
+    const selectPosition = (listOrFinish: ListOrFinish) => {
+        if (listOrFinish.length) {
+            gameProcess.game.move_by_index_ts_n(Math.random() * listOrFinish.length >> 0)
+        }
+    }
     let gameProcess = new GameProcess(8)
     gameProcess.game.set_depth(3) // <-- depth limit
     let whitePosList = [0, 2, 4, 6, 9, 11, 13, 15, 16, 18, 20, 22]
@@ -16,7 +23,7 @@ do {
     if (neuralMakeFirstMove) {
         listOrFinish = gameProcess.game.get_board_list_ts_n()
         if (listOrFinish instanceof Array) {
-            gameProcess.game.move_by_index_ts_n(Math.random() * listOrFinish.length >> 0)
+            selectPosition(listOrFinish)
             movesCount++
         }
         console.log("neural play White")
@@ -27,7 +34,7 @@ do {
         listOrFinish = gameProcess.game.find_and_make_best_move_ts_n()
         movesCount++ // todo result may have +1 count mistake in case Deep algorithm lost
         if (listOrFinish instanceof Array) {
-            gameProcess.game.move_by_index_ts_n(Math.random() * listOrFinish.length >> 0)
+            selectPosition(listOrFinish)
             movesCount++
         }
     } while (listOrFinish instanceof Array)
