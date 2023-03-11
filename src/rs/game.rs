@@ -259,10 +259,10 @@ impl Game {
         }
         let mut board_list: Vec<Vec<i32>> = vec![];
         for pos in pos_list {
-            let mut board = vec![0; (self.position_environment.size * self.position_environment.size) as usize];
+            let mut board = vec![0; (self.position_environment.size * self.position_environment.size / 2) as usize];
             for cell in pos.position.cells {
                 if let Some(piece) = cell {
-                    board[self.to_board(piece.pos)] =
+                    board[piece.pos] =
                         (if piece.is_king { 3 } else { 1 }) * if piece.color == Color::White { 1 } else { -1 }
                 }
             }
