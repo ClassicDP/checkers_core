@@ -15,6 +15,7 @@ export function __wbg_moveitem_free(a: number): void;
 export function __wbg_bestpos_free(a: number): void;
 export function __wbg_game_free(a: number): void;
 export function game_new(a: number): number;
+export function game_set_depth(a: number, b: number): void;
 export function game_insert_piece(a: number, b: number): void;
 export function game_remove_piece(a: number, b: number): number;
 export function game_position(a: number): number;

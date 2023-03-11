@@ -39,6 +39,10 @@ export class Game {
 */
   constructor(size: number);
 /**
+* @param {number} depth
+*/
+  set_depth(depth: number): void;
+/**
 * @param {Piece} piece
 */
   insert_piece(piece: Piece): void;

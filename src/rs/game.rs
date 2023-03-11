@@ -95,6 +95,7 @@ pub struct Game {
     position_environment: Rc<PositionEnvironment>,
     #[wasm_bindgen(skip)]
     pub current_position: Position,
+    max_depth: i16,
 }
 
 #[wasm_bindgen]
@@ -106,8 +107,16 @@ impl Game {
             position_history: vec![],
             position_environment: environment.clone(),
             current_position: Position::new(environment.clone()),
+            max_depth: 3,
         }
     }
+
+    #[wasm_bindgen]
+    pub fn set_depth(&mut self, depth: i16) {
+        self.max_depth = depth;
+    }
+
+
     #[wasm_bindgen]
     pub fn insert_piece(&mut self, piece: Piece) {
         self.current_position.insert_piece(piece);
@@ -228,7 +237,7 @@ impl Game {
             };
         }
         match serde_wasm_bindgen::to_value(
-            &self.best_move(6, i32::MIN, i32::MAX, 0)) {
+            &self.best_move(self.max_depth, i32::MIN, i32::MAX, 0)) {
             Ok(js) => js,
             Err(_err) => JsValue::UNDEFINED
         }
@@ -270,7 +279,7 @@ impl Game {
                 Err(_err) => JsValue::UNDEFINED
             };
         }
-        let best_pos = self.best_move(3, i32::MIN, i32::MAX, 0);
+        let best_pos = self.best_move(self.max_depth, i32::MIN, i32::MAX, 0);
         self.make_move_by_pos_item(&best_pos);
         let finish = self.finish_check();
         if finish.is_some() {
@@ -316,7 +325,7 @@ impl Game {
 
     #[wasm_bindgen]
     pub fn get_best_move_rust(&mut self) -> BestPos {
-        self.best_move(3, i32::MIN, i32::MAX, 0)
+        self.best_move(self.max_depth, i32::MIN, i32::MAX, 0)
     }
 
 
