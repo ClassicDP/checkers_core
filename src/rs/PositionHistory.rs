@@ -71,12 +71,13 @@ impl PositionHistory {
 
     pub fn finish_check(&mut self) -> Option<FinishType> {
         let i = self.list.len();
-        if i < 2 { return None; }
+        if i==0 {return None}
         let current = self.list[i-1].clone();
         if current.pos.borrow_mut().get_move_list_cached().borrow().list.len() == 0 {
             return if current.pos.borrow().next_move.is_some() &&
                 current.pos.borrow().next_move.unwrap() == White { Some(FinishType::BlackWin) } else { Some(FinishType::WhiteWin) };
         }
+        if i < 2 { return None; }
         // let ref mut pos_it = self.position_history[i];
         let pos_history = &mut self.list;
         let environment = current.pos.borrow().environment.clone();
