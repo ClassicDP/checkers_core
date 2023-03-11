@@ -25,13 +25,11 @@ do {
     }
     do {
         listOrFinish = gameProcess.game.find_and_make_best_move_ts_n()
-        movesCount++
-        gameProcess.game.move_by_index_ts_n(Math.random() * listOrFinish.length >> 0)
-        if (!(listOrFinish instanceof Array)) {
+        movesCount++ // todo result may have +1 count mistake in case Deep algorithm lost
+        if (listOrFinish instanceof Array) {
             gameProcess.game.move_by_index_ts_n(Math.random() * listOrFinish.length >> 0)
             movesCount++
         }
-        // console.log(list)
     } while (listOrFinish instanceof Array)
     console.log(listOrFinish, movesCount)
 } while (1)
