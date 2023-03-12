@@ -60,7 +60,7 @@ pub fn best_move_triangle() {
     vec![31].iter()
         .for_each(|pos|
             game.insert_piece(Piece::new(game.to_pack(*pos), Color::White, true)));
-    vec![43, 18, 20].iter()
+    vec![43, 0, 20].iter()
         .for_each(|pos|
             game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, true)));
 

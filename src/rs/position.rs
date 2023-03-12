@@ -41,7 +41,7 @@ pub struct PosState {
     pub(crate) triangle_start_at: Option<usize>,
     pub(crate) power_equal_start_at: Option<usize>,
     pub(crate) main_road_start_at: Option<usize>,
-    pub(crate) repeats: Option<usize>,
+    pub(crate) repeats: u8
 }
 
 impl PartialEq for PosState {
@@ -117,7 +117,7 @@ impl Position {
                 triangle_start_at: None,
                 power_equal_start_at: None,
                 main_road_start_at: None,
-                repeats: None,
+                repeats: 0,
             },
             cells: Vec::new(),
             environment,
