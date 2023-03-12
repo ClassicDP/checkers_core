@@ -1,3 +1,4 @@
+use std::cell::{Ref, RefCell};
 use std::cmp::{min, Ordering};
 use std::io;
 use std::io::Write;
@@ -22,13 +23,13 @@ use crate::PositionHistory::{FinishType, PositionAndMove, PositionHistory};
 #[derive(TS)]
 #[ts(export)]
 pub struct BestPos {
-    pos: Option<PositionAndMove>,
+    pos: Option<RefCell<PositionAndMove>>,
     deep_eval: i32,
 }
 
 impl BestPos {
     pub fn get_move_item(&self) -> MoveItem {
-        self.pos.clone().unwrap().mov.borrow_mut().clone().unwrap()
+        self.pos.as_ref().unwrap().borrow().mov.as_ref().unwrap().clone()
     }
 }
 
@@ -83,24 +84,23 @@ impl Game {
 
     pub fn make_move_by_pos_item(&mut self, pos: &BestPos) {
         self.current_position.make_move(&mut pos.get_move_item());
-        self.position_history.push( PositionAndMove::from(self.current_position.clone(), pos.get_move_item()));
+        self.position_history.push(PositionAndMove::from(self.current_position.clone(), pos.get_move_item()));
     }
 
-    pub fn make_move_by_move_item(&mut self, move_item: &mut MoveItem) {
+    pub fn make_move_by_move_item(&mut self, move_item: &MoveItem) {
         self.current_position.make_move(move_item);
-        self.position_history.push( PositionAndMove::from(self.current_position.clone(), move_item.clone()));
-
+        self.position_history.push(PositionAndMove::from(self.current_position.clone(), move_item.clone()));
     }
 
     #[wasm_bindgen]
     pub fn best_move(&mut self, mut max_depth: i16, mut best_white: i32,
                      mut best_black: i32, depth: i16) -> BestPos {
         // log(&format!("{:?}", self.current_position));
-        let ref mut move_list = self.current_position.get_move_list_cached();
+        let ref move_list = self.current_position.get_move_list_cached();
         let mut pos_list: Vec<_> = {
-            move_list.borrow_mut().list.iter_mut().map(|x| {
-                let pos = self.current_position.make_move_and_get_position(x);
-                pos.pos.borrow_mut().evaluate();
+            move_list.as_ref().as_ref().unwrap().list.iter().map(|x| {
+                let mut pos = self.current_position.make_move_and_get_position(x);
+                pos.pos.evaluate();
                 self.current_position.unmake_move(x);
                 pos
             }).collect()
@@ -120,36 +120,36 @@ impl Game {
         //     }
         // }
         pos_list.sort_by_key(|x|
-            x.pos.borrow().eval.unwrap() * if move_color == White { -1 } else { 1 });
+            x.pos.eval.unwrap() * if move_color == White { -1 } else { 1 });
 
         let mut best_pos = BestPos { pos: None, deep_eval: if move_color == White { i32::MIN } else { i32::MAX } };
         if depth < max_depth {
             for pos_it in pos_list {
-                self.current_position.make_move(&pos_it.mov.borrow().clone().unwrap());
+                self.current_position.make_move(&pos_it.mov.as_ref().unwrap());
                 self.position_history.push(pos_it);
                 let finish = self.position_history.finish_check();
                 if finish.is_some() {
                     // print!("{:?} {}\n", finish, depth);
                     // pos_it.position.print_pos();
-                    let pos_it = self.position_history.pop().unwrap();
-                    self.current_position.unmake_move(&pos_it.mov.borrow().clone().unwrap());
-                    let eval = pos_it.pos.borrow_mut().evaluate() ;
+                    let mut pos_it = self.position_history.pop().unwrap();
+                    self.current_position.unmake_move(&pos_it.borrow().mov.as_ref().unwrap());
+                    let eval = pos_it.borrow_mut().pos.evaluate();
                     return BestPos { deep_eval: eval, pos: Option::from(pos_it) };
                 }
                 let deep_eval =
                     self.best_move(max_depth, best_white, best_black, depth + 1).deep_eval;
                 let mut pos_it = self.position_history.pop().unwrap();
-                self.current_position.took_pieces = pos_it.pos.clone().borrow().took_pieces.clone();
-                self.current_position.unmake_move(&pos_it.mov.borrow().clone().unwrap());
+                self.current_position.took_pieces = pos_it.borrow().pos.took_pieces.clone();
+                self.current_position.unmake_move(&pos_it.borrow().mov.as_ref().unwrap());
                 let white = self.current_position.state.white.clone();
                 let black = self.current_position.state.black.clone();
-                self.current_position.state = pos_it.pos.borrow().state.clone();
+                self.current_position.state = pos_it.borrow().pos.state.clone();
                 self.current_position.state.white = white;
                 self.current_position.state.black = black;
                 if move_color == White {
                     if best_black < deep_eval {
                         // print!("cut at white move depth: {} {} {} {}\n", depth, best_black, best_white, deep_eval);
-                        return BestPos { pos: Some(pos_it.clone()), deep_eval };
+                        return BestPos { pos: Some(pos_it), deep_eval };
                     }
                     if best_white < deep_eval { best_white = deep_eval }
                     if best_pos.deep_eval < deep_eval {
@@ -168,8 +168,8 @@ impl Game {
             }
         } else {
             for mut pos in pos_list {
-                let eval = pos.pos.borrow_mut().evaluate();
-                best_pos = BestPos { deep_eval: eval, pos: Some(pos) }
+                let eval = pos.pos.evaluate();
+                best_pos = BestPos { deep_eval: eval, pos: Some(RefCell::from(pos)) }
             }
         }
         best_pos
@@ -201,14 +201,14 @@ impl Game {
     fn get_board_list(&mut self) -> Vec<Vec<i32>> {
         let move_list = self.current_position.get_move_list_cached();
         let mut pos_list: Vec<PositionAndMove> = vec![];
-        for ref mut mov in move_list.borrow_mut().list.clone() {
+        for ref mut mov in move_list.as_ref().as_ref().unwrap().list.clone() {
             pos_list.push(self.current_position.make_move_and_get_position(mov));
             self.current_position.unmake_move(mov);
         }
         let mut board_list: Vec<Vec<i32>> = vec![];
         for pos in pos_list {
             let mut board = vec![0; (self.position_environment.size * self.position_environment.size / 2) as usize];
-            for cell in &pos.pos.borrow().cells {
+            for cell in &pos.pos.cells {
                 if let Some(piece) = cell {
                     board[piece.pos] =
                         (if piece.is_king { 3 } else { 1 }) * if piece.color == Color::White { 1 } else { -1 }
@@ -252,22 +252,25 @@ impl Game {
 
     #[wasm_bindgen]
     pub fn move_by_index_ts_n(&mut self, i: i32) -> JsValue {
-        let ref mut move_list = self.current_position.get_move_list_cached();
-        let len = move_list.borrow().list.len() as i32;
-        if i >= 0 && i < len {
-            self.make_move_by_move_item(&mut move_list.borrow_mut().list[i as usize]);
-            let finish = self.position_history.finish_check();
-            if finish.is_some() {
-                return match serde_wasm_bindgen::to_value(&finish.unwrap()) {
-                    Ok(js) => js,
-                    Err(_err) => JsValue::UNDEFINED
+        if let Some(ref move_list) = self.current_position.get_move_list_cached().as_ref() {
+            let len = move_list.list.len() as i32;
+            if i >= 0 && i < len {
+                self.make_move_by_move_item(&move_list.list[i as usize]);
+                let finish = self.position_history.finish_check();
+                if finish.is_some() {
+                    return match serde_wasm_bindgen::to_value(&finish.unwrap()) {
+                        Ok(js) => js,
+                        Err(_err) => JsValue::UNDEFINED
+                    };
+                }
+                return {
+                    JsValue::TRUE
                 };
+            } else {
+                JsValue::FALSE
             }
-            return {
-                JsValue::TRUE
-            };
         } else {
-            JsValue::FALSE
+            return JsValue::FALSE;
         }
     }
 
@@ -430,7 +433,7 @@ mod tests {
                 game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, false)));
 
         let best = &game.get_best_move_rust();
-        assert_eq!(best.pos.as_ref().unwrap().pos.borrow().took_pieces.len(), 9);
+        assert_eq!(best.pos.as_ref().unwrap().borrow().pos.took_pieces.len(), 9);
         print!("\n best: {:?} \n", {
             best
         });

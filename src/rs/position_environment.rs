@@ -210,9 +210,9 @@ impl PositionEnvironment {
             let mut list = MoveList::new();
             pos.get_strike_list(22, &mut list, &vec![], false);
             let mut p0 = pos.make_move_and_get_position(&mut list.list[0]);
-            pos.unmake_move(&p0.mov.borrow().clone().unwrap());
-            let p1 = p0.clone();
-            if p0.pos != p1.pos { break; }
+            pos.unmake_move(&p0.mov.unwrap());
+            let p1 = p0.pos.clone();
+            if p0.pos != p1 { break; }
         };
 
 

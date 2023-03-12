@@ -1,7 +1,6 @@
 use rand::{Rng, thread_rng};
 use crate::color::Color;
 use crate::game::Game;
-use crate::moves::StraightStrike;
 use crate::piece::Piece;
 include!("lib.rs");
 
@@ -38,7 +37,7 @@ pub fn random_game_test() {
             // print!("history {:?}\n", game.position_history.len());
             if game.position_history.len() % 2 == 10 {
                 let moves_list = game.current_position.get_move_list_cached();
-                let i = thread_rng().gen_range(0..moves_list.borrow().list.len());
+                let i = thread_rng().gen_range(0..moves_list.as_ref().as_ref().unwrap().list.len());
                 game.move_by_index_ts_n(i as i32);
                 // let ref mut random_move = moves_list.borrow_mut().list[i];
                 // game.make_move_by_move_item(random_move);
@@ -92,6 +91,7 @@ pub fn best_move_triangle() {
 }
 
 pub fn main() {
+
     best_move_triangle();
     // random_game_test();
     let mut game = Game::new(8);
@@ -110,12 +110,12 @@ pub fn main() {
             list.list.iter_mut().map(|x| {
                 let mut pos = game.current_position.make_move_and_get_position(x);
                 game.current_position.unmake_move(x);
-                pos.pos.borrow_mut().evaluate();
+                pos.pos.evaluate();
                 pos
             }).collect()
         };
         pos_list.sort_by_key(|x|
-            x.pos.borrow().eval.unwrap() * if x.pos.borrow().next_move.unwrap() == Color::White { -1 } else { 1 });
+            x.pos.eval.unwrap() * if x.pos.next_move.unwrap() == Color::White { -1 } else { 1 });
         let po = game.current_position.make_move_and_get_position(&mut list.list[0]);
         game.position_history.finish_check();
         if po.pos != po.pos { break; }

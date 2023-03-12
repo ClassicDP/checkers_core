@@ -1,11 +1,9 @@
-use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::io;
 use std::io::Write;
 use std::mem::swap;
 use std::rc::Rc;
 use rand::{Rng, thread_rng};
-
 
 use serde::{Deserialize, Serialize};
 use crate::position_environment::PositionEnvironment;
@@ -19,7 +17,6 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use crate::game::BestPos;
 use crate::PositionHistory::PositionAndMove;
 use crate::random;
-
 
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
@@ -41,7 +38,7 @@ pub struct PosState {
     pub(crate) triangle_start_at: Option<usize>,
     pub(crate) power_equal_start_at: Option<usize>,
     pub(crate) main_road_start_at: Option<usize>,
-    pub(crate) repeats: u8
+    pub(crate) repeats: u8,
 }
 
 impl PartialEq for PosState {
@@ -90,13 +87,13 @@ pub struct Position {
     pub cells: Vec<Option<Piece>>,
     pub state: PosState,
     pub next_move: Option<Color>,
-    move_list: Option<RefCell<MoveList>>,
+    move_list: Rc<Option<MoveList>>,
     #[serde(skip_serializing)]
     pub eval: Option<i32>,
     #[serde(skip_serializing)]
     pub environment: Rc<PositionEnvironment>,
     #[serde(skip_serializing)]
-    pub took_pieces: Vec<Option<Piece>>
+    pub took_pieces: Vec<Option<Piece>>,
 }
 
 impl PartialEq for Position {
@@ -122,9 +119,9 @@ impl Position {
             cells: Vec::new(),
             environment,
             next_move: None,
-            move_list: None,
+            move_list: Rc::new(None),
             eval: None,
-            took_pieces: vec![]
+            took_pieces: vec![],
         };
         pos.cells = Vec::new();
         let size = pos.environment.size;
@@ -143,12 +140,12 @@ impl Position {
         io::stdout().flush().unwrap();
     }
 
-    pub fn get_move_list_cached(&mut self) -> RefCell<MoveList> {
+    pub fn get_move_list_cached(&mut self) -> Rc<Option<MoveList>> {
         if self.move_list.is_none() {
             let move_li = self.get_move_list(false);
-            self.move_list.get_or_insert(RefCell::new(move_li));
+            self.move_list = Rc::new(Option::from(move_li));
         }
-        self.move_list.as_ref().unwrap().clone()
+        self.move_list.clone()
     }
 
     fn state_change(&mut self, piece: &Piece, sign: i32) {
@@ -168,7 +165,7 @@ impl Position {
         let pos = piece.pos as usize;
         self.state_change(&piece, 1);
         self.cells[pos] = Some(piece);
-        self.move_list = None;
+        self.move_list = Rc::new(None);
         self.eval = None;
     }
 
@@ -176,7 +173,7 @@ impl Position {
         if let Some(piece) = self.cells[pos].clone() {
             self.state_change(&piece, -1);
             self.cells[pos] = None;
-            self.move_list = None;
+            self.move_list = Rc::new(None);
             self.eval = None;
             return true;
         }
@@ -323,11 +320,12 @@ impl Position {
         if self.eval.is_some() { return self.eval.unwrap(); }
         // white advantage if positive signature of evaluate, black - negative
         let mut eval: i32 =
-            if self.get_move_list_cached().borrow().list.len() == 0 {
+            if self.get_move_list_cached().as_ref().as_ref().unwrap().list.len() == 0 {
                 if self.next_move.is_some() && self.next_move.unwrap() == Color::White {
                     i32::MIN / 2
                 } else { i32::MAX / 2 }
             } else { 0 };
+
         for cell in &self.cells {
             if let Some(ref piece) = cell {
                 let v = self.get_vectors(piece, &vec![], false);
@@ -411,15 +409,15 @@ impl Position {
             self.make_strike_or_move(mov);
         }
         if self.next_move.is_some() { self.next_move = Some(!self.next_move.unwrap()) }
-        self.move_list = None;
+        self.move_list = Rc::new(None);
         self.eval = None;
     }
 
 
     pub fn unmake_move(&mut self, move_item: &MoveItem) {
-        if let Some(ref  mov) = move_item.mov {
+        if let Some(ref mov) = move_item.mov {
             self.unmake_strike_or_move(mov);
-        } else if let Some(ref  strike) = move_item.strike {
+        } else if let Some(ref strike) = move_item.strike {
             for (i, straight_strike) in strike.vec.iter().enumerate() {
                 self.state_change(self.took_pieces[i].clone().as_ref().unwrap(), 1);
                 swap(&mut self.took_pieces[i], &mut self.cells[straight_strike.take]);

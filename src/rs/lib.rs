@@ -12,6 +12,7 @@ pub mod game;
 mod mcts;
 mod PositionHistory;
 
+
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = Math)]

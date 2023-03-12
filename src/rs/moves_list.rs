@@ -2,7 +2,6 @@ use std::borrow::Borrow;
 use std::rc::Rc;
 use serde::{Deserialize, Serialize};
 use crate::moves::{BoardPos, ChainPieceMove, PieceMove, QuietMove, StraightStrike};
-use crate::piece::Piece;
 use ts_rs::TS;
 use wasm_bindgen::prelude::wasm_bindgen;
 
