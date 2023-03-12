@@ -43,6 +43,7 @@ pub struct Game {
     #[wasm_bindgen(skip)]
     pub current_position: Position,
     max_depth: i16,
+    tree: McTree,
 }
 
 #[wasm_bindgen]
@@ -50,11 +51,14 @@ impl Game {
     #[wasm_bindgen(constructor)]
     pub fn new(size: i8) -> Self {
         let environment = Rc::new(PositionEnvironment::new(size));
+        let position = Position::new(environment.clone());
+        let position_history = Rc::new(RefCell::new(PositionHistory::new()));
         Game {
-            position_history: Rc::new(RefCell::new(PositionHistory::new())),
             position_environment: environment.clone(),
-            current_position: Position::new(environment.clone()),
+            current_position: position.clone(),
+            position_history: position_history.clone(),
             max_depth: 3,
+            tree: McTree::new(position.clone(), position_history.clone()),
         }
     }
 

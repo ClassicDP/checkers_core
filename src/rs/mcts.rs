@@ -55,6 +55,7 @@ impl McTree {
     }
 
     pub fn search(&mut self) {
-        self.history.borrow_mut().push(PositionAndMove::from_pos(self.root.pos_mov.borrow().pos.clone()));
+        self.history.borrow_mut()
+            .push(PositionAndMove::from_pos(self.root.pos_mov.borrow().pos.clone()));
     }
 }
