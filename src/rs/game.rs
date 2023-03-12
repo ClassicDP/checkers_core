@@ -22,7 +22,7 @@ use crate::PositionHistory::{FinishType, PositionAndMove, PositionHistory};
 #[derive(TS)]
 #[ts(export)]
 pub struct BestPos {
-    pos: Option<Rc<PositionAndMove>>,
+    pos: Option<PositionAndMove>,
     deep_eval: i32,
 }
 
@@ -169,7 +169,7 @@ impl Game {
         } else {
             for mut pos in pos_list {
                 let eval = pos.pos.borrow_mut().evaluate();
-                best_pos = BestPos { deep_eval: eval, pos: Some(Rc::new(pos)) }
+                best_pos = BestPos { deep_eval: eval, pos: Some(pos) }
             }
         }
         best_pos
@@ -321,117 +321,6 @@ impl Game {
         self.current_position.next_move = Some(color);
     }
 
-
-    // pub fn finish_check(&mut self) -> Option<FinishType> {
-    //     let cur_position = &mut self.current_position;
-    //     if cur_position.get_move_list_cached().borrow().list.len() == 0 {
-    //         return if cur_position.next_move.is_some() &&
-    //             cur_position.next_move.unwrap() == White { Some(BlackWin) } else { Some(WhiteWin) };
-    //     }
-    //     let i = self.position_history.len();
-    //     // let ref mut pos_it = self.position_history[i];
-    //     let pos_history = &mut self.position_history;
-    //     if cur_position.state.get_count(White).king > 0 &&
-    //         cur_position.state.get_count(Black).king > 0 {
-    //         // first position where both set kings
-    //         if cur_position.state.kings_start_at.is_none() || cur_position.state.kings_start_at.unwrap() > i {
-    //             cur_position.state.kings_start_at = Some(i);
-    //         }
-    //         // 1) если в течение 15 ходов игроки делали ходы только дамками, не передвигая
-    //         // простых шашек и не производя взятия.
-    //         if i > 0 &&
-    //             pos_history[i - 1].pos.borrow().cells[pos_history[i - 1].mov.borrow().as_ref().unwrap().to()].as_ref().unwrap().is_king {
-    //             if cur_position.state.kings_only_move_start_at.is_none() ||
-    //                 cur_position.state.kings_only_move_start_at.unwrap() > i {
-    //                 cur_position.state.kings_only_move_start_at = Some(i - 1);
-    //             }
-    //             if i - cur_position.state.kings_only_move_start_at.unwrap() >= 15 {
-    //                 return Some(Draw1);
-    //             }
-    //         } else {
-    //             cur_position.state.kings_only_move_start_at = None;
-    //         }
-    //
-    //
-    //         // 2) если три раза повторяется одна и та же позиция
-    //         let mut repeats = 0;
-    //         let mut j: i32 = i as i32 - 1;
-    //         while j >= 0 && pos_history[j as usize].pos.borrow_mut().state == cur_position.state {
-    //             if *cur_position == *pos_history[j as usize].pos.borrow() {
-    //                 repeats += 1;
-    //                 if repeats > 1 {
-    //                     return Some(Draw2);
-    //                 }
-    //             }
-    //             if j < cur_position.state.kings_start_at.unwrap_or(0) as i32 { break; }
-    //             j -= 1;
-    //         }
-    //         cur_position.state.repeats = Some(repeats);
-    //
-    //         // 3) если участник, имеющий три дамки (и более) против одной дамки противника,
-    //         // за 15 ходов не возьмёт дамку противника
-    //         let is_triangle = |state: &mut PosState| {
-    //             (state.get_count(White).king == 1 && state.get_count(Black).king >= 3) ||
-    //                 (state.get_count(Black).king == 1 && state.get_count(White).king >= 3)
-    //         };
-    //         if is_triangle(&mut cur_position.state) {
-    //             if cur_position.state.triangle_start_at.is_none()
-    //                 || cur_position.state.triangle_start_at.unwrap() > i { cur_position.state.triangle_start_at = Some(i); } else {
-    //                 if i - cur_position.state.triangle_start_at.unwrap() >= 15 { return Some(Draw3); }
-    //             }
-    //         } else { cur_position.state.triangle_start_at = None; }
-    //
-    //         // 4) если в позиции, в которой оба соперника имеют дамки, не изменилось соотношение сил
-    //         // (то есть не было взятия, и ни одна простая шашка не стала дамкой) на протяжении:
-    //         // в 2- и 3-фигурных окончаниях — 5 ходов,
-    //         // в 4- и 5-фигурных окончаниях — 30 ходов,
-    //         // в 6- и 7-фигурных окончаниях — 60 ходов;
-    //         if i > 1 && pos_history[i - 1].pos.borrow().state == pos_history[i - 2].pos.borrow().state {
-    //             if cur_position.state.power_equal_start_at.is_none()
-    //                 || cur_position.state.power_equal_start_at.unwrap() > i - 1 {
-    //                 cur_position.state.power_equal_start_at = Some(i - 2);
-    //             }
-    //             let total = cur_position.state.get_total();
-    //             // if cur_position.state.power_equal_start_at.is_none() {panic!("!");}
-    //             let n = i - cur_position.state.power_equal_start_at.unwrap();
-    //             if total < 4 && n >= 5 { return Some(Draw4); }
-    //             if total < 6 && n >= 30 { return Some(Draw4); }
-    //             if total < 8 && n >= 60 { return Some(Draw4); }
-    //         } else { cur_position.state.power_equal_start_at = None; }
-    //
-    //         // если участник, имея в окончании партии три дамки, две дамки и простую, дамку и две простые,
-    //         // ""три простые против одинокой дамки"", находящейся на большой дороге,
-    //         // своим 5-м ходом не сможет добиться выигранной позиции;
-    //         let is_single_on_main_road = |position: &mut Position| -> bool {
-    //             let ref mut state = position.state;
-    //             if (state.get_count(Black).king == 1 ||
-    //                 state.get_count(White).king == 1) &&
-    //                 state.get_total() == 4 {
-    //                 let color = if state.get_count(Black).king == 1 {
-    //                     Black
-    //                 } else { White };
-    //                 for main_road_point in self.position_environment.get_vectors(0)[0].points.iter() {
-    //                     if let Some(piece) = &position.cells[*main_road_point] {
-    //                         return if piece.color == color { true } else {
-    //                             false
-    //                         };
-    //                     }
-    //                 }
-    //             }
-    //             false
-    //         };
-    //         if is_single_on_main_road(cur_position) {
-    //             if cur_position.state.main_road_start_at.is_none() ||
-    //                 cur_position.state.main_road_start_at.unwrap() > i {
-    //                 cur_position.state.main_road_start_at = Some(i);
-    //             }
-    //             if i - cur_position.state.main_road_start_at.unwrap() >= 10 {
-    //                 return Some(Draw5);
-    //             }
-    //         } else { cur_position.state.main_road_start_at = None; }
-    //     } else { cur_position.state.kings_start_at = None; }
-    //     None
-    // }
 
     #[wasm_bindgen]
     pub fn make_move_for_front(&mut self, pos_chain: &JsValue) -> Result<JsValue, JsValue> {

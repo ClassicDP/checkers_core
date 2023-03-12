@@ -1,12 +1,10 @@
 use std::cell::RefCell;
-use std::rc::Rc;
 use crate::moves_list::MoveItem;
 use crate::position::{Position, PosState};
 use wasm_bindgen::prelude::*;
 use ts_rs::*;
 use serde::Serialize;
 use std::cmp::Ordering;
-use std::ops::Index;
 use crate::color::Color::{Black, White};
 use crate::PositionHistory::FinishType::{BlackWin, Draw1, Draw2, Draw3, Draw4, Draw5, WhiteWin};
 
@@ -37,60 +35,55 @@ impl PositionAndMove {
 }
 
 pub struct PositionHistory {
-    list: Vec<Rc<PositionAndMove>>,
+    list: RefCell<Vec<PositionAndMove>>,
 }
 
 impl PositionHistory {
     pub fn len(&self) -> usize {
-        self.list.len()
+        self.list.borrow().len()
     }
 }
 
-impl Index<usize> for PositionHistory {
-    type Output = Rc<PositionAndMove>;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        self.list.index(index)
-    }
-}
 
 impl PositionHistory {
     pub fn new() -> PositionHistory {
         PositionHistory {
-            list: vec![]
+            list: RefCell::new( vec![])
         }
     }
     pub fn push(&mut self, pos_mov: PositionAndMove) -> Option<FinishType> {
-        self.list.push(Rc::new(pos_mov));
+        self.list.borrow_mut().push(pos_mov);
         self.finish_check()
     }
 
-    pub fn pop(&mut self) -> Option<Rc<PositionAndMove>> {
-        self.list.pop()
+    pub fn pop(&mut self) -> Option<PositionAndMove> {
+        self.list.borrow_mut().pop()
     }
 
     pub fn finish_check(&mut self) -> Option<FinishType> {
-        let i = self.list.len();
+        let i = self.list.borrow().len();
         if i==0 {return None}
-        let current = self.list[i-1].clone();
+        let current = &self.list.borrow()[i-1];
         if current.pos.borrow_mut().get_move_list_cached().borrow().list.len() == 0 {
             return if current.pos.borrow().next_move.is_some() &&
-                current.pos.borrow().next_move.unwrap() == White { Some(FinishType::BlackWin) } else { Some(FinishType::WhiteWin) };
+                current.pos.borrow().next_move.unwrap() == White { Some(BlackWin) } else { Some(WhiteWin) };
         }
         if i < 2 { return None; }
         // let ref mut pos_it = self.position_history[i];
-        let pos_history = &mut self.list;
+        let pos_history = &self.list;
         let environment = current.pos.borrow().environment.clone();
         if current.pos.borrow_mut().state.get_count(White).king > 0 &&
             current.pos.borrow_mut().state.get_count(Black).king > 0 {
             // first position where both set kings
-            if current.pos.borrow().state.kings_start_at.is_none() || current.pos.borrow().state.kings_start_at.unwrap() > i {
+            if current.pos.borrow().state.kings_start_at.is_none() ||
+                current.pos.borrow().state.kings_start_at.unwrap() > i {
                 current.pos.borrow_mut().state.kings_start_at = Some(i);
             }
             // 1) если в течение 15 ходов игроки делали ходы только дамками, не передвигая
             // простых шашек и не производя взятия.
             if i > 1 &&
-                pos_history[i - 1].pos.borrow().cells[pos_history[i - 1].mov.borrow_mut().as_ref().unwrap().to()].as_ref().unwrap().is_king {
+                pos_history.borrow()[i - 1].pos.borrow()
+                    .cells[pos_history.borrow()[i - 1].mov.borrow_mut().as_ref().unwrap().to()].as_ref().unwrap().is_king {
                 if current.pos.borrow().state.kings_only_move_start_at.is_none() ||
                     current.pos.borrow().state.kings_only_move_start_at.unwrap() > i {
                     current.pos.borrow_mut().state.kings_only_move_start_at = Some(i - 1);
@@ -106,8 +99,8 @@ impl PositionHistory {
             // 2) если три раза повторяется одна и та же позиция
             let mut repeats = 0;
             let mut j: i32 = i as i32 - 1;
-            while j >= 0 && pos_history[j as usize].pos.borrow().state == current.pos.borrow().state {
-                if current.pos == pos_history[j as usize].pos {
+            while j >= 0 && pos_history.borrow()[j as usize].pos.borrow().state == current.pos.borrow().state {
+                if current.pos == pos_history.borrow()[j as usize].pos {
                     repeats += 1;
                     if repeats > 1 {
                         return Some(FinishType::Draw2);
@@ -126,8 +119,9 @@ impl PositionHistory {
             };
             if is_triangle(&mut current.pos.borrow_mut().state) {
                 if current.pos.borrow().state.triangle_start_at.is_none()
-                    || current.pos.borrow().state.triangle_start_at.unwrap() > i { current.pos.borrow_mut().state.triangle_start_at = Some(i); } else {
-                    if i - current.pos.borrow().state.triangle_start_at.unwrap() >= 15 { return Some(FinishType::Draw3); }
+                    || current.pos.borrow().state.triangle_start_at.unwrap() > i {
+                    current.pos.borrow_mut().state.triangle_start_at = Some(i); } else {
+                    if i - current.pos.borrow().state.triangle_start_at.unwrap() >= 15 { return Some(Draw3); }
                 }
             } else { current.pos.borrow_mut().state.triangle_start_at = None; }
 
@@ -136,7 +130,7 @@ impl PositionHistory {
             // в 2- и 3-фигурных окончаниях — 5 ходов,
             // в 4- и 5-фигурных окончаниях — 30 ходов,
             // в 6- и 7-фигурных окончаниях — 60 ходов;
-            if i > 1 && pos_history[i - 1].pos.borrow().state == pos_history[i - 2].pos.borrow().state {
+            if i > 1 && pos_history.borrow()[i - 1].pos.borrow().state == pos_history.borrow()[i - 2].pos.borrow().state {
                 if current.pos.borrow().state.power_equal_start_at.is_none()
                     || current.pos.borrow().state.power_equal_start_at.unwrap() > i - 1 {
                     current.pos.borrow_mut().state.power_equal_start_at = Some(i - 2);
@@ -176,7 +170,7 @@ impl PositionHistory {
                     current.pos.borrow_mut().state.main_road_start_at = Some(i);
                 }
                 if i - current.pos.borrow().state.main_road_start_at.unwrap() >= 10 {
-                    return Some(FinishType::Draw5);
+                    return Some(Draw5);
                 }
             } else { current.pos.borrow_mut().state.main_road_start_at = None; }
         } else { current.pos.borrow_mut().state.kings_start_at = None; }
