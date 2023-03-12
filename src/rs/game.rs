@@ -16,6 +16,7 @@ use crate::color::Color::{Black, White};
 use crate::PositionHistory::FinishType::{BlackWin, Draw1, Draw2, Draw3, Draw4, Draw5, WhiteWin};
 use crate::log;
 use rand::prelude::*;
+use crate::mcts::McTree;
 use crate::PositionHistory::{FinishType, PositionAndMove, PositionHistory};
 
 #[wasm_bindgen]
@@ -37,7 +38,7 @@ impl BestPos {
 #[wasm_bindgen]
 pub struct Game {
     #[wasm_bindgen(skip)]
-    pub position_history: PositionHistory,
+    pub position_history: Rc<RefCell<PositionHistory>>,
     position_environment: Rc<PositionEnvironment>,
     #[wasm_bindgen(skip)]
     pub current_position: Position,
@@ -50,7 +51,7 @@ impl Game {
     pub fn new(size: i8) -> Self {
         let environment = Rc::new(PositionEnvironment::new(size));
         Game {
-            position_history: PositionHistory::new(),
+            position_history: Rc::new(RefCell::new(PositionHistory::new())),
             position_environment: environment.clone(),
             current_position: Position::new(environment.clone()),
             max_depth: 3,
@@ -84,12 +85,13 @@ impl Game {
 
     pub fn make_move_by_pos_item(&mut self, pos: &BestPos) {
         self.current_position.make_move(&mut pos.get_move_item());
-        self.position_history.push(PositionAndMove::from(self.current_position.clone(), pos.get_move_item()));
+        self.position_history.borrow_mut().push(PositionAndMove::from(self.current_position.clone(), pos.get_move_item()));
     }
 
     pub fn make_move_by_move_item(&mut self, move_item: &MoveItem) {
         self.current_position.make_move(move_item);
-        self.position_history.push(PositionAndMove::from(self.current_position.clone(), move_item.clone()));
+        self.position_history.borrow_mut()
+            .push(PositionAndMove::from(self.current_position.clone(), move_item.clone()));
     }
 
     #[wasm_bindgen]
@@ -126,19 +128,19 @@ impl Game {
         if depth < max_depth {
             for pos_it in pos_list {
                 self.current_position.make_move(&pos_it.mov.as_ref().unwrap());
-                self.position_history.push(pos_it);
-                let finish = self.position_history.finish_check();
+                self.position_history.borrow_mut().push(pos_it);
+                let finish = self.position_history.borrow_mut().finish_check();
                 if finish.is_some() {
                     // print!("{:?} {}\n", finish, depth);
                     // pos_it.position.print_pos();
-                    let mut pos_it = self.position_history.pop().unwrap();
+                    let mut pos_it = self.position_history.borrow_mut().pop().unwrap();
                     self.current_position.unmake_move(&pos_it.borrow().mov.as_ref().unwrap());
                     let eval = pos_it.borrow_mut().pos.evaluate();
                     return BestPos { deep_eval: eval, pos: Option::from(pos_it) };
                 }
                 let deep_eval =
                     self.best_move(max_depth, best_white, best_black, depth + 1).deep_eval;
-                let mut pos_it = self.position_history.pop().unwrap();
+                let mut pos_it = self.position_history.borrow_mut().pop().unwrap();
                 self.current_position.took_pieces = pos_it.borrow().pos.took_pieces.clone();
                 self.current_position.unmake_move(&pos_it.borrow().mov.as_ref().unwrap());
                 let white = self.current_position.state.white.clone();
@@ -177,7 +179,7 @@ impl Game {
 
     #[wasm_bindgen]
     pub fn get_best_move(&mut self) -> JsValue {
-        let finish = self.position_history.finish_check();
+        let finish = self.position_history.borrow_mut().finish_check();
         if finish.is_some() {
             return match serde_wasm_bindgen::to_value(&finish.unwrap()) {
                 Ok(js) => js,
@@ -220,7 +222,7 @@ impl Game {
     }
     #[wasm_bindgen]
     pub fn find_and_make_best_move_ts_n(&mut self) -> JsValue {
-        let finish = self.position_history.finish_check();
+        let finish = self.position_history.borrow_mut().finish_check();
         if finish.is_some() {
             return match serde_wasm_bindgen::to_value(&finish.unwrap()) {
                 Ok(js) => js,
@@ -229,7 +231,7 @@ impl Game {
         }
         let best_pos = self.best_move(self.max_depth, i32::MIN, i32::MAX, 0);
         self.make_move_by_pos_item(&best_pos);
-        let finish = self.position_history.finish_check();
+        let finish = self.position_history.borrow_mut().finish_check();
         if finish.is_some() {
             return match serde_wasm_bindgen::to_value(&finish.unwrap()) {
                 Ok(js) => js,
@@ -256,7 +258,7 @@ impl Game {
             let len = move_list.list.len() as i32;
             if i >= 0 && i < len {
                 self.make_move_by_move_item(&move_list.list[i as usize]);
-                let finish = self.position_history.finish_check();
+                let finish = self.position_history.borrow_mut().finish_check();
                 if finish.is_some() {
                     return match serde_wasm_bindgen::to_value(&finish.unwrap()) {
                         Ok(js) => js,
@@ -360,8 +362,8 @@ impl Game {
                     }
                     if ok && pos_list.len() == i {
                         self.current_position.make_move(&mut move_item);
-                        let draw = self.position_history.finish_check();
-                        self.position_history.push(
+                        let draw = self.position_history.borrow_mut().finish_check();
+                        self.position_history.borrow_mut().push(
                             PositionAndMove::from(self.current_position.clone(), move_item));
                         return if draw.is_none() { Ok(JsValue::TRUE) } else {
                             Ok(serde_wasm_bindgen::to_value(&draw.unwrap()).unwrap())

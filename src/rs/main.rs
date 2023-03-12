@@ -32,10 +32,10 @@ pub fn random_game_test() {
         v_b.iter()
             .for_each(|pos|
                 game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, false)));
-        while game.position_history.finish_check().is_none() {
+        while game.position_history.borrow_mut().finish_check().is_none() {
             // print!("state {}\n", game.state_());
             // print!("history {:?}\n", game.position_history.len());
-            if game.position_history.len() % 2 == 10 {
+            if game.position_history.borrow().len() % 2 == 10 {
                 let moves_list = game.current_position.get_move_list_cached();
                 let i = thread_rng().gen_range(0..moves_list.as_ref().as_ref().unwrap().list.len());
                 game.move_by_index_ts_n(i as i32);
@@ -46,7 +46,7 @@ pub fn random_game_test() {
                 game.make_move_by_pos_item(best_pos);
             }
         }
-        print!("end: {} {} {:?}\n", game_count, game.position_history.len(), game.position_history.finish_check());
+        print!("end: {} {} {:?}\n", game_count, game.position_history.borrow().len(), game.position_history.borrow_mut().finish_check());
         print!("state {}\n", game.state_());
         game_count += 1;
     }
@@ -64,9 +64,9 @@ pub fn best_move_triangle() {
             game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, true)));
 
     use crate::moves::PieceMove;
-    while game.position_history.finish_check().is_none() {
+    while game.position_history.borrow_mut().finish_check().is_none() {
         print!("state {}\n", game.state_());
-        print!("history {:?}\n", game.position_history.len());
+        print!("history {:?}\n", game.position_history.borrow().len());
         let best = game.get_best_move_rust();
         print!("{}", {
             if best.get_move_item().strike.is_some() {
@@ -87,7 +87,7 @@ pub fn best_move_triangle() {
         });
         game.make_move_by_pos_item(&best);
     }
-    print!("{:?}", game.position_history.finish_check());
+    print!("{:?}", game.position_history.borrow_mut().finish_check());
 }
 
 pub fn main() {
@@ -117,7 +117,7 @@ pub fn main() {
         pos_list.sort_by_key(|x|
             x.pos.eval.unwrap() * if x.pos.next_move.unwrap() == Color::White { -1 } else { 1 });
         let po = game.current_position.make_move_and_get_position(&mut list.list[0]);
-        game.position_history.finish_check();
+        game.position_history.borrow_mut().finish_check();
         if po.pos != po.pos { break; }
         game.current_position.unmake_move(&mut list.list[0]);
     }

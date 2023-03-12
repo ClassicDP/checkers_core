@@ -34,7 +34,6 @@ impl PositionAndMove {
     }
 }
 
-
 pub struct PositionHistory {
     list: Vec<RefCell<PositionAndMove>>,
 }

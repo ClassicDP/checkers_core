@@ -1,8 +1,9 @@
 use std::cell::RefCell;
+use std::rc::Rc;
 use crate::position::Position;
 use crate::PositionHistory::{PositionAndMove, PositionHistory};
 
-struct Node {
+pub struct Node {
     W: i64,
     N: i64,
     pos_mov: RefCell<PositionAndMove>,
@@ -20,26 +21,22 @@ impl Node {
     }
     pub fn expand(&mut self) {
         let mut base_p = self.pos_mov.borrow().pos.clone();
-        if let Some(ref move_list) = base_p.get_move_list_cached().as_ref() {
-            for mov in &move_list.list {
-                self.childs.push(Node::new(base_p.make_move_and_get_position(mov)));
-                base_p.unmake_move(mov);
-            }
-        } else {
-            panic!("Move list empty")
+        let move_list = base_p.get_move_list_cached();
+        for mov in &move_list.as_ref().as_ref().unwrap().list {
+            self.childs.push(Node::new(base_p.make_move_and_get_position(mov)));
+            base_p.unmake_move(mov);
         }
-
     }
 }
 
-struct Tree {
+pub struct McTree  {
     root: Node,
-    history: PositionHistory,
+    history: Rc<RefCell<PositionHistory>>,
 }
 
-impl Tree {
-    pub fn new(pos: Position, history: PositionHistory) -> Tree {
-        Tree {
+impl McTree {
+    pub fn new(pos: Position, history: Rc<RefCell<PositionHistory>>) -> McTree {
+        McTree {
             root: Node {
                 W: 0,
                 N: 0,
@@ -50,10 +47,14 @@ impl Tree {
         }
     }
 
-    pub fn new_from_node (root: Node, history: PositionHistory) -> Tree {
-        Tree {
+    pub fn new_from_node(root: Node, history: Rc<RefCell<PositionHistory>>) -> McTree {
+        McTree {
             root,
-            history
+            history,
         }
+    }
+
+    pub fn search(&mut self) {
+        self.history.borrow_mut().push(PositionAndMove::from_pos(self.root.pos_mov.borrow().pos.clone()));
     }
 }
