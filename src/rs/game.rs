@@ -24,7 +24,7 @@ use crate::PositionHistory::{FinishType, PositionAndMove, PositionHistory};
 #[derive(TS)]
 #[ts(export)]
 pub struct BestPos {
-    pos: Option<RefCell<PositionAndMove>>,
+    pos: Option<Rc<RefCell<PositionAndMove>>>,
     deep_eval: i32,
 }
 
@@ -175,7 +175,7 @@ impl Game {
         } else {
             for mut pos in pos_list {
                 let eval = pos.pos.evaluate();
-                best_pos = BestPos { deep_eval: eval, pos: Some(RefCell::from(pos)) }
+                best_pos = BestPos { deep_eval: eval, pos: Some(Rc::from(RefCell::from(pos))) }
             }
         }
         best_pos

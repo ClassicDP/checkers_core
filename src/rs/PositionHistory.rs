@@ -5,6 +5,7 @@ use wasm_bindgen::prelude::*;
 use ts_rs::*;
 use serde::Serialize;
 use std::cmp::Ordering;
+use std::rc::Rc;
 use crate::color::Color::{Black, White};
 use crate::PositionHistory::FinishType::{BlackWin, Draw1, Draw2, Draw3, Draw4, Draw5, WhiteWin};
 
@@ -35,7 +36,7 @@ impl PositionAndMove {
 }
 
 pub struct PositionHistory {
-    list: Vec<RefCell<PositionAndMove>>,
+    list: Vec<Rc<RefCell<PositionAndMove>>>,
 }
 
 impl PositionHistory {
@@ -52,11 +53,16 @@ impl PositionHistory {
         }
     }
     pub fn push(&mut self, pos_mov: PositionAndMove) -> Option<FinishType> {
-        self.list.push(RefCell::from(pos_mov));
+        self.list.push(Rc::new(RefCell::from(pos_mov)));
         self.finish_check()
     }
 
-    pub fn pop(&mut self) -> Option<RefCell<PositionAndMove>> {
+    pub fn push_rc(&mut self, pos_mov: Rc<RefCell<PositionAndMove>>) -> Option<FinishType> {
+        self.list.push(pos_mov);
+        self.finish_check()
+    }
+
+    pub fn pop(&mut self) -> Option<Rc<RefCell<PositionAndMove>>> {
         self.list.pop()
     }
 
