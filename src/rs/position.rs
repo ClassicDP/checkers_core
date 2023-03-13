@@ -337,7 +337,7 @@ impl Position {
                     })
             }
         }
-        eval += self.state.evaluate() + thread_rng().gen_range(-2..2);
+        eval += self.state.evaluate();
         self.eval = Some(eval);
         eval
     }
