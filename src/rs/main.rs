@@ -1,3 +1,5 @@
+use std::io;
+use std::io::Write;
 use rand::{Rng, thread_rng};
 use crate::color::Color;
 use crate::color::Color::Black;
@@ -69,10 +71,29 @@ pub fn best_move_triangle() {
     game.current_position.next_move = Option::from(Color::Black);
     // game.position_history.borrow_mut().push(PositionAndMove::from_pos(game.current_position));
     game.tree = Some(McTree::new(game.current_position.clone(), game.position_history.clone()));
-    if let Some(tree) = &mut game.tree {
-        let node = tree.search(10000);
-        print!("{:?}", node);
+    if let Some(mut tree) = game.tree {
+        loop {
+            // game.tree = Some(McTree::new(game.current_position.clone(), game.position_history.clone()));
+            let node = tree.search(100000);
+            game.tree = Option::from(McTree::new_from_node(node.clone().unwrap().clone(),
+                                                           game.position_history.clone()));
+            if node.is_none() {break}
+            let mov = node.unwrap().borrow().get_move().unwrap().clone();
+            print!("{:?}\n", &mov);
+            game.make_move_by_move_item(&mov);
+            io::stdout().flush().unwrap();
+        }
     }
+
+    let mut game = Game::new(8);
+    game.set_depth(6);
+    game.current_position.next_move = Some(Color::Black);
+    vec![31].iter()
+        .for_each(|pos|
+            game.insert_piece(Piece::new(game.to_pack(*pos), Color::White, true)));
+    vec![43, 0, 20].iter()
+        .for_each(|pos|
+            game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, true)));
 
     use crate::moves::PieceMove;
     while game.position_history.borrow_mut().finish_check().is_none() {

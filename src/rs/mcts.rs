@@ -9,6 +9,7 @@ use crate::PositionHistory::{FinishType, PositionAndMove, PositionHistory};
 use rand::{Rng};
 use schemars::_private::NoSerialize;
 use crate::color::Color;
+use crate::moves_list::MoveItem;
 
 #[derive(Debug)]
 pub struct Node {
@@ -38,6 +39,9 @@ impl Node {
                 RefCell::new(Node::new(base_p.make_move_and_get_position(mov)))));
             base_p.unmake_move(mov);
         }
+    }
+    pub fn get_move(&self) -> Option<MoveItem> {
+        self.pos_mov.borrow().mov.clone()
     }
 }
 
@@ -94,8 +98,10 @@ impl McTree {
                 if let Some(finish) = finish {
                     node.borrow_mut().passed_completely = true;
                     back_propagation({
-                        let fr = if finish == FinishType::WhiteWin { 1 } else if finish == FinishType::BlackWin { -1 } else { 0 };
-                        let sing = if node.borrow().pos_mov.borrow().pos.next_move.unwrap() == Color::White { 1 } else { -1 };
+                        let fr = if finish == FinishType::WhiteWin { 1 } else if
+                        finish == FinishType::BlackWin { -1 } else { 0 };
+                        let sing =
+                            if node.borrow().pos_mov.borrow().pos.next_move.unwrap() == Color::White { -1 } else { 1 };
                         fr * sing
                     }, &mut track, &self.history, hist_len);
                     break;
@@ -104,27 +110,28 @@ impl McTree {
                 let u = |child: &Node|
                     1.4 * f64::sqrt(f64::ln(node.borrow().N as f64) / (child.N as f64 + 1.0));
                 let u_max = |node: &Node| node.W as f64 / (node.N as f64 + 1.0) + u(node);
-                let mut childs = vec![];
-                for child in &node.borrow().childs {
-                    if !child.borrow().passed_completely { childs.push(child.clone()); }
-                }
+                let childs = node.borrow().childs.clone();
+                // for child in &node.borrow().childs {
+                //     if !child.borrow().passed_completely { childs.push(child.clone()); }
+                // }
                 if childs.len() > 0 {
                     node = {
                         if childs.iter().all(|x| x.borrow().N == 0) {
                             childs[rand::thread_rng().gen_range(0..childs.len())].clone()
                         } else {
                             childs.iter().max_by(|a, b|
-                                if u_max(&*a.borrow()) < u_max(&*b.borrow()) { Ordering::Less } else { Ordering::Greater }).unwrap().clone()
+                                if u_max(&*a.borrow()) < u_max(&*b.borrow())
+                                { Ordering::Less } else { Ordering::Greater }).unwrap().clone()
                         }
                     };
                 } else {
                     node.borrow_mut().passed_completely = true;
+                    track.push(node);
                     back_propagation(track.pop().unwrap().borrow().W, &mut track, &self.history, hist_len);
                     break;
                 }
             }
             pass += 1;
-            print!("{}", pass);
         }
         if self.root.borrow().childs.len() > 0 {
             Some(self.root.borrow().childs
