@@ -75,8 +75,8 @@ impl McTree {
     pub fn search(&mut self, max_passes: i32) -> Option<Rc<RefCell<Node>>> {
         let mut track: Vec<Rc<RefCell<Node>>> = vec![];
         let hist_len = self.history.borrow().len();
-        pub fn back_propagation (mut res: i64, track: &mut Vec<Rc<RefCell<Node>>>,
-                                 history: &Rc<RefCell<PositionHistory>>, hist_len: usize) {
+        fn back_propagation(mut res: i64, track: &mut Vec<Rc<RefCell<Node>>>,
+                                history: &Rc<RefCell<PositionHistory>>, hist_len: usize) {
             if res != 0 {
                 for node in track.iter().rev() {
                     node.borrow_mut().W += res;
@@ -91,24 +91,9 @@ impl McTree {
             let mut node = self.root.clone();
             loop {
                 node.borrow_mut().N += 1;
-                self.history.borrow_mut().push_rc(node.borrow().pos_mov.clone());
-                track.push(node.clone());
-                // if finish achieved
-                let finish = self.history.borrow_mut().finish_check();
-                if let Some(finish) = finish {
-                    node.borrow_mut().passed_completely = true;
-                    back_propagation({
-                        let fr = if finish == FinishType::WhiteWin { 1 } else if
-                        finish == FinishType::BlackWin { -1 } else { 0 };
-                        let sing =
-                            if node.borrow().pos_mov.borrow().pos.next_move.unwrap() == Color::White { -1 } else { 1 };
-                        fr * sing
-                    }, &mut track, &self.history, hist_len);
-                    break;
-                }
                 node.borrow_mut().expand();
                 let u = |child: &Node|
-                    1.4 * f64::sqrt(f64::ln(node.borrow().N as f64) / (child.N as f64 + 1.0));
+                    5.1 * f64::sqrt(f64::ln(node.borrow().N as f64) / (child.N as f64 + 1.0));
                 let u_max = |node: &Node| node.W as f64 / (node.N as f64 + 1.0) + u(node);
                 let childs = node.borrow().childs.clone();
                 // for child in &node.borrow().childs {
@@ -130,12 +115,27 @@ impl McTree {
                     back_propagation(track.pop().unwrap().borrow().W, &mut track, &self.history, hist_len);
                     break;
                 }
+
+                track.push(node.clone());
+                let finish = self.history.borrow_mut().push_rc(node.borrow().pos_mov.clone());
+                // if finish achieved
+                if let Some(finish) = finish {
+                    node.borrow_mut().passed_completely = true;
+                    back_propagation({
+                                         let fr = if finish == FinishType::WhiteWin { 1 } else if
+                                         finish == FinishType::BlackWin { -1 } else { 0 };
+                                         let sing =
+                                             if node.borrow().pos_mov.borrow().pos.next_move.unwrap() == Color::White { -1 } else { 1 };
+                                         fr * sing
+                                     }, &mut track, &self.history, hist_len);
+                    break;
+                }
             }
             pass += 1;
         }
         if self.root.borrow().childs.len() > 0 {
             Some(self.root.borrow().childs
-                .iter().max_by(|x,y|x.borrow().W.cmp(&y.borrow().W)).unwrap().clone())
+                .iter().max_by(|x, y| x.borrow().N.cmp(&y.borrow().N)).unwrap().clone())
         } else {
             None
         }

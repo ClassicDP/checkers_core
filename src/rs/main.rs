@@ -64,20 +64,21 @@ pub fn best_move_triangle() {
     vec![31].iter()
         .for_each(|pos|
             game.insert_piece(Piece::new(game.to_pack(*pos), Color::White, true)));
-    vec![43, 0, 20].iter()
+    vec![43, 36, 20].iter()
         .for_each(|pos|
             game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, true)));
 
     game.current_position.next_move = Option::from(Color::Black);
     // game.position_history.borrow_mut().push(PositionAndMove::from_pos(game.current_position));
     game.tree = Some(McTree::new(game.current_position.clone(), game.position_history.clone()));
-    if let Some(mut tree) = game.tree {
-        loop {
+
+    loop {
+        if let Some(mut tree) = game.tree {
             // game.tree = Some(McTree::new(game.current_position.clone(), game.position_history.clone()));
             let node = tree.search(100000);
+            if node.is_none() { break; }
             game.tree = Option::from(McTree::new_from_node(node.clone().unwrap().clone(),
                                                            game.position_history.clone()));
-            if node.is_none() {break}
             let mov = node.unwrap().borrow().get_move().unwrap().clone();
             print!("{:?}\n", &mov);
             game.make_move_by_move_item(&mov);
@@ -91,7 +92,7 @@ pub fn best_move_triangle() {
     vec![31].iter()
         .for_each(|pos|
             game.insert_piece(Piece::new(game.to_pack(*pos), Color::White, true)));
-    vec![43, 0, 20].iter()
+    vec![43, 36, 20].iter()
         .for_each(|pos|
             game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, true)));
 
@@ -99,6 +100,7 @@ pub fn best_move_triangle() {
     while game.position_history.borrow_mut().finish_check().is_none() {
         print!("state {}\n", game.state_());
         print!("history {:?}\n", game.position_history.borrow().len());
+        game.set_depth(8);
         let best = game.get_best_move_rust();
         print!("{}", {
             if best.get_move_item().strike.is_some() {
@@ -123,7 +125,6 @@ pub fn best_move_triangle() {
 }
 
 pub fn main() {
-
     best_move_triangle();
     // random_game_test();
     let mut game = Game::new(8);
