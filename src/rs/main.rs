@@ -70,7 +70,8 @@ pub fn best_move_triangle() {
     // game.position_history.borrow_mut().push(PositionAndMove::from_pos(game.current_position));
     game.tree = Some(McTree::new(game.current_position.clone(), game.position_history.clone()));
     if let Some(tree) = &mut game.tree {
-        let node = tree.search(10);
+        let node = tree.search(10000);
+        print!("{:?}", node);
     }
 
     use crate::moves::PieceMove;

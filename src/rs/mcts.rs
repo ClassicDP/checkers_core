@@ -1,11 +1,16 @@
 use std::cell::RefCell;
 use std::cmp::Ordering;
+use std::io;
+use std::io::Write;
+use std::ops::Deref;
 use std::rc::Rc;
 use crate::position::Position;
 use crate::PositionHistory::{FinishType, PositionAndMove, PositionHistory};
 use rand::{Rng};
+use schemars::_private::NoSerialize;
 use crate::color::Color;
 
+#[derive(Debug)]
 pub struct Node {
     W: i64,
     N: i64,
@@ -36,6 +41,7 @@ impl Node {
     }
 }
 
+#[derive(Debug)]
 pub struct McTree {
     root: Rc<RefCell<Node>>,
     history: Rc<RefCell<PositionHistory>>,
@@ -64,7 +70,6 @@ impl McTree {
 
     pub fn search(&mut self, max_passes: i32) -> Option<Rc<RefCell<Node>>> {
         let mut track: Vec<Rc<RefCell<Node>>> = vec![];
-        let mut node = self.root.clone();
         let hist_len = self.history.borrow().len();
         pub fn back_propagation (mut res: i64, track: &mut Vec<Rc<RefCell<Node>>>,
                                  history: &Rc<RefCell<PositionHistory>>, hist_len: usize) {
@@ -79,13 +84,14 @@ impl McTree {
         }
         let mut pass = 0;
         while pass < max_passes && !self.root.borrow().passed_completely {
+            let mut node = self.root.clone();
             loop {
                 node.borrow_mut().N += 1;
                 self.history.borrow_mut().push_rc(node.borrow().pos_mov.clone());
                 track.push(node.clone());
                 // if finish achieved
-
-                if let Some(finish) = self.history.borrow_mut().finish_check() {
+                let finish = self.history.borrow_mut().finish_check();
+                if let Some(finish) = finish {
                     node.borrow_mut().passed_completely = true;
                     back_propagation({
                         let fr = if finish == FinishType::WhiteWin { 1 } else if finish == FinishType::BlackWin { -1 } else { 0 };
@@ -118,6 +124,7 @@ impl McTree {
                 }
             }
             pass += 1;
+            print!("{}", pass);
         }
         if self.root.borrow().childs.len() > 0 {
             Some(self.root.borrow().childs
