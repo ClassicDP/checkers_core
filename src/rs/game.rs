@@ -44,7 +44,7 @@ pub struct Game {
     pub current_position: Position,
     max_depth: i16,
     #[wasm_bindgen(skip)]
-    pub tree: McTree,
+    pub tree: Option<McTree>,
 }
 
 #[wasm_bindgen]
@@ -57,9 +57,9 @@ impl Game {
         Game {
             position_environment: environment.clone(),
             current_position: position.clone(),
-            position_history: position_history.clone(),
+            position_history,
             max_depth: 3,
-            tree: McTree::new(position.clone(), position_history.clone()),
+            tree: None,
         }
     }
 

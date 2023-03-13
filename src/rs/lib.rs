@@ -9,8 +9,8 @@ mod vector;
 pub mod piece;
 pub mod color;
 pub mod game;
-mod mcts;
-mod PositionHistory;
+pub mod mcts;
+pub mod PositionHistory;
 
 
 
