@@ -93,8 +93,11 @@ impl<'a> IntoIterator for &'a MoveItem {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[derive(TS)]
 #[ts(export)]
+#[wasm_bindgen]
 pub struct MoveList {
+    #[wasm_bindgen(skip)]
     pub list: Vec<MoveItem>,
+    #[wasm_bindgen(skip)]
     pub current_chain: Strike,
 }
 

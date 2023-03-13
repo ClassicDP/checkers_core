@@ -579,6 +579,27 @@ class MoveItem {
 module.exports.MoveItem = MoveItem;
 /**
 */
+class MoveList {
+
+    constructor() {
+        throw new Error('cannot invoke `new` directly');
+    }
+
+    __destroy_into_raw() {
+        const ptr = this.ptr;
+        this.ptr = 0;
+
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_movelist_free(ptr);
+    }
+}
+module.exports.MoveList = MoveList;
+/**
+*/
 class Piece {
 
     constructor() {

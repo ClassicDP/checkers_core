@@ -129,6 +129,11 @@ export class MoveItem {
 }
 /**
 */
+export class MoveList {
+  free(): void;
+}
+/**
+*/
 export class Piece {
   free(): void;
 /**

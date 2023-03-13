@@ -11,6 +11,7 @@ export function positionenvironment_is_king_move_for(a: number, b: number, c: nu
 export function positionenvironment_game(): void;
 export function positionenvironment_test(): number;
 export function __wbg_moveitem_free(a: number): void;
+export function __wbg_movelist_free(a: number): void;
 export function __wbg_bestpos_free(a: number): void;
 export function __wbg_game_free(a: number): void;
 export function game_new(a: number): number;

@@ -43,7 +43,8 @@ pub struct Game {
     #[wasm_bindgen(skip)]
     pub current_position: Position,
     max_depth: i16,
-    tree: McTree,
+    #[wasm_bindgen(skip)]
+    pub tree: McTree,
 }
 
 #[wasm_bindgen]

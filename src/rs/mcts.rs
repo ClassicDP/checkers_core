@@ -1,14 +1,15 @@
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::rc::Rc;
-use js_sys::Math::{log, log2, sqrt};
 use crate::position::Position;
 use crate::PositionHistory::{FinishType, PositionAndMove, PositionHistory};
 use rand::{Rng};
+use crate::color::Color;
 
 pub struct Node {
     W: i64,
     N: i64,
+    passed_completely: bool,
     pos_mov: Rc<RefCell<PositionAndMove>>,
     childs: Vec<Rc<RefCell<Node>>>,
 }
@@ -18,6 +19,7 @@ impl Node {
         Node {
             W: 0,
             N: 0,
+            passed_completely: false,
             pos_mov: Rc::new(RefCell::new(pos_mov)),
             childs: vec![],
         }
@@ -45,6 +47,7 @@ impl McTree {
             root: Rc::new(RefCell::new(Node {
                 W: 0,
                 N: 0,
+                passed_completely: false,
                 pos_mov: Rc::new(RefCell::new(PositionAndMove::from_pos(pos))),
                 childs: vec![],
             })),
@@ -59,29 +62,68 @@ impl McTree {
         }
     }
 
-    pub fn search(&mut self) {
+    pub fn search(&mut self, max_passes: i32) -> Option<Rc<RefCell<Node>>> {
         let mut track: Vec<Rc<RefCell<Node>>> = vec![];
         let mut node = self.root.clone();
-        track.push(node.clone());
-        node.borrow_mut().expand();
-        let u = sqrt(log(node.borrow().N as f64) / (node.borrow().N as f64 + 1.0));
-        let u_max = |node: &Node| node.W as f64 / (node.N as f64 + 1.0) + u;
-        if node.borrow().childs.iter().all(|x| x.borrow().N == 0) {
-            node.borrow_mut().childs.sort_by(|_a, _b| if rand::thread_rng().gen_range(0..100) < 50
-            { Ordering::Less } else { Ordering::Greater });
-        } else {
-            node.borrow_mut().childs.sort_by(|a, b|
-                if u_max(&*a.borrow()) < u_max(&*b.borrow()) { Ordering::Less } else { Ordering::Greater });
+        let hist_len = self.history.borrow().len();
+        pub fn back_propagation (mut res: i64, track: &mut Vec<Rc<RefCell<Node>>>,
+                                 history: &Rc<RefCell<PositionHistory>>, hist_len: usize) {
+            if res != 0 {
+                for node in track.iter().rev() {
+                    node.borrow_mut().W += res;
+                    res = -res;
+                }
+            }
+            history.borrow_mut().cut_to(hist_len);
+            *track = vec![];
         }
-        node = {
-            let _x = node.borrow().childs.last().unwrap().clone();
-            _x
-        };
-        self.history.borrow_mut().push_rc(node.borrow().pos_mov.clone());
-        self.history.borrow_mut()
-            .push(PositionAndMove::from_pos(self.root.borrow().pos_mov.borrow().pos.clone()));
-        if let Some(finish)= self.history.borrow_mut().finish_check() {
-            let result = if finish==FinishType::WhiteWin {1} else if finish == FinishType::BlackWin {-1 } else { 0 };
+        let mut pass = 0;
+        while pass < max_passes && !self.root.borrow().passed_completely {
+            loop {
+                node.borrow_mut().N += 1;
+                self.history.borrow_mut().push_rc(node.borrow().pos_mov.clone());
+                track.push(node.clone());
+                // if finish achieved
+
+                if let Some(finish) = self.history.borrow_mut().finish_check() {
+                    node.borrow_mut().passed_completely = true;
+                    back_propagation({
+                        let fr = if finish == FinishType::WhiteWin { 1 } else if finish == FinishType::BlackWin { -1 } else { 0 };
+                        let sing = if node.borrow().pos_mov.borrow().pos.next_move.unwrap() == Color::White { 1 } else { -1 };
+                        fr * sing
+                    }, &mut track, &self.history, hist_len);
+                    break;
+                }
+                node.borrow_mut().expand();
+                let u = |child: &Node|
+                    1.4 * f64::sqrt(f64::ln(node.borrow().N as f64) / (child.N as f64 + 1.0));
+                let u_max = |node: &Node| node.W as f64 / (node.N as f64 + 1.0) + u(node);
+                let mut childs = vec![];
+                for child in &node.borrow().childs {
+                    if !child.borrow().passed_completely { childs.push(child.clone()); }
+                }
+                if childs.len() > 0 {
+                    node = {
+                        if childs.iter().all(|x| x.borrow().N == 0) {
+                            childs[rand::thread_rng().gen_range(0..childs.len())].clone()
+                        } else {
+                            childs.iter().max_by(|a, b|
+                                if u_max(&*a.borrow()) < u_max(&*b.borrow()) { Ordering::Less } else { Ordering::Greater }).unwrap().clone()
+                        }
+                    };
+                } else {
+                    node.borrow_mut().passed_completely = true;
+                    back_propagation(track.pop().unwrap().borrow().W, &mut track, &self.history, hist_len);
+                    break;
+                }
+            }
+            pass += 1;
+        }
+        if self.root.borrow().childs.len() > 0 {
+            Some(self.root.borrow().childs
+                .iter().max_by(|x,y|x.borrow().W.cmp(&y.borrow().W)).unwrap().clone())
+        } else {
+            None
         }
     }
 }

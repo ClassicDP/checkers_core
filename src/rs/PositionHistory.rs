@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::cell::{RefCell, RefMut};
 use crate::moves_list::MoveItem;
 use crate::position::{Position, PosState};
 use wasm_bindgen::prelude::*;
@@ -51,6 +51,13 @@ impl PositionHistory {
         PositionHistory {
             list: vec![]
         }
+    }
+    pub fn last(&mut self) -> Rc<RefCell<PositionAndMove>> {
+        self.list.last().unwrap().clone()
+    }
+
+    pub fn cut_to (&mut self, to: usize) {
+        self.list = self.list[0..to].to_owned();
     }
     pub fn push(&mut self, pos_mov: PositionAndMove) -> Option<FinishType> {
         self.list.push(Rc::new(RefCell::from(pos_mov)));

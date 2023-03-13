@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use rand::{Rng, thread_rng};
 use crate::color::Color;
 use crate::game::Game;
@@ -63,6 +65,8 @@ pub fn best_move_triangle() {
         .for_each(|pos|
             game.insert_piece(Piece::new(game.to_pack(*pos), Color::Black, true)));
 
+    game.current_position.next_move = Option::from(Color::Black);
+    // let node = game.tree.search(10);
     use crate::moves::PieceMove;
     while game.position_history.borrow_mut().finish_check().is_none() {
         print!("state {}\n", game.state_());
